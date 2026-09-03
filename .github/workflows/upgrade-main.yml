@@ -36,7 +36,7 @@ jobs:
         run: pnpm i --frozen-lockfile
       - name: Upgrade dependencies
         id: upgrade_dependencies
-        run: pnpm exec projen upgrade
+        run: pnpm --filter cdk-ses-mail-catcher upgrade
       - name: Find mutations
         id: create_patch
         run: |-

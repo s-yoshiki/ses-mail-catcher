@@ -1,0 +1,26 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "oxc",
+    "typescript",
+    "unicorn",
+    "import",
+    "jest",
+    "node"
+  ],
+  "env": {
+    "node": true,
+    "jest": true
+  },
+  "categories": {
+    "correctness": "deny",
+    "suspicious": "deny"
+  },
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/lib/**",
+    "**/dist/**",
+    "**/coverage/**",
+    "**/test-reports/**"
+  ]
+}

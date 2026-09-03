@@ -2,22 +2,21 @@ import { awscdk, javascript } from 'projen';
 const project = new awscdk.AwsCdkConstructLibrary({
   author: 'Yoshiki Shinagawa',
   authorAddress: 's.yoshiki1123@gmail.com',
-  allowScripts: ['@parcel/watcher', 'unrs-resolver'],
   cdkVersion: '2.189.1',
   description: 'AWS CDK Construct Library for capturing and inspecting emails sent through Amazon SES',
   homepage: 'https://github.com/s-yoshiki/cdk-ses-mail-catcher',
   jsiiVersion: '~6.0.0',
   keywords: ['aws-cdk', 'aws-ses', 'email', 'mail-catcher', 'jsii'],
   name: 'cdk-ses-mail-catcher',
+  repositoryDirectory: 'packages/cdk-ses-mail-catcher',
   packageManager: javascript.NodePackageManager.PNPM,
-  pnpmOptions: {
-    workspaceYamlOptions: {
-      allowBuilds: {
-        '@parcel/watcher': true,
-        'unrs-resolver': true,
-      },
-    },
-  },
+  projenCommand: 'projen --no-post',
+  devDeps: ['oxlint@^1.81.0'],
+  eslint: false,
+  github: false,
+  buildWorkflow: false,
+  pullRequestTemplate: false,
+  autoMerge: false,
   projenrcTs: true,
   publishTasks: true,
   releaseToNpm: true,
@@ -30,4 +29,12 @@ const project = new awscdk.AwsCdkConstructLibrary({
   // devDeps: [],                   /* Build dependencies for this module. */
   // packageName: undefined,        /* The "name" in package.json. */
 });
+
+// Oxlint is the workspace linter. Keep this task in the package so Turbo
+// can run linting per workspace package.
+project.addTask('lint', {
+  exec: 'oxlint .projenrc.ts src test',
+});
+project.setScript('lint', 'oxlint .projenrc.ts src test');
+
 project.synth();

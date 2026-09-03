@@ -1,0 +1,26 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": [".oxlintrc.json"],
+  "tasks": {
+    "build": {
+      "outputs": ["lib/**", "dist/**"]
+    },
+    "compile": {
+      "outputs": ["lib/**", ".jsii"]
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**", "test-reports/**"]
+    },
+    "lint": {
+      "outputs": []
+    },
+    "package": {
+      "dependsOn": ["build"],
+      "outputs": ["dist/**"]
+    },
+    "clobber": {
+      "cache": false
+    }
+  }
+}

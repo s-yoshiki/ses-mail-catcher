@@ -32,8 +32,10 @@ jobs:
           package-manager-cache: true
       - name: Install dependencies
         run: pnpm i --no-frozen-lockfile
+      - name: lint
+        run: pnpm lint
       - name: build
-        run: pnpm exec projen build
+        run: pnpm build
       - name: Find mutations
         id: self_mutation
         run: |-
@@ -55,14 +57,14 @@ jobs:
           cat repo.patch
           exit 1
       - name: Backup artifact permissions
-        run: cd dist && getfacl -R . > permissions-backup.acl
+        run: cd packages/cdk-ses-mail-catcher/dist && getfacl -R . > permissions-backup.acl
         continue-on-error: true
       - name: Upload artifact
         id: upload_artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: build-artifact
-          path: dist
+          path: packages/cdk-ses-mail-catcher/dist
           overwrite: true
   self-mutation:
     needs: build
@@ -144,7 +146,7 @@ jobs:
         run: mv dist dist.old
       - name: Create js artifact
         id: create_js_artifact
-        run: cd .repo && pnpm exec projen package:js
+        run: cd .repo && pnpm --filter cdk-ses-mail-catcher package:js
       - name: Collect js artifact
         id: collect_js_artifact
-        run: mv .repo/dist dist
+        run: mv .repo/packages/cdk-ses-mail-catcher/dist dist
