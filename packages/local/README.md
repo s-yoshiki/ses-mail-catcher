@@ -43,6 +43,7 @@ const ses = new SESv2Client({
 ```
 
 The server accepts `SendEmail` with Simple or Raw content and `SendRawEmail` requests.
+The request/inspection shape is inspired by [aws-ses-v2-local](https://github.com/domdomegg/aws-ses-v2-local), while the storage implementation here is SQLite-based.
 
 ## Inspect messages
 

@@ -20,7 +20,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint src test",
-    "build:binary": "scriptc build src/cli.ts --dynamic -o dist/ses-mail-catcher"
+    "build:binary": "pnpm dlx scriptc build src/cli.ts --dynamic -o dist/ses-mail-catcher"
   },
   "devDependencies": {
     "@types/node": "^26.4.1",
