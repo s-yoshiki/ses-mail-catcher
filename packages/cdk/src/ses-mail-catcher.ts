@@ -1,6 +1,6 @@
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Duration, RemovalPolicy } from 'aws-cdk-lib';
+import { ArnFormat, Duration, RemovalPolicy, Stack } from 'aws-cdk-lib';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
@@ -99,6 +99,9 @@ export class SesMailCatcher extends Construct {
       enforceSSL: true,
       lifecycleRules: [{ expiration: Duration.days(retentionDays) }],
       removalPolicy: RemovalPolicy.DESTROY,
+      // Captured mail is disposable. Without this, a bucket that still holds
+      // messages blocks deletion of the whole stack.
+      autoDeleteObjects: true,
     });
 
     this.table = props.storage?.table ?? new dynamodb.Table(this, 'MailTable', {
@@ -140,7 +143,7 @@ export class SesMailCatcher extends Construct {
     } else {
       this.function.addToRolePolicy(new iam.PolicyStatement({
         actions: ['ses:SendEmail', 'ses:SendRawEmail'],
-        resources: ['*'],
+        resources: this.relayResources(relay),
       }));
     }
   }
@@ -152,5 +155,30 @@ export class SesMailCatcher extends Construct {
    */
   public grantSend(grantee: iam.IGrantable): void {
     this.function.grantInvoke(grantee);
+  }
+
+  /**
+   * Resolves the resources that relay mode is allowed to send through.
+   *
+   * SES authorises a send against the sending identity, and additionally
+   * against the configuration set when one is used. The identity ARN is the
+   * only value that can narrow the statement, so without it the statement has
+   * to stay open.
+   */
+  private relayResources(relay: RelayOptions): string[] {
+    if (!relay.fromEmailAddressIdentityArn) {
+      return ['*'];
+    }
+
+    const resources = [relay.fromEmailAddressIdentityArn];
+    if (relay.configurationSetName) {
+      resources.push(Stack.of(this).formatArn({
+        service: 'ses',
+        resource: 'configuration-set',
+        resourceName: relay.configurationSetName,
+        arnFormat: ArnFormat.SLASH_RESOURCE_NAME,
+      }));
+    }
+    return resources;
   }
 }
