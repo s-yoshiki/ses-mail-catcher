@@ -1,26 +1,13 @@
 {
   "dependencies": [
     {
-      "name": "@types/jest",
-      "type": "build"
-    },
-    {
       "name": "@types/node",
-      "version": "ts5.9",
+      "version": "^26.4.1",
       "type": "build"
     },
     {
       "name": "commit-and-tag-version",
-      "version": "^12",
-      "type": "build"
-    },
-    {
-      "name": "jest",
-      "type": "build"
-    },
-    {
-      "name": "jest-junit",
-      "version": "^17",
+      "version": "^13.1.2",
       "type": "build"
     },
     {
@@ -29,7 +16,7 @@
     },
     {
       "name": "jsii-docgen",
-      "version": "^10.5.0",
+      "version": "^10.12.6",
       "type": "build"
     },
     {
@@ -38,12 +25,12 @@
     },
     {
       "name": "jsii-rosetta",
-      "version": "~6.0.0",
+      "version": "~6.0.13",
       "type": "build"
     },
     {
       "name": "jsii",
-      "version": "~6.0.0",
+      "version": "~6.0.12",
       "type": "build"
     },
     {
@@ -53,29 +40,32 @@
     },
     {
       "name": "projen",
+      "version": "^0.103.16",
       "type": "build"
     },
     {
-      "name": "ts-jest",
-      "type": "build"
-    },
-    {
-      "name": "ts-node",
+      "name": "tsx",
+      "version": "^4.23.13",
       "type": "build"
     },
     {
       "name": "typescript",
-      "version": "~5.9.2",
+      "version": "~7.0.2",
+      "type": "build"
+    },
+    {
+      "name": "vitest",
+      "version": "^5.0.0",
       "type": "build"
     },
     {
       "name": "aws-cdk-lib",
-      "version": "^2.189.1",
+      "version": "^2.268.0",
       "type": "peer"
     },
     {
       "name": "constructs",
-      "version": "^10.5.1",
+      "version": "^10.8.1",
       "type": "peer"
     }
   ],

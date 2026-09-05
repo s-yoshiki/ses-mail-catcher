@@ -5,12 +5,12 @@
     "typescript",
     "unicorn",
     "import",
-    "jest",
+    "vitest",
     "node"
   ],
   "env": {
     "node": true,
-    "jest": true
+    "vitest": true
   },
   "categories": {
     "correctness": "deny",

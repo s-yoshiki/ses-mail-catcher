@@ -24,12 +24,13 @@
     "post-upgrade": "projen --no-post post-upgrade",
     "pre-compile": "projen --no-post pre-compile",
     "release": "projen --no-post release",
-    "test": "projen --no-post test",
-    "test:watch": "projen --no-post test:watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
     "unbump": "projen --no-post unbump",
     "upgrade": "projen --no-post upgrade",
     "watch": "projen --no-post watch",
-    "projen": "projen --no-post"
+    "projen": "projen --no-post",
+    "test:watch": "vitest"
   },
   "author": {
     "name": "Yoshiki Shinagawa",
@@ -37,36 +38,37 @@
     "organization": false
   },
   "devDependencies": {
-    "@types/jest": "^30.0.0",
-    "@types/node": "ts5.9",
-    "aws-cdk-lib": "2.189.1",
-    "commit-and-tag-version": "^12",
-    "constructs": "10.5.1",
-    "jest": "^30.5.1",
-    "jest-junit": "^17",
-    "jsii": "~6.0.0",
+    "@types/node": "^26.4.1",
+    "aws-cdk-lib": "2.268.0",
+    "commit-and-tag-version": "^13.1.2",
+    "constructs": "10.8.1",
+    "jsii": "~6.0.12",
     "jsii-diff": "^1.140.0",
-    "jsii-docgen": "^10.5.0",
+    "jsii-docgen": "^10.12.6",
     "jsii-pacmak": "^1.140.0",
-    "jsii-rosetta": "~6.0.0",
+    "jsii-rosetta": "~6.0.13",
     "oxlint": "^1.81.0",
-    "projen": "^0.103.13",
-    "ts-jest": "^29.4.12",
-    "ts-node": "^10.9.2",
-    "typescript": "~5.9.2"
+    "projen": "^0.103.16",
+    "tsx": "^4.23.13",
+    "typescript": "~7.0.2",
+    "vitest": "^5.0.0"
   },
   "peerDependencies": {
-    "aws-cdk-lib": "^2.189.1",
-    "constructs": "^10.5.1"
+    "aws-cdk-lib": "^2.268.0",
+    "constructs": "^10.8.1"
   },
   "pnpm": {},
   "keywords": [
     "aws-cdk",
     "aws-ses",
     "cdk",
+    "constructs",
     "email",
     "jsii",
-    "mail-catcher"
+    "mail",
+    "mail-catcher",
+    "serverless",
+    "testing"
   ],
   "devEngines": {
     "packageManager": {
@@ -82,53 +84,8 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "0.0.0",
+  "version": "0.1.0",
   "packageManager": "pnpm@10.33.0",
-  "jest": {
-    "coverageProvider": "v8",
-    "testMatch": [
-      "<rootDir>/@(src|test)/**/*(*.)@(spec|test).ts?(x)",
-      "<rootDir>/@(src|test)/**/__tests__/**/*.ts?(x)",
-      "<rootDir>/@(projenrc)/**/*(*.)@(spec|test).ts?(x)",
-      "<rootDir>/@(projenrc)/**/__tests__/**/*.ts?(x)"
-    ],
-    "clearMocks": true,
-    "collectCoverage": true,
-    "coverageReporters": [
-      "json",
-      "lcov",
-      "clover",
-      "cobertura",
-      "text"
-    ],
-    "coverageDirectory": "coverage",
-    "coveragePathIgnorePatterns": [
-      "/node_modules/"
-    ],
-    "testPathIgnorePatterns": [
-      "/node_modules/"
-    ],
-    "watchPathIgnorePatterns": [
-      "/node_modules/"
-    ],
-    "reporters": [
-      "default",
-      [
-        "jest-junit",
-        {
-          "outputDirectory": "test-reports"
-        }
-      ]
-    ],
-    "transform": {
-      "^.+\\.[t]sx?$": [
-        "ts-jest",
-        {
-          "tsconfig": "test/tsconfig.json"
-        }
-      ]
-    }
-  },
   "types": "lib/index.d.ts",
   "jsii": {
     "outdir": "dist",

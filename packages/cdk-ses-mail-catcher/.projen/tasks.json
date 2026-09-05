@@ -37,7 +37,7 @@
         "BUMPFILE": "dist/version.txt",
         "RELEASETAG": "dist/releasetag.txt",
         "RELEASE_TAG_PREFIX": "",
-        "BUMP_PACKAGE": "commit-and-tag-version@^12"
+        "BUMP_PACKAGE": "commit-and-tag-version@^13"
       },
       "steps": [
         {
@@ -143,8 +143,17 @@
       "steps": [
         {
           "execArgs": [
-            "ts-node",
-            "--project",
+            "tsc",
+            "--noEmit",
+            "-p",
+            "projenrc/tsconfig.json"
+          ],
+          "name": "typecheck"
+        },
+        {
+          "execArgs": [
+            "tsx",
+            "--tsconfig",
             "projenrc/tsconfig.json",
             ".projenrc.ts"
           ]
@@ -291,24 +300,16 @@
       "description": "Run tests",
       "steps": [
         {
-          "execArgs": [
-            "jest",
-            "--passWithNoTests",
-            "--updateSnapshot"
-          ],
+          "exec": "vitest run",
           "receiveArgs": true
         }
       ]
     },
-    "test:watch": {
-      "name": "test:watch",
-      "description": "Run jest in watch mode",
+    "typecheck": {
+      "name": "typecheck",
       "steps": [
         {
-          "execArgs": [
-            "jest",
-            "--watch"
-          ]
+          "exec": "tsc --noEmit"
         }
       ]
     },
@@ -321,7 +322,7 @@
         "BUMPFILE": "dist/version.txt",
         "RELEASETAG": "dist/releasetag.txt",
         "RELEASE_TAG_PREFIX": "",
-        "BUMP_PACKAGE": "commit-and-tag-version@^12"
+        "BUMP_PACKAGE": "commit-and-tag-version@^13"
       },
       "steps": [
         {
@@ -346,7 +347,7 @@
             "--peer",
             "--no-deprecated",
             "--dep=dev,prod,peer,optional",
-            "--filter=@types/jest,jest,jsii-diff,jsii-pacmak,projen,ts-jest,ts-node"
+            "--filter=jsii-diff,jsii-pacmak"
           ]
         },
         {
@@ -356,11 +357,8 @@
           "execArgs": [
             "pnpm",
             "update",
-            "@types/jest",
             "@types/node",
             "commit-and-tag-version",
-            "jest",
-            "jest-junit",
             "jsii-diff",
             "jsii-docgen",
             "jsii-pacmak",
@@ -368,9 +366,9 @@
             "jsii",
             "oxlint",
             "projen",
-            "ts-jest",
-            "ts-node",
+            "tsx",
             "typescript",
+            "vitest",
             "aws-cdk-lib",
             "constructs"
           ]

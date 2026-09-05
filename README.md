@@ -9,6 +9,7 @@ pnpm install
 pnpm test
 pnpm build
 pnpm lint
+pnpm typecheck
 ```
 
 `pnpm lint` runs oxlint through Turborepo. The repository uses oxlint as its
