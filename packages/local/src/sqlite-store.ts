@@ -106,6 +106,13 @@ export class SqliteStore {
     }));
   }
 
+  public mailboxes(): string[] {
+    const rows = this.db
+      .prepare('SELECT DISTINCT mailbox FROM messages ORDER BY mailbox')
+      .all() as unknown as Array<{ mailbox: string }>;
+    return rows.map((row) => row.mailbox);
+  }
+
   public get(id: string): StoredMessage | undefined {
     const statement = this.db.prepare(`
       SELECT id, from_address, to_addresses, cc_addresses, bcc_addresses,

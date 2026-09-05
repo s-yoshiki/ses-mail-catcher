@@ -30,6 +30,18 @@ pnpm --filter ses-mail-catcher-local build
 pnpm --filter ses-mail-catcher-local test
 ```
 
+The local server serves the viewer bundle from `lib/viewer`. Build from the
+repository root with `pnpm build` so Turborepo builds `packages/viewer` first;
+building the local package alone leaves the server working as a pure API.
+
+While working on the viewer itself, run the server and the Vite dev server side
+by side. Vite proxies `/api` to the server:
+
+```sh
+node packages/local/lib/cli.js
+pnpm --filter ses-mail-catcher-viewer dev
+```
+
 ## Local SES endpoint
 
 ```sh

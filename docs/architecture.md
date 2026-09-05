@@ -5,6 +5,7 @@
 ```text
 Application
    ├─ local SES v2 endpoint ──> packages/local ──> SQLite cache
+   │                                  └─ serves packages/viewer at /
    └─ SendMailEvent invoke ──> packages/cdk ──> Lambda ──> S3 + DynamoDB
                                                         └─> SES (RELAY only)
 ```
@@ -34,14 +35,31 @@ The default database is intentionally placed in the platform cache directory. Us
 
 The bind address defaults to `127.0.0.1` and is overridden with `SES_MAIL_CATCHER_HOST` / `--host`; the port with `SES_MAIL_CATCHER_PORT` / `--port`. The container image sets the host to `0.0.0.0` so that a published port reaches the server.
 
-The local store supports:
+The local store answers the viewer contract under `/api`:
 
-- `GET /health-check`
-- `GET /store`
-- `GET /store/:id`
-- `GET /store/:id/raw`
+- `GET /api/messages`
+- `GET /api/messages/:id`
+- `GET /api/messages/:id/raw`
+- `GET /api/messages/:id/attachments/:index`
+- `GET /api/health`
+
+The original `/health-check`, `/store`, `/store/:id` and `/store/:id/raw` routes
+remain as aliases.
 
 The local server requires Node.js 22.5 or later for `node:sqlite` and has no native SQLite npm addon.
+
+## Viewer
+
+`ses-mail-catcher-viewer` is a React single page app built with Vite. It is not
+published on its own: `packages/local` copies the bundle into `lib/viewer` at
+build time and serves it from the same port as the API, so no CORS handling and
+no second process are involved.
+
+The bundle is deliberately backend-agnostic. It uses relative asset URLs and
+resolves its API root from the document, so any host that answers the `/api`
+contract in `packages/viewer/src/types.ts` can serve it. Message HTML is
+rendered inside an iframe with an empty `sandbox` attribute, because captured
+mail is untrusted input.
 
 ## Distribution
 

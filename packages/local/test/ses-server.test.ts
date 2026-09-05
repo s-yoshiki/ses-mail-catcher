@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -81,5 +81,136 @@ describe('local SES server', () => {
     expect(server.host).toBe('localhost');
     expect(server.port).toBeGreaterThan(0);
     expect((await fetch(`${server.url}/health-check`)).status).toBe(200);
+  });
+});
+
+describe('viewer API', () => {
+  async function seed(): Promise<{ url: string; id: string }> {
+    const directory = await mkdtemp(join(tmpdir(), 'ses-mail-catcher-api-'));
+    temporaryDirectories.push(directory);
+    const server = await startServer({ dbPath: join(directory, 'mailbox.sqlite3'), port: 0 });
+    servers.push(server);
+
+    const response = await fetch(`${server.url}/v2/email/outbound-emails`, {
+      method: 'POST',
+      headers: { 'x-amz-target': 'AmazonSimpleEmailServiceV2.SendEmail' },
+      body: JSON.stringify({
+        FromEmailAddress: 'sender@example.com',
+        Destination: { ToAddresses: ['recipient@example.com'] },
+        EmailTags: [{ Name: 'mailbox', Value: 'orders' }],
+        Content: {
+          Simple: {
+            Subject: { Data: 'Receipt' },
+            Body: { Text: { Data: 'plain body' }, Html: { Data: '<p>html body</p>' } },
+            Attachments: [{
+              FileName: 'invoice.pdf',
+              ContentType: 'application/pdf',
+              RawContent: Buffer.from('%PDF-1.4').toString('base64'),
+            }],
+          },
+        },
+      }),
+    });
+
+    const { MessageId } = await response.json() as { MessageId: string };
+    return { url: server.url, id: MessageId };
+  }
+
+  it('lists messages together with the known mailboxes', async () => {
+    const { url } = await seed();
+
+    const response = await fetch(`${url}/api/messages`);
+    expect(response.headers.get('content-type')).toContain('application/json');
+
+    const body = await response.json() as { messages: Array<{ subject: string }>; mailboxes: string[] };
+    expect(body.messages).toHaveLength(1);
+    expect(body.mailboxes).toEqual(['orders']);
+  });
+
+  it('filters the list by mailbox', async () => {
+    const { url } = await seed();
+
+    const matching = await (await fetch(`${url}/api/messages?mailbox=orders`)).json() as { messages: unknown[] };
+    const other = await (await fetch(`${url}/api/messages?mailbox=default`)).json() as { messages: unknown[] };
+
+    expect(matching.messages).toHaveLength(1);
+    expect(other.messages).toHaveLength(0);
+  });
+
+  it('returns the decoded body parts and attachment metadata', async () => {
+    const { url, id } = await seed();
+
+    const detail = await (await fetch(`${url}/api/messages/${id}`)).json() as {
+      content: { text?: string; html?: string; attachments: Array<{ index: number; filename: string; size: number }> };
+      replyToAddresses: string[];
+    };
+
+    expect(detail.content.text).toContain('plain body');
+    expect(detail.content.html).toContain('<p>html body</p>');
+    expect(detail.content.attachments).toEqual([
+      { index: 0, filename: 'invoice.pdf', contentType: 'application/pdf', size: 8, inline: false },
+    ]);
+  });
+
+  it('downloads an attachment with its own content type', async () => {
+    const { url, id } = await seed();
+
+    const response = await fetch(`${url}/api/messages/${id}/attachments/0`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toBe('application/pdf');
+    expect(response.headers.get('content-disposition')).toContain('invoice.pdf');
+    expect(await response.text()).toBe('%PDF-1.4');
+  });
+
+  it('reports missing messages and attachments', async () => {
+    const { url, id } = await seed();
+
+    expect((await fetch(`${url}/api/messages/does-not-exist`)).status).toBe(404);
+    expect((await fetch(`${url}/api/messages/${id}/attachments/9`)).status).toBe(404);
+  });
+
+  it('keeps serving the original store routes', async () => {
+    const { url, id } = await seed();
+
+    expect((await fetch(`${url}/health-check`)).status).toBe(200);
+    expect((await fetch(`${url}/api/health`)).status).toBe(200);
+
+    const legacy = await (await fetch(`${url}/store/${id}`)).json() as { rawMime: string };
+    expect(Buffer.from(legacy.rawMime, 'base64').toString('utf8')).toContain('Subject: Receipt');
+  });
+});
+
+describe('viewer assets', () => {
+  it('serves the bundle when one has been built', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'ses-mail-catcher-bundle-'));
+    temporaryDirectories.push(directory);
+    const viewerDir = join(directory, 'viewer');
+    await mkdir(viewerDir);
+    await writeFile(join(viewerDir, 'index.html'), '<!doctype html><div id="root"></div>');
+
+    const server = await startServer({ dbPath: join(directory, 'mailbox.sqlite3'), port: 0, viewerDir });
+    servers.push(server);
+
+    expect(server.viewerEnabled).toBe(true);
+    const response = await fetch(`${server.url}/`);
+    expect(response.headers.get('content-type')).toBe('text/html; charset=utf-8');
+    expect(await response.text()).toContain('id="root"');
+  });
+
+  it('falls back to an endpoint listing when no bundle is present', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'ses-mail-catcher-nobundle-'));
+    temporaryDirectories.push(directory);
+
+    const server = await startServer({
+      dbPath: join(directory, 'mailbox.sqlite3'),
+      port: 0,
+      viewerDir: join(directory, 'missing'),
+    });
+    servers.push(server);
+
+    expect(server.viewerEnabled).toBe(false);
+    const body = await (await fetch(`${server.url}/`)).json() as { viewer: string; endpoints: string[] };
+    expect(body.viewer).toBe('not built');
+    expect(body.endpoints).toContain('GET /api/messages');
   });
 });

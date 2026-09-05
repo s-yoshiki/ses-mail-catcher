@@ -17,17 +17,21 @@
     "node": ">=22.5.0"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "compile": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node scripts/copy-viewer.mjs",
+    "compile": "tsc -p tsconfig.build.json && node scripts/copy-viewer.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint src test",
     "build:binary": "pnpm dlx scriptc build src/cli.ts --dynamic -o dist/ses-mail-catcher"
   },
+  "dependencies": {
+    "postal-mime": "^3.0.0"
+  },
   "devDependencies": {
     "@types/node": "^26.4.1",
     "oxlint": "^1.81.0",
+    "ses-mail-catcher-viewer": "workspace:*",
     "tsx": "^4.23.13",
     "typescript": "~7.0.2",
     "vitest": "^5.0.0"

@@ -2,10 +2,12 @@ import { randomUUID } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 
 import { resolveDbPath } from './db-path.js';
+import { parseMessageContent, toDetailResponse } from './message-content.js';
 import { createSimpleMime, parseMimeHeaders, toApiMessage } from './mime.js';
 import { resolveHost, resolvePort } from './options.js';
 import { SqliteStore } from './sqlite-store.js';
 import type { StoredMessage } from './types.js';
+import { ViewerAssets } from './viewer-assets.js';
 
 const MAX_BODY_BYTES = 10 * 1024 * 1024;
 
@@ -13,6 +15,13 @@ export interface LocalServerOptions {
   host?: string;
   port?: number;
   dbPath?: string;
+  /** Overrides where the built viewer bundle is read from. */
+  viewerDir?: string;
+}
+
+interface RequestContext {
+  readonly store: SqliteStore;
+  readonly viewer: ViewerAssets | undefined;
 }
 
 export interface RunningLocalServer {
@@ -22,6 +31,8 @@ export interface RunningLocalServer {
   readonly url: string;
   readonly store: SqliteStore;
   readonly server: Server;
+  /** Whether a built viewer bundle was found and is being served. */
+  readonly viewerEnabled: boolean;
   close(): Promise<void>;
 }
 
@@ -30,8 +41,10 @@ export async function startServer(options: LocalServerOptions = {}): Promise<Run
   const requestedPort = options.port ?? resolvePort();
   const dbPath = options.dbPath ?? resolveDbPath();
   const store = await SqliteStore.open(dbPath);
+  const viewer = await ViewerAssets.open(options.viewerDir ?? ViewerAssets.defaultRoot());
+  const context: RequestContext = { store, viewer };
   const server = createServer((request, response) => {
-    void handleRequest(request, response, store);
+    void handleRequest(request, response, context);
   });
 
   try {
@@ -50,6 +63,7 @@ export async function startServer(options: LocalServerOptions = {}): Promise<Run
     url: `http://${host}:${port}`,
     store,
     server,
+    viewerEnabled: viewer !== undefined,
     close: async () => {
       await closeServer(server);
       store.close();
@@ -60,70 +74,185 @@ export async function startServer(options: LocalServerOptions = {}): Promise<Run
 async function handleRequest(
   request: IncomingMessage,
   response: ServerResponse,
-  store: SqliteStore,
+  context: RequestContext,
 ): Promise<void> {
+  const url = new URL(request.url ?? '/', 'http://localhost');
+
   try {
-    const url = new URL(request.url ?? '/', 'http://localhost');
-    const pathParts = url.pathname.split('/').filter(Boolean);
-
-    if (request.method === 'GET' && url.pathname === '/health-check') {
-      writeJson(response, 200, { status: 'ok' });
-      return;
-    }
-
-    if (request.method === 'GET' && url.pathname === '/store') {
-      const limit = Number.parseInt(url.searchParams.get('limit') ?? '100', 10);
-      writeJson(response, 200, { messages: store.list(Number.isNaN(limit) ? 100 : limit) });
-      return;
-    }
-
-    if (request.method === 'GET' && pathParts[0] === 'store' && pathParts.length === 2) {
-      const message = store.get(decodeURIComponent(pathParts[1]));
-      if (!message) {
-        writeJson(response, 404, { message: 'Message not found' });
-        return;
-      }
-      writeJson(response, 200, toApiMessage(message));
-      return;
-    }
-
-    if (request.method === 'GET' && pathParts[0] === 'store' && pathParts[2] === 'raw') {
-      const message = store.get(decodeURIComponent(pathParts[1]));
-      if (!message) {
-        writeJson(response, 404, { message: 'Message not found' });
-        return;
-      }
-      response.writeHead(200, {
-        'Content-Length': message.rawMime.byteLength,
-        'Content-Type': 'message/rfc822',
-      });
-      response.end(Buffer.from(message.rawMime));
-      return;
-    }
-
     if (request.method === 'POST' && isSesSendPath(url.pathname)) {
       const body = await readJson(request);
-      const message = saveSesMessage(body, request.headers['x-amz-target'], store);
-      writeJson(response, 200, { MessageId: message.id });
+      const message = saveSesMessage(body, request.headers['x-amz-target'], context.store);
+      writeSesJson(response, 200, { MessageId: message.id });
       return;
     }
 
-    if (request.method === 'GET' && url.pathname === '/') {
-      writeJson(response, 200, {
-        name: 'ses-mail-catcher-local',
-        endpoints: ['POST /v2/email/outbound-emails', 'GET /store', 'GET /store/:id', 'GET /health-check'],
-      });
-      return;
+    if (request.method === 'GET') {
+      if (await handleApiRequest(url, response, context.store)) {
+        return;
+      }
+      if (await handleViewerRequest(url, response, context.viewer)) {
+        return;
+      }
     }
 
     writeJson(response, 404, { message: 'Not found' });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Invalid request';
-    writeJson(response, 400, {
-      __type: 'InvalidParameterValue',
-      message,
-    });
+    if (request.method === 'POST') {
+      writeSesJson(response, 400, { __type: 'InvalidParameterValue', message });
+      return;
+    }
+    writeJson(response, 400, { message });
   }
+}
+
+/**
+ * Answers the inspection API.
+ *
+ * `/api` is the contract the bundled viewer is built against. The original
+ * `/store` routes stay as aliases so existing scripts keep working.
+ */
+async function handleApiRequest(
+  url: URL,
+  response: ServerResponse,
+  store: SqliteStore,
+): Promise<boolean> {
+  if (url.pathname === '/health-check' || url.pathname === '/api/health') {
+    writeJson(response, 200, { status: 'ok' });
+    return true;
+  }
+
+  if (url.pathname === '/store' || url.pathname === '/api/messages') {
+    const mailbox = url.searchParams.get('mailbox') ?? undefined;
+    const messages = store.list(parseLimit(url.searchParams.get('limit')), mailbox);
+    writeJson(response, 200, url.pathname === '/store'
+      ? { messages }
+      : { messages, mailboxes: store.mailboxes() });
+    return true;
+  }
+
+  const route = matchMessageRoute(url.pathname);
+  if (route === undefined) {
+    return false;
+  }
+
+  const message = store.get(route.id);
+  if (!message) {
+    writeJson(response, 404, { message: 'Message not found' });
+    return true;
+  }
+
+  if (route.kind === 'raw') {
+    writeBinary(response, 200, Buffer.from(message.rawMime), 'message/rfc822');
+    return true;
+  }
+
+  if (route.kind === 'legacy') {
+    writeJson(response, 200, toApiMessage(message));
+    return true;
+  }
+
+  if (route.kind === 'detail') {
+    writeJson(response, 200, await toDetailResponse(message));
+    return true;
+  }
+
+  const parsed = await parseMessageContent(message.rawMime);
+  const attachment = parsed.attachments[route.index];
+  if (!attachment) {
+    writeJson(response, 404, { message: 'Attachment not found' });
+    return true;
+  }
+
+  writeBinary(
+    response,
+    200,
+    Buffer.from(attachment.content),
+    attachment.contentType,
+    contentDisposition(attachment.filename),
+  );
+  return true;
+}
+
+async function handleViewerRequest(
+  url: URL,
+  response: ServerResponse,
+  viewer: ViewerAssets | undefined,
+): Promise<boolean> {
+  if (viewer === undefined) {
+    if (url.pathname !== '/') {
+      return false;
+    }
+    // Without a built bundle the server is still a usable API, so point at it.
+    writeJson(response, 200, {
+      name: 'ses-mail-catcher-local',
+      viewer: 'not built',
+      endpoints: [
+        'POST /v2/email/outbound-emails',
+        'GET /api/messages',
+        'GET /api/messages/:id',
+        'GET /api/messages/:id/raw',
+        'GET /api/messages/:id/attachments/:index',
+        'GET /api/health',
+      ],
+    });
+    return true;
+  }
+
+  const asset = await viewer.read(url.pathname);
+  if (asset === undefined) {
+    return false;
+  }
+
+  response.writeHead(200, {
+    'Content-Length': asset.body.byteLength,
+    'Content-Type': asset.contentType,
+    'Cache-Control': asset.cacheControl,
+  });
+  response.end(asset.body);
+  return true;
+}
+
+type MessageRoute =
+  | { kind: 'legacy'; id: string }
+  | { kind: 'detail'; id: string }
+  | { kind: 'raw'; id: string }
+  | { kind: 'attachment'; id: string; index: number };
+
+function matchMessageRoute(pathname: string): MessageRoute | undefined {
+  const parts = pathname.split('/').filter(Boolean).map((part) => decodeURIComponent(part));
+
+  if (parts[0] === 'store' && parts.length === 2) {
+    return { kind: 'legacy', id: parts[1] };
+  }
+  if (parts[0] === 'store' && parts.length === 3 && parts[2] === 'raw') {
+    return { kind: 'raw', id: parts[1] };
+  }
+  if (parts[0] !== 'api' || parts[1] !== 'messages' || parts[2] === undefined) {
+    return undefined;
+  }
+  if (parts.length === 3) {
+    return { kind: 'detail', id: parts[2] };
+  }
+  if (parts.length === 4 && parts[3] === 'raw') {
+    return { kind: 'raw', id: parts[2] };
+  }
+  if (parts.length === 5 && parts[3] === 'attachments') {
+    const index = Number.parseInt(parts[4], 10);
+    return Number.isInteger(index) && index >= 0 ? { kind: 'attachment', id: parts[2], index } : undefined;
+  }
+  return undefined;
+}
+
+function parseLimit(value: string | null): number {
+  const limit = Number.parseInt(value ?? '100', 10);
+  return Number.isNaN(limit) ? 100 : limit;
+}
+
+function contentDisposition(filename: string): string {
+  // Keep the header itself ASCII and carry the real name in the RFC 5987 form.
+  const ascii = filename.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_');
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(filename)}`;
 }
 
 function saveSesMessage(
@@ -281,12 +410,40 @@ async function readJson(request: IncomingMessage): Promise<Record<string, unknow
 }
 
 function writeJson(response: ServerResponse, statusCode: number, body: unknown): void {
+  writeJsonAs(response, statusCode, body, 'application/json; charset=utf-8');
+}
+
+function writeSesJson(response: ServerResponse, statusCode: number, body: unknown): void {
+  writeJsonAs(response, statusCode, body, 'application/x-amz-json-1.1; charset=utf-8');
+}
+
+function writeJsonAs(
+  response: ServerResponse,
+  statusCode: number,
+  body: unknown,
+  contentType: string,
+): void {
   const payload = JSON.stringify(body);
   response.writeHead(statusCode, {
     'Content-Length': Buffer.byteLength(payload),
-    'Content-Type': 'application/x-amz-json-1.1; charset=utf-8',
+    'Content-Type': contentType,
   });
   response.end(payload);
+}
+
+function writeBinary(
+  response: ServerResponse,
+  statusCode: number,
+  body: Buffer,
+  contentType: string,
+  disposition?: string,
+): void {
+  response.writeHead(statusCode, {
+    'Content-Length': body.byteLength,
+    'Content-Type': contentType,
+    ...(disposition ? { 'Content-Disposition': disposition } : {}),
+  });
+  response.end(body);
 }
 
 function listen(server: Server, host: string, port: number): Promise<void> {

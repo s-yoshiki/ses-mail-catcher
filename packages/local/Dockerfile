@@ -1,16 +1,38 @@
+# The build context is the repository root, because the server bundles the
+# viewer from packages/viewer:
+#
+#   docker build -f packages/local/Dockerfile -t ses-mail-catcher-local .
+
 FROM node:24-bookworm-slim AS build
 
-WORKDIR /app
-COPY package.json tsconfig.json tsconfig.build.json ./
-RUN npm install
-COPY src ./src
-RUN npm run build
+RUN npm install --global pnpm@11.25.0
+
+WORKDIR /repo
+
+# Manifests first so the dependency layer survives source changes. The cdk
+# manifest is copied for the lockfile check only; --filter keeps its
+# dependencies out of the install.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/cdk/package.json packages/cdk/
+COPY packages/local/package.json packages/local/
+COPY packages/viewer/package.json packages/viewer/
+RUN pnpm install --frozen-lockfile \
+  --filter ses-mail-catcher-local \
+  --filter ses-mail-catcher-viewer
+
+COPY packages/viewer packages/viewer
+COPY packages/local packages/local
+
+# `deploy` resolves the workspace into a self-contained tree, so the runtime
+# stage needs no package manager and no workspace layout.
+RUN pnpm --filter ses-mail-catcher-viewer build \
+  && pnpm --filter ses-mail-catcher-local build \
+  && pnpm --filter ses-mail-catcher-local deploy --prod --legacy /out
 
 FROM node:24-bookworm-slim
 
 WORKDIR /app
-COPY package.json ./
-COPY --from=build /app/lib ./lib
+COPY --from=build /out ./
 RUN mkdir -p /data && chown node:node /data
 
 USER node

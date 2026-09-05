@@ -20,7 +20,7 @@ The npm package requires public access configuration for the `@s-yoshiki` scope 
 Build and run the local image:
 
 ```sh
-docker build -t ses-mail-catcher-local packages/local
+docker build -f packages/local/Dockerfile -t ses-mail-catcher-local .
 docker run --rm -p 8005:8005 -v "$PWD/.ses-mail-catcher:/data" ses-mail-catcher-local
 ```
 
