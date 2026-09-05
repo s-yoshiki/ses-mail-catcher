@@ -1,10 +1,13 @@
-import * as path from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Duration, RemovalPolicy } from 'aws-cdk-lib';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
+
+const packageLibDirectory = dirname(fileURLToPath(import.meta.url));
 
 /** The way the mail catcher handles an incoming mail event. */
 export enum MailMode {
@@ -111,8 +114,8 @@ export class SesMailCatcher extends Construct {
       // The handler is compiled from src/mail-handler.ts and included in the
       // published lib/ directory. Keeping the asset path deterministic makes
       // local synthesis and installed-package synthesis behave identically.
-      code: lambda.Code.fromAsset(path.join(__dirname, '../lib')),
-      description: 'Captures or relays mail events for cdk-ses-mail-catcher',
+      code: lambda.Code.fromAsset(join(packageLibDirectory, '../lib')),
+      description: 'Captures or relays mail events for ses-mail-catcher',
       environment: {
         MAIL_MODE: this.mode,
         METADATA_TABLE_NAME: this.table.tableName,
@@ -124,7 +127,7 @@ export class SesMailCatcher extends Construct {
       },
       handler: 'mail-handler.handler',
       memorySize: 512,
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_22_X,
       timeout: Duration.seconds(30),
     });
 

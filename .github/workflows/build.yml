@@ -23,7 +23,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6.0.10
         with:
-          version: 10.33.0
+          version: 11.19.0
       - name: Setup Node.js
         uses: actions/setup-node@v7.0.0
         with:
@@ -57,14 +57,14 @@ jobs:
           cat repo.patch
           exit 1
       - name: Backup artifact permissions
-        run: cd packages/cdk-ses-mail-catcher/dist && getfacl -R . > permissions-backup.acl
+        run: cd packages/cdk/dist && getfacl -R . > permissions-backup.acl
         continue-on-error: true
       - name: Upload artifact
         id: upload_artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: build-artifact
-          path: packages/cdk-ses-mail-catcher/dist
+          path: packages/cdk/dist
           overwrite: true
   self-mutation:
     needs: build
@@ -146,7 +146,7 @@ jobs:
         run: mv dist dist.old
       - name: Create js artifact
         id: create_js_artifact
-        run: cd .repo && pnpm --filter cdk-ses-mail-catcher package:js
+        run: cd .repo && pnpm --filter @s-yoshiki/cdk-ses-mail-catcher package:js
       - name: Collect js artifact
         id: collect_js_artifact
-        run: mv .repo/packages/cdk-ses-mail-catcher/dist dist
+        run: mv .repo/packages/cdk/dist dist

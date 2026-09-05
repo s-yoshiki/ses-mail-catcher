@@ -41,7 +41,7 @@ jobs:
         id: setup_pnpm
         uses: pnpm/action-setup@v6.0.10
         with:
-          version: 10.33.0
+          version: 11.19.0
       - name: Setup Node.js
         id: setup_node_js
         uses: actions/setup-node@v7.0.0
@@ -54,11 +54,11 @@ jobs:
         run: pnpm i --frozen-lockfile
       - name: release
         id: release
-        run: pnpm --filter cdk-ses-mail-catcher release
+        run: pnpm --filter @s-yoshiki/cdk-ses-mail-catcher release
       - name: Check if version has already been tagged
         id: check_tag_exists
         run: |-
-          TAG=$(cat packages/cdk-ses-mail-catcher/dist/releasetag.txt)
+          TAG=$(cat packages/cdk/dist/releasetag.txt)
           ([ ! -z "$TAG" ] && git ls-remote -q --exit-code --tags origin $TAG && (echo "exists=true" >> $GITHUB_OUTPUT)) || (echo "exists=false" >> $GITHUB_OUTPUT)
           cat $GITHUB_OUTPUT
       - name: Check for new commits
@@ -72,7 +72,7 @@ jobs:
       - name: Backup artifact permissions
         id: backup_artifact_permissions
         if: ${{ steps.git_remote.outputs.latest_commit == github.sha }}
-        run: cd packages/cdk-ses-mail-catcher/dist && getfacl -R . > permissions-backup.acl
+        run: cd packages/cdk/dist && getfacl -R . > permissions-backup.acl
         continue-on-error: true
       - name: Upload artifact
         id: upload_artifact
@@ -80,7 +80,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: build-artifact
-          path: packages/cdk-ses-mail-catcher/dist
+          path: packages/cdk/dist
           overwrite: true
   release_github:
     name: Publish to GitHub Releases
@@ -144,7 +144,7 @@ jobs:
         id: setup_pnpm
         uses: pnpm/action-setup@v6.0.10
         with:
-          version: 10.33.0
+          version: 11.19.0
       - name: Checkout
         id: checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -161,10 +161,10 @@ jobs:
         run: mv dist dist.old
       - name: Create js artifact
         id: create_js_artifact
-        run: cd .repo && pnpm --filter cdk-ses-mail-catcher package:js
+        run: cd .repo && pnpm --filter @s-yoshiki/cdk-ses-mail-catcher package:js
       - name: Collect js artifact
         id: collect_js_artifact
-        run: mv .repo/packages/cdk-ses-mail-catcher/dist dist
+        run: mv .repo/packages/cdk/dist dist
       - name: Release
         id: release
         env:

@@ -1,3 +1,7 @@
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+
 /** @internal */
 export interface CommandClient {
   send(command: unknown): Promise<unknown>;

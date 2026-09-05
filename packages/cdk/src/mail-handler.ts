@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
 
-import { loadAwsSdk, type AwsSdkModules, type CommandClient } from './aws-sdk';
-import { createMetadataItem } from './metadata';
-import { createMimeMessage } from './mime';
-import { validateEvent } from './mail-validation';
+import { loadAwsSdk, type AwsSdkModules, type CommandClient } from './aws-sdk.js';
+import { createMetadataItem } from './metadata.js';
+import { createMimeMessage } from './mime.js';
+import { validateEvent } from './mail-validation.js';
 
 type MailHandlerMode = 'CATCH' | 'RELAY';
 

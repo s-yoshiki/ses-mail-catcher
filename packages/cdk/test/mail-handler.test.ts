@@ -1,5 +1,5 @@
 import { expect, test, vi } from 'vitest';
-import { processMail, type MailHandlerConfig, type MailHandlerDependencies } from '../src/mail-handler';
+import { processMail, type MailHandlerConfig, type MailHandlerDependencies } from '../src/mail-handler.js';
 
 const TestClient = vi.fn<(_config: Record<string, unknown>) => void>();
 

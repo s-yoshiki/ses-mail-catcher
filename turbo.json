@@ -10,9 +10,12 @@
     },
     "test": {
       "dependsOn": ["build"],
-      "outputs": ["coverage/**", "test-reports/**"]
+      "outputs": []
     },
     "lint": {
+      "outputs": []
+    },
+    "typecheck": {
       "outputs": []
     },
     "package": {

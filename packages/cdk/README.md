@@ -1,6 +1,6 @@
-# cdk-ses-mail-catcher
+# @s-yoshiki/cdk-ses-mail-catcher
 
-[![View on Construct Hub](https://constructs.dev/badge?package=cdk-ses-mail-catcher)](https://constructs.dev/packages/cdk-ses-mail-catcher)
+[![View on Construct Hub](https://constructs.dev/badge?package=%40s-yoshiki%2Fcdk-ses-mail-catcher)](https://constructs.dev/packages/%40s-yoshiki%2Fcdk-ses-mail-catcher)
 
 An AWS CDK Construct Library for safely capturing emails in development and
 staging environments, or relaying them through Amazon SES in production.
@@ -14,7 +14,7 @@ metadata in DynamoDB.
 ```ts
 import { Duration, Stack } from "aws-cdk-lib";
 import { Code, Function, Runtime } from "aws-cdk-lib/aws-lambda";
-import { MailMode, SesMailCatcher } from "cdk-ses-mail-catcher";
+import { MailMode, SesMailCatcher } from "@s-yoshiki/cdk-ses-mail-catcher";
 
 const stack = new Stack();
 const mailCatcher = new SesMailCatcher(stack, "MailCatcher", {
@@ -77,12 +77,12 @@ asset is packaged with the Construct and used as the Lambda source.
 
 ```sh
 pnpm install
-pnpm --filter cdk-ses-mail-catcher test
-pnpm --filter cdk-ses-mail-catcher build
+pnpm --filter @s-yoshiki/cdk-ses-mail-catcher test
+pnpm --filter @s-yoshiki/cdk-ses-mail-catcher build
 ```
 
 Generated project files are managed by [projen](https://github.com/projen/projen).
-Edit `.projenrc.ts` and run `pnpm --filter cdk-ses-mail-catcher projen` when
+Edit `.projenrc.ts` and run `pnpm --filter @s-yoshiki/cdk-ses-mail-catcher projen` when
 changing project settings.
 
 ## Publishing

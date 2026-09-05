@@ -6,12 +6,13 @@ const project = new awscdk.AwsCdkConstructLibrary({
   cdkVersion: '2.268.0',
   constructsVersion: '10.8.1',
   description: 'AWS CDK Construct Library for capturing and inspecting emails sent through Amazon SES',
-  homepage: 'https://github.com/s-yoshiki/cdk-ses-mail-catcher',
+  homepage: 'https://github.com/s-yoshiki/ses-mail-catcher',
   jsiiVersion: '~6.0.12',
   keywords: ['aws-cdk', 'aws-ses', 'constructs', 'email', 'mail', 'mail-catcher', 'serverless', 'testing', 'jsii'],
-  name: 'cdk-ses-mail-catcher',
-  repositoryDirectory: 'packages/cdk-ses-mail-catcher',
+  name: '@s-yoshiki/cdk-ses-mail-catcher',
+  repositoryDirectory: 'packages/cdk',
   packageManager: javascript.NodePackageManager.PNPM,
+  pnpmVersion: '11.19.0',
   projenCommand: 'projen --no-post',
   projenVersion: '^0.103.16',
   devDeps: [
@@ -39,7 +40,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
   },
   publishTasks: true,
   releaseToNpm: true,
-  repositoryUrl: 'https://github.com/s-yoshiki/cdk-ses-mail-catcher.git',
+  repositoryUrl: 'https://github.com/s-yoshiki/ses-mail-catcher.git',
   typescriptVersion: '~7.0.2',
   workflowPackageCache: true,
 
@@ -53,6 +54,9 @@ const project = new awscdk.AwsCdkConstructLibrary({
 // its latest compatible patch release independently of the jsii compiler.
 project.deps.removeDependency('jsii-rosetta');
 project.addDevDeps('jsii-rosetta@~6.0.13');
+project.package.addField('type', 'module');
+project.tsconfig?.file.addOverride('compilerOptions.module', 'NodeNext');
+project.tsconfig?.file.addOverride('compilerOptions.moduleResolution', 'NodeNext');
 
 // Oxlint is the workspace linter. Keep this task in the package so Turbo
 // can run linting per workspace package.

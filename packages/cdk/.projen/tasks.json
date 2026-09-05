@@ -120,7 +120,7 @@
         {
           "execArgs": [
             "jsii-diff",
-            "npm:cdk-ses-mail-catcher",
+            "npm:@s-yoshiki/cdk-ses-mail-catcher",
             "-k",
             "--ignore-file",
             ".compatignore"

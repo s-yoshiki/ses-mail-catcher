@@ -1,8 +1,15 @@
-# cdk-ses-mail-catcher
+# ses-mail-catcher
 
-pnpm + Turborepo monorepo for the `cdk-ses-mail-catcher` AWS CDK construct library.
+Amazon SES の送信メールを、用途に応じてローカルまたは AWS 上で捕捉する monorepo です。
 
-## Development
+ESM-first の Node.js/TypeScript リポジトリとして管理し、Node.js 24 と pnpm 11.19.0 を基準にしています。
+
+| パッケージ | 用途 | 保存先 |
+| --- | --- | --- |
+| [`@s-yoshiki/cdk-ses-mail-catcher`](./packages/cdk) | AWS Serverless 版の CDK Construct | Lambda + S3 + DynamoDB |
+| [`ses-mail-catcher-local`](./packages/local) | 開発・統合テスト用のローカル SES v2 互換サーバー | SQLite |
+
+## 開発
 
 ```sh
 pnpm install
@@ -12,18 +19,60 @@ pnpm lint
 pnpm typecheck
 ```
 
-`pnpm lint` runs oxlint through Turborepo. The repository uses oxlint as its
-only linter; ESLint is not installed.
-
-Run a command for one workspace package with pnpm filters:
+パッケージ単位で実行する場合:
 
 ```sh
-pnpm --filter cdk-ses-mail-catcher test
-pnpm --filter cdk-ses-mail-catcher build
+pnpm --filter @s-yoshiki/cdk-ses-mail-catcher test
+pnpm --filter @s-yoshiki/cdk-ses-mail-catcher build
+pnpm --filter ses-mail-catcher-local test
+pnpm --filter ses-mail-catcher-local build
 ```
 
-The library lives in [`packages/cdk-ses-mail-catcher`](./packages/cdk-ses-mail-catcher). Its generated project files are managed by [projen](https://github.com/projen/projen):
+## ローカル版
 
 ```sh
-pnpm --filter cdk-ses-mail-catcher projen
+pnpm --filter ses-mail-catcher-local build
+node packages/local/lib/cli.js
+```
+
+デフォルトでは `127.0.0.1:8005` で SES v2 の `SendEmail` / `SendRawEmail` を受け付けます。
+メールは OS のキャッシュディレクトリにある SQLite に保存されます。保存先を固定したい場合は
+`SES_MAIL_CATCHER_DB_PATH` または `--db-path` を指定してください。
+
+Docker イメージも作成できます:
+
+```sh
+docker build -t ses-mail-catcher-local packages/local
+docker run --rm -p 8005:8005 -v "$PWD/.ses-mail-catcher:/data" ses-mail-catcher-local
+```
+
+詳細は [`packages/local/README.md`](./packages/local/README.md) を参照してください。
+
+設計・開発・リリース方針は [`docs/architecture.md`](./docs/architecture.md)、[`docs/development.md`](./docs/development.md)、[`docs/release.md`](./docs/release.md) にまとめています。
+
+## AWS Serverless 版
+
+```ts
+import { Duration, Stack } from 'aws-cdk-lib';
+import { MailMode, SesMailCatcher } from '@s-yoshiki/cdk-ses-mail-catcher';
+
+const stack = new Stack();
+const mailCatcher = new SesMailCatcher(stack, 'MailCatcher', {
+  retention: Duration.days(7),
+  mode: MailMode.CATCH,
+});
+```
+
+`CATCH` mode は raw MIME を S3 に保存し、検索用 metadata を DynamoDB に保存します。
+`RELAY` mode は同じ MIME を SES に relay します。
+
+CDK パッケージの詳細は [`packages/cdk/README.md`](./packages/cdk/README.md) を参照してください。
+
+## Projen
+
+CDK パッケージの生成ファイルは [projen](https://github.com/projen/projen) で管理しています。
+設定を変更した場合は次を実行します:
+
+```sh
+pnpm --filter @s-yoshiki/cdk-ses-mail-catcher projen
 ```

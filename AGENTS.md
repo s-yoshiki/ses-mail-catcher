@@ -1,0 +1,60 @@
+# Repository instructions for coding agents
+
+## Scope
+
+This repository is an ESM-first pnpm + Turborepo monorepo for `ses-mail-catcher`.
+
+- `packages/cdk`: the publishable `@s-yoshiki/cdk-ses-mail-catcher` AWS CDK Construct.
+- `packages/local`: the `ses-mail-catcher-local` development server and container source.
+- `docs`: architecture, development, and release documentation.
+
+## Non-negotiable design rules
+
+- Keep TypeScript source ESM-compatible: use `module: NodeNext`, `type: module`, and explicit `.js` suffixes for relative imports.
+- The CDK package must remain jsii-compatible. Public APIs in `packages/cdk/src` must use jsii-supported types and should be documented.
+- Do not inline or hard-code Lambda handler source. The CDK construct must package the compiled `lib/` asset and resolve its path from the module URL.
+- Keep CATCH mode free of SES permissions. Only RELAY mode may grant `ses:SendEmail` and `ses:SendRawEmail`.
+- The local database is disposable cache data by default. Preserve `SES_MAIL_CATCHER_DB_PATH` and `--db-path` as explicit overrides.
+- Do not add a native SQLite npm addon unless the `node:sqlite` baseline becomes impossible to support.
+- Preserve the existing Lambda + S3 + DynamoDB architecture for the CDK package.
+
+## Commands
+
+```sh
+pnpm install
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+Package-specific commands:
+
+```sh
+pnpm --filter @s-yoshiki/cdk-ses-mail-catcher compile
+pnpm --filter @s-yoshiki/cdk-ses-mail-catcher test
+pnpm --filter ses-mail-catcher-local build
+pnpm --filter ses-mail-catcher-local test
+```
+
+When changing Projen-managed CDK settings, edit `packages/cdk/.projenrc.ts` and run:
+
+```sh
+pnpm --filter @s-yoshiki/cdk-ses-mail-catcher projen
+```
+
+Do not hand-edit generated CDK files unless the corresponding source/configuration change is also made.
+
+## Verification expectations
+
+- Changes to `packages/cdk` require typecheck, lint, Vitest, and jsii compile checks.
+- Changes to `packages/local` require typecheck, lint, Vitest, and a build check.
+- Changes to workflows, package names, or paths require `rg` checks for stale `cdk-ses-mail-catcher` paths and package filters.
+- Keep documentation examples aligned with the actual package names and commands.
+
+## Git and release
+
+- The canonical repository is `https://github.com/s-yoshiki/ses-mail-catcher`.
+- The CDK package is published as `@s-yoshiki/cdk-ses-mail-catcher`.
+- The local implementation is distributed through its Dockerfile; `scriptc` native binaries remain experimental.
+- Never commit `node_modules`, SQLite database files, coverage output, or local cache data.
