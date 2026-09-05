@@ -12,7 +12,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
   name: '@s-yoshiki/cdk-ses-mail-catcher',
   repositoryDirectory: 'packages/cdk',
   packageManager: javascript.NodePackageManager.PNPM,
-  pnpmVersion: '11.19.0',
+  pnpmVersion: '11.25.0',
   projenCommand: 'projen --no-post',
   projenVersion: '^0.103.16',
   devDeps: [

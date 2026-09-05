@@ -2,7 +2,7 @@
 
 Amazon SES の送信メールを、用途に応じてローカルまたは AWS 上で捕捉する monorepo です。
 
-ESM-first の Node.js/TypeScript リポジトリとして管理し、Node.js 24 と pnpm 11.19.0 を基準にしています。
+ESM-first の Node.js/TypeScript リポジトリとして管理し、Node.js 24 と pnpm 11.25.0 を基準にしています。
 
 | パッケージ | 用途 | 保存先 |
 | --- | --- | --- |
@@ -36,6 +36,7 @@ node packages/local/lib/cli.js
 ```
 
 デフォルトでは `127.0.0.1:8005` で SES v2 の `SendEmail` / `SendRawEmail` を受け付けます。
+待ち受けアドレスは `SES_MAIL_CATCHER_HOST` / `SES_MAIL_CATCHER_PORT`、または `--host` / `--port` で変更できます。
 メールは OS のキャッシュディレクトリにある SQLite に保存されます。保存先を固定したい場合は
 `SES_MAIL_CATCHER_DB_PATH` または `--db-path` を指定してください。
 
@@ -45,6 +46,9 @@ Docker イメージも作成できます:
 docker build -t ses-mail-catcher-local packages/local
 docker run --rm -p 8005:8005 -v "$PWD/.ses-mail-catcher:/data" ses-mail-catcher-local
 ```
+
+イメージ側は `SES_MAIL_CATCHER_HOST=0.0.0.0` を設定しています。コンテナのループバックにだけ
+bind すると公開ポートから到達できないためです。
 
 詳細は [`packages/local/README.md`](./packages/local/README.md) を参照してください。
 

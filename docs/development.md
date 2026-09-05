@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Node.js 24 (see `.node-version`).
-- pnpm 11.19.0.
+- pnpm 11.25.0.
 
 The repository is ESM-first. TypeScript uses NodeNext resolution and relative imports include their emitted `.js` suffix.
 
@@ -47,3 +47,5 @@ const ses = new SESv2Client({
 ```
 
 The database location is printed at startup. It defaults to the operating system cache directory; set `SES_MAIL_CATCHER_DB_PATH` or `--db-path` to override it.
+
+The server binds to `127.0.0.1:8005` by default. Use `SES_MAIL_CATCHER_HOST` / `--host` and `SES_MAIL_CATCHER_PORT` / `--port` to change that; flags take precedence over the environment.

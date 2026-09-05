@@ -73,7 +73,7 @@
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "11.19.0",
+      "version": "11.25.0",
       "onFail": "ignore"
     }
   },
@@ -82,7 +82,7 @@
   "homepage": "https://github.com/s-yoshiki/ses-mail-catcher",
   "stability": "stable",
   "version": "0.1.0",
-  "packageManager": "pnpm@11.19.0",
+  "packageManager": "pnpm@11.25.0",
   "types": "lib/index.d.ts",
   "jsii": {
     "outdir": "dist",
