@@ -1,7 +1,8 @@
 name: CI
 
+# Pull requests are gated by the build workflow, which runs the same checks and
+# additionally produces the release artifact. This workflow guards main itself.
 on:
-  pull_request:
   push:
     branches:
       - main
@@ -19,12 +20,12 @@ jobs:
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 11.19.0
+          version: 11.25.0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version-file: .node-version
           cache: pnpm
 
       - name: Install dependencies
