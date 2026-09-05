@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { resolveDbPath } from './db-path.js';
+import { parsePort, resolveHost, resolvePort } from './options.js';
 import { startServer } from './ses-server.js';
 
 interface CliOptions {
@@ -28,8 +29,8 @@ async function main(): Promise<void> {
 
 function parseArgs(args: string[]): CliOptions | undefined {
   const options: CliOptions = {
-    host: '127.0.0.1',
-    port: 8005,
+    host: resolveHost(),
+    port: resolvePort(),
     dbPath: resolveDbPath(),
   };
 
@@ -48,12 +49,7 @@ function parseArgs(args: string[]): CliOptions | undefined {
       continue;
     }
     if (arg === '--port') {
-      const value = requiredValue(args, ++index, arg);
-      const port = Number.parseInt(value, 10);
-      if (!Number.isInteger(port) || port < 0 || port > 65535) {
-        throw new Error('--port must be an integer between 0 and 65535');
-      }
-      options.port = port;
+      options.port = parsePort(requiredValue(args, ++index, arg), arg);
       continue;
     }
     if (arg === '--db-path') {

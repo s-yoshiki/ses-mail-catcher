@@ -24,7 +24,7 @@ docker build -t ses-mail-catcher-local packages/local
 docker run --rm -p 8005:8005 -v "$PWD/.ses-mail-catcher:/data" ses-mail-catcher-local
 ```
 
-The image stores its SQLite database at `/data/mailbox.sqlite3` through `SES_MAIL_CATCHER_DB_PATH`.
+The image stores its SQLite database at `/data/mailbox.sqlite3` through `SES_MAIL_CATCHER_DB_PATH`, and binds to `0.0.0.0` through `SES_MAIL_CATCHER_HOST` so the published port is reachable.
 
 ## Native binary
 

@@ -2,14 +2,16 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { HOST_ENV, PORT_ENV } from '../src/options.js';
 import { startServer } from '../src/ses-server.js';
 
 const temporaryDirectories: string[] = [];
 const servers: Array<{ close(): Promise<void> }> = [];
 
 afterEach(async () => {
+  vi.unstubAllEnvs();
   await Promise.all(servers.splice(0).map((server) => server.close()));
   await Promise.all(temporaryDirectories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })));
 });
@@ -63,6 +65,21 @@ describe('local SES server', () => {
 
     expect(response.status).toBe(200);
     expect((await response.json()).MessageId).toEqual(expect.any(String));
+    expect((await fetch(`${server.url}/health-check`)).status).toBe(200);
+  });
+
+  it('binds to the host and port given in the environment', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'ses-mail-catcher-env-'));
+    temporaryDirectories.push(directory);
+    // The container image relies on this to publish the port beyond loopback.
+    vi.stubEnv(HOST_ENV, 'localhost');
+    vi.stubEnv(PORT_ENV, '0');
+
+    const server = await startServer({ dbPath: join(directory, 'mailbox.sqlite3') });
+    servers.push(server);
+
+    expect(server.host).toBe('localhost');
+    expect(server.port).toBeGreaterThan(0);
     expect((await fetch(`${server.url}/health-check`)).status).toBe(200);
   });
 });

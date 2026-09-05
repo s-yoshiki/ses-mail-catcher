@@ -30,6 +30,15 @@ Set `SES_MAIL_CATCHER_DB_PATH` or pass `--db-path` when a persistent, non-cache 
 ses-mail-catcher --port 8005 --db-path ./tmp/mailbox.sqlite3
 ```
 
+The listening address is configurable the same way. Command line flags win over
+the environment.
+
+| Setting | Environment variable | Flag | Default |
+| --- | --- | --- | --- |
+| Bind address | `SES_MAIL_CATCHER_HOST` | `--host` | `127.0.0.1` |
+| Port | `SES_MAIL_CATCHER_PORT` | `--port` | `8005` |
+| Database path | `SES_MAIL_CATCHER_DB_PATH` | `--db-path` | OS cache directory |
+
 ## Use with AWS SDK for JavaScript v3
 
 Point the SES v2 client at the local endpoint and use dummy credentials:
@@ -58,6 +67,9 @@ The request/inspection shape is inspired by [aws-ses-v2-local](https://github.co
 docker build -t ses-mail-catcher-local packages/local
 docker run --rm -p 8005:8005 -v "$PWD/.ses-mail-catcher:/data" ses-mail-catcher-local
 ```
+
+The image sets `SES_MAIL_CATCHER_HOST=0.0.0.0`, because a server bound to the
+container loopback interface is not reachable through a published port.
 
 ## Native binary
 

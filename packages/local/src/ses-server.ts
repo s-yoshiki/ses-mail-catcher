@@ -3,6 +3,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 
 import { resolveDbPath } from './db-path.js';
 import { createSimpleMime, parseMimeHeaders, toApiMessage } from './mime.js';
+import { resolveHost, resolvePort } from './options.js';
 import { SqliteStore } from './sqlite-store.js';
 import type { StoredMessage } from './types.js';
 
@@ -25,8 +26,8 @@ export interface RunningLocalServer {
 }
 
 export async function startServer(options: LocalServerOptions = {}): Promise<RunningLocalServer> {
-  const host = options.host ?? '127.0.0.1';
-  const requestedPort = options.port ?? 8005;
+  const host = options.host ?? resolveHost();
+  const requestedPort = options.port ?? resolvePort();
   const dbPath = options.dbPath ?? resolveDbPath();
   const store = await SqliteStore.open(dbPath);
   const server = createServer((request, response) => {
