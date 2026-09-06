@@ -4,7 +4,7 @@ import type {
   MessageDetail,
   MessageListResponse,
   MessageSummary,
-} from 'ses-mail-catcher-api-contract';
+} from '@ses-mail-catcher/api-contract';
 
 export interface StoredMessage {
   id: string;

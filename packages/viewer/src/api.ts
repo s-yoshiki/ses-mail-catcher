@@ -2,7 +2,7 @@ import {
   apiErrorSchema,
   messageDetailSchema,
   messageListResponseSchema,
-} from 'ses-mail-catcher-api-contract';
+} from '@ses-mail-catcher/api-contract';
 
 import type { MessageDetail, MessageListResponse } from './types.js';
 

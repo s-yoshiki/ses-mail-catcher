@@ -1,4 +1,4 @@
-import type { MessageSummary } from 'ses-mail-catcher-api-contract';
+import type { MessageSummary } from '@ses-mail-catcher/api-contract';
 
 import type { CommandClient, ViewerAwsSdkModules } from './aws-sdk.js';
 import type { AttributeValue } from './metadata.js';

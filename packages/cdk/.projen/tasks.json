@@ -360,9 +360,9 @@
           "execArgs": [
             "pnpm",
             "update",
+            "@ses-mail-catcher/cdk-mail-handler",
+            "@ses-mail-catcher/cdk-viewer-handler",
             "@types/node",
-            "cdk-lambda-mail-handler",
-            "cdk-lambda-viewer-handler",
             "commit-and-tag-version",
             "jsii-diff",
             "jsii-docgen",

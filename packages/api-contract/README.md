@@ -1,4 +1,4 @@
-# ses-mail-catcher-api-contract
+# @ses-mail-catcher/api-contract
 
 Shared API types and Zod schemas for the viewer API.
 

@@ -1,5 +1,5 @@
 {
-  "name": "ses-mail-catcher-api-contract",
+  "name": "@ses-mail-catcher/api-contract",
   "version": "0.1.0",
   "type": "module",
   "description": "Shared TypeScript types and runtime schemas for ses-mail-catcher viewer APIs",

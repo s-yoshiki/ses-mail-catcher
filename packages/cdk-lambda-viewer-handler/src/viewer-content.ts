@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module';
 
-import type { MessageAttachment } from 'ses-mail-catcher-api-contract';
+import type { MessageAttachment } from '@ses-mail-catcher/api-contract';
 
 const require = createRequire(import.meta.url);
 

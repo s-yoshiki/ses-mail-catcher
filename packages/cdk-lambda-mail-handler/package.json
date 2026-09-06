@@ -1,5 +1,5 @@
 {
-  "name": "cdk-lambda-mail-handler",
+  "name": "@ses-mail-catcher/cdk-mail-handler",
   "version": "0.1.0",
   "private": true,
   "type": "module",

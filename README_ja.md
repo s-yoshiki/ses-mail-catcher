@@ -9,11 +9,11 @@ ESM-first の Node.js / TypeScript monorepo として管理しています。リ
 | パッケージ | 用途 | 保存先・実行環境 |
 | --- | --- | --- |
 | [`@s-yoshiki/cdk-ses-mail-catcher`](./packages/cdk) | メールを捕捉またはリレーする AWS Serverless 版の CDK Construct | Lambda + S3 + DynamoDB |
-| [`ses-mail-catcher-local`](./packages/local) | 開発・統合テスト用のローカル SES v2 互換サーバー | SQLite |
-| [`ses-mail-catcher-viewer`](./packages/viewer) | 捕捉したメールを読む React ビューア | ローカルサーバーと AWS viewer に同梱 |
-| [`ses-mail-catcher-api-contract`](./packages/api-contract) | viewer API の共有 TypeScript 型と Zod スキーマ | ワークスペース内専用パッケージ |
-| [`cdk-lambda-mail-handler`](./packages/cdk-lambda-mail-handler) | CDK Construct が利用するメール Lambda ハンドラー | ワークスペース内専用パッケージ |
-| [`cdk-lambda-viewer-handler`](./packages/cdk-lambda-viewer-handler) | CDK Construct が利用する viewer Lambda ハンドラー | ワークスペース内専用パッケージ |
+| [`@ses-mail-catcher/local`](./packages/local) | 開発・統合テスト用のローカル SES v2 互換サーバー | 非公開 workspace、Docker で配布 |
+| [`@ses-mail-catcher/viewer`](./packages/viewer) | 捕捉したメールを読む React ビューア | 非公開 workspace、ローカルサーバーと AWS viewer に同梱 |
+| [`@ses-mail-catcher/api-contract`](./packages/api-contract) | viewer API の共有 TypeScript 型と Zod スキーマ | 非公開 workspace |
+| [`@ses-mail-catcher/cdk-mail-handler`](./packages/cdk-lambda-mail-handler) | CDK Construct が利用するメール Lambda ハンドラー | 非公開 workspace |
+| [`@ses-mail-catcher/cdk-viewer-handler`](./packages/cdk-lambda-viewer-handler) | CDK Construct が利用する viewer Lambda ハンドラー | 非公開 workspace |
 
 ## 開発
 
@@ -32,11 +32,11 @@ pnpm build
 ```sh
 pnpm --filter @s-yoshiki/cdk-ses-mail-catcher compile
 pnpm --filter @s-yoshiki/cdk-ses-mail-catcher test
-pnpm --filter cdk-lambda-mail-handler test
-pnpm --filter cdk-lambda-viewer-handler test
-pnpm --filter ses-mail-catcher-local build
-pnpm --filter ses-mail-catcher-local test
-pnpm --filter ses-mail-catcher-viewer dev
+pnpm --filter @ses-mail-catcher/cdk-mail-handler test
+pnpm --filter @ses-mail-catcher/cdk-viewer-handler test
+pnpm --filter @ses-mail-catcher/local build
+pnpm --filter @ses-mail-catcher/local test
+pnpm --filter @ses-mail-catcher/viewer dev
 ```
 
 ローカルサーバーとビューアを扱う場合は、リポジトリのルートからビルドしてください。Turborepo がビューアを先にビルドし、その成果物をローカルサーバーが `packages/local/lib/viewer` にコピーします。ローカルパッケージだけをビルドした場合も、サーバーは API 専用サービスとして動作します。
