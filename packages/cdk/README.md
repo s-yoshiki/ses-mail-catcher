@@ -65,8 +65,63 @@ references (`bucket`, `key`); the referenced bucket must grant read access to
 
 The public resources are available as `mailCatcher.function`,
 `mailCatcher.bucket`, and `mailCatcher.table`. Use `grantSend()` to give an
-application Lambda permission to invoke the handler. Viewer, HTTP API, and
-queue-based transports are intentionally reserved for a later release.
+application Lambda permission to invoke the handler. Queue-based transports are
+intentionally reserved for a later release.
+
+## Viewer
+
+`viewer` adds a Lambda function URL that serves the same React viewer as the
+local server, reading messages straight from DynamoDB and S3. It is not created
+unless asked for, and it only works in `CATCH` mode, because relay mode stores
+nothing.
+
+Captured mail is exactly the kind of thing that should not sit on an open URL,
+so the construct refuses to create a viewer without some form of access
+control. Two are built in and can be combined.
+
+```ts
+import { Secret } from "aws-cdk-lib/aws-secretsmanager";
+
+const credentials = new Secret(stack, "ViewerCredentials", {
+  generateSecretString: {
+    secretStringTemplate: JSON.stringify({ username: "developer" }),
+    generateStringKey: "password",
+  },
+});
+
+const mailCatcher = new SesMailCatcher(stack, "MailCatcher", {
+  viewer: {
+    basicAuth: { secret: credentials },
+    allowedIpCidrs: ["203.0.113.0/24"],
+  },
+});
+```
+
+`mailCatcher.viewerUrl` is the address to open, and `mailCatcher.viewerFunction`
+is the function behind it.
+
+- **Basic authentication** reads its credentials from a Secrets Manager secret
+  at run time, so they never appear in the synthesized template. The secret
+  holds JSON; `usernameField` and `passwordField` rename the fields it reads.
+  Credentials are compared with a constant-time digest comparison.
+- **Address ranges** accept IPv4 and IPv6 CIDR blocks. The address comes from
+  the function URL request context rather than a forwarded header, so a caller
+  cannot spoof it.
+
+The function URL uses `AuthType.NONE` by default, because a browser cannot sign
+requests; the checks above are what protect the messages. Set
+`authType: FunctionUrlAuthType.AWS_IAM` when the viewer is reached through a
+signing client instead. A viewer with no access control at all has to be
+acknowledged explicitly with `allowPublicAccess: true`.
+
+The viewer function is granted read access only: `dynamodb:Query`/`Scan` on the
+table, `s3:GetObject` on the bucket, and `secretsmanager:GetSecretValue` on the
+credentials secret.
+
+The Lambda asset carries the built viewer bundle and a vendored copy of
+[postal-mime](https://github.com/postalsys/postal-mime) (MIT-0) under
+`lib/vendor`, because the asset is the compiled `lib` directory and has no
+`node_modules` of its own.
 
 The Lambda implementation is kept as regular TypeScript modules: the handler
 only orchestrates validation, MIME creation, storage, and relay; each concern

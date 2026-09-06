@@ -1,0 +1,21 @@
+# The container image is built from the repository root; see
+# packages/local/Dockerfile.
+
+.git
+.github
+.turbo
+.pnpm-store
+node_modules
+**/node_modules
+**/.turbo
+**/lib
+**/dist
+**/coverage
+**/test-reports
+**/*.tsbuildinfo
+**/*.tgz
+**/*.sqlite3
+.ses-mail-catcher
+docs
+*.md
+!packages/local/README.md
