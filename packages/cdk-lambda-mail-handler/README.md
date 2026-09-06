@@ -1,4 +1,4 @@
-# ses-mail-catcher-cdk-lambda-mail-handler
+# cdk-lambda-mail-handler
 
 Private workspace for the mail-processing Lambda handler used by the CDK
 construct.
@@ -14,7 +14,7 @@ Lambda asset.
 Run its tests with:
 
 ```sh
-pnpm --filter ses-mail-catcher-cdk-lambda-mail-handler test
+pnpm --filter cdk-lambda-mail-handler test
 ```
 
 This workspace is private and is not published separately.

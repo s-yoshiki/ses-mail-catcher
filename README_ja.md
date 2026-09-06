@@ -12,8 +12,8 @@ ESM-first の Node.js / TypeScript monorepo として管理しています。リ
 | [`ses-mail-catcher-local`](./packages/local) | 開発・統合テスト用のローカル SES v2 互換サーバー | SQLite |
 | [`ses-mail-catcher-viewer`](./packages/viewer) | 捕捉したメールを読む React ビューア | ローカルサーバーと AWS viewer に同梱 |
 | [`ses-mail-catcher-api-contract`](./packages/api-contract) | viewer API の共有 TypeScript 型と Zod スキーマ | ワークスペース内専用パッケージ |
-| [`ses-mail-catcher-cdk-lambda-mail-handler`](./packages/cdk-lambda-mail-handler) | CDK Construct が利用するメール Lambda ハンドラー | ワークスペース内専用パッケージ |
-| [`ses-mail-catcher-cdk-lambda-viewer-handler`](./packages/cdk-lambda-viewer-handler) | CDK Construct が利用する viewer Lambda ハンドラー | ワークスペース内専用パッケージ |
+| [`cdk-lambda-mail-handler`](./packages/cdk-lambda-mail-handler) | CDK Construct が利用するメール Lambda ハンドラー | ワークスペース内専用パッケージ |
+| [`cdk-lambda-viewer-handler`](./packages/cdk-lambda-viewer-handler) | CDK Construct が利用する viewer Lambda ハンドラー | ワークスペース内専用パッケージ |
 
 ## 開発
 
@@ -32,8 +32,8 @@ pnpm build
 ```sh
 pnpm --filter @s-yoshiki/cdk-ses-mail-catcher compile
 pnpm --filter @s-yoshiki/cdk-ses-mail-catcher test
-pnpm --filter ses-mail-catcher-cdk-lambda-mail-handler test
-pnpm --filter ses-mail-catcher-cdk-lambda-viewer-handler test
+pnpm --filter cdk-lambda-mail-handler test
+pnpm --filter cdk-lambda-viewer-handler test
 pnpm --filter ses-mail-catcher-local build
 pnpm --filter ses-mail-catcher-local test
 pnpm --filter ses-mail-catcher-viewer dev

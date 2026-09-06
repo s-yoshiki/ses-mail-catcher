@@ -6,6 +6,16 @@
       "type": "build"
     },
     {
+      "name": "cdk-lambda-mail-handler",
+      "version": "workspace:*",
+      "type": "build"
+    },
+    {
+      "name": "cdk-lambda-viewer-handler",
+      "version": "workspace:*",
+      "type": "build"
+    },
+    {
       "name": "commit-and-tag-version",
       "version": "^13.1.2",
       "type": "build"
@@ -41,16 +51,6 @@
     {
       "name": "projen",
       "version": "^0.103.19",
-      "type": "build"
-    },
-    {
-      "name": "ses-mail-catcher-cdk-lambda-mail-handler",
-      "version": "workspace:*",
-      "type": "build"
-    },
-    {
-      "name": "ses-mail-catcher-cdk-lambda-viewer-handler",
-      "version": "workspace:*",
       "type": "build"
     },
     {

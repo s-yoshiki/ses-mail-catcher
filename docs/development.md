@@ -20,8 +20,8 @@ pnpm build
 For the CDK package, `compile` additionally runs jsii:
 
 ```sh
-pnpm --filter ses-mail-catcher-cdk-lambda-mail-handler build
-pnpm --filter ses-mail-catcher-cdk-lambda-viewer-handler build
+pnpm --filter cdk-lambda-mail-handler build
+pnpm --filter cdk-lambda-viewer-handler build
 pnpm --filter @s-yoshiki/cdk-ses-mail-catcher compile
 ```
 
@@ -30,8 +30,8 @@ so build the repository from the root when changing either workspace:
 
 ```sh
 pnpm build
-pnpm --filter ses-mail-catcher-cdk-lambda-mail-handler test
-pnpm --filter ses-mail-catcher-cdk-lambda-viewer-handler test
+pnpm --filter cdk-lambda-mail-handler test
+pnpm --filter cdk-lambda-viewer-handler test
 ```
 
 For the local package:

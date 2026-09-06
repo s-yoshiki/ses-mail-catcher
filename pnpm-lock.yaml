@@ -80,6 +80,12 @@ importers:
       aws-cdk-lib:
         specifier: 2.268.0
         version: 2.268.0(constructs@10.8.1)
+      cdk-lambda-mail-handler:
+        specifier: workspace:*
+        version: link:../cdk-lambda-mail-handler
+      cdk-lambda-viewer-handler:
+        specifier: workspace:*
+        version: link:../cdk-lambda-viewer-handler
       commit-and-tag-version:
         specifier: ^13.1.2
         version: 13.1.2(conventional-commits-filter@6.0.1)(conventional-commits-parser@7.1.2)
@@ -107,12 +113,6 @@ importers:
       projen:
         specifier: ^0.103.19
         version: 0.103.19(constructs@10.8.1)
-      ses-mail-catcher-cdk-lambda-mail-handler:
-        specifier: workspace:*
-        version: link:../cdk-lambda-mail-handler
-      ses-mail-catcher-cdk-lambda-viewer-handler:
-        specifier: workspace:*
-        version: link:../cdk-lambda-viewer-handler
       tsx:
         specifier: ^4.23.13
         version: 4.23.13

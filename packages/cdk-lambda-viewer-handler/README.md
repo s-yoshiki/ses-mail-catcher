@@ -1,4 +1,4 @@
-# ses-mail-catcher-cdk-lambda-viewer-handler
+# cdk-lambda-viewer-handler
 
 Private workspace containing the viewer Lambda handler and its runtime modules
 for the CDK construct.
@@ -19,7 +19,7 @@ workspace and the CDK package after it:
 
 ```sh
 pnpm build
-pnpm --filter ses-mail-catcher-cdk-lambda-viewer-handler test
+pnpm --filter cdk-lambda-viewer-handler test
 ```
 
 This workspace is private and is not a separately published package.
