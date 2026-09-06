@@ -1,5 +1,9 @@
 # Development guide
 
+The branch workflow is documented in
+[Branching strategy](./branching-strategy.md). Normal feature and bug-fix pull
+requests target `develop`; `main` is reserved for releases and hotfixes.
+
 ## Prerequisites
 
 - Node.js 24 (see `.node-version`).
