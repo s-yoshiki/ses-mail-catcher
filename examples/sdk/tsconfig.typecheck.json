@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "../..",
+    "paths": {
+      "@s-yoshiki/cdk-ses-mail-catcher": ["../../packages/cdk/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts"]
+}

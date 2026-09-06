@@ -1,4 +1,4 @@
-import type { SendMailEvent } from './types.js';
+import type { SendMailEvent } from './event-types.js';
 
 /** @internal */
 export interface AttributeValue {

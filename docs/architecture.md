@@ -16,7 +16,8 @@ Application
 
 `@s-yoshiki/cdk-ses-mail-catcher` provisions the existing serverless design:
 
-- Lambda runs `mail-handler.handler` from the compiled package asset.
+- The Lambda workspace builds `mail-handler.handler` and `viewer-handler.handler`;
+  the CDK package copies those compiled handlers into its published asset.
 - S3 stores canonical raw MIME.
 - DynamoDB stores searchable message metadata and TTL information.
 - CATCH mode grants S3/DynamoDB permissions only.

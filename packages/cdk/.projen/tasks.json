@@ -258,7 +258,7 @@
           "spawn": "docgen"
         },
         {
-          "exec": "node scripts/copy-viewer-assets.mjs"
+          "exec": "node scripts/copy-lambda-assets.mjs"
         }
       ]
     },
@@ -368,10 +368,8 @@
             "jsii-rosetta",
             "jsii",
             "oxlint",
-            "postal-mime",
             "projen",
-            "ses-mail-catcher-api-contract",
-            "ses-mail-catcher-viewer",
+            "ses-mail-catcher-lambda",
             "tsx",
             "typescript",
             "vitest",

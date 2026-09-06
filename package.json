@@ -12,7 +12,7 @@
     "compile": "turbo run compile",
     "typecheck": "turbo run typecheck",
     "package": "turbo run package",
-    "clean": "turbo run clobber",
+    "clean": "node scripts/clean.mjs",
     "projen": "pnpm --filter @s-yoshiki/cdk-ses-mail-catcher projen"
   },
   "devDependencies": {

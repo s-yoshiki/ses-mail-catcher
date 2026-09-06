@@ -1,0 +1,8 @@
+{
+  "app": "node lib/bin/app.js",
+  "watch": {
+    "include": ["src/**/*.ts"],
+    "exclude": ["README.md", "lib/**/*.js"]
+  },
+  "context": {}
+}

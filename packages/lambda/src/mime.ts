@@ -1,4 +1,4 @@
-import type { MailAttachment, SendMailEvent } from './types.js';
+import type { MailAttachment, SendMailEvent } from './event-types.js';
 
 /** @internal */
 export type AttachmentReader = (attachment: MailAttachment) => Promise<Uint8Array>;
