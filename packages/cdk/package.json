@@ -40,6 +40,8 @@
   "devDependencies": {
     "@types/node": "^26.4.1",
     "aws-cdk-lib": "2.268.0",
+    "cdk-lambda-mail-handler": "workspace:*",
+    "cdk-lambda-viewer-handler": "workspace:*",
     "commit-and-tag-version": "^13.1.2",
     "constructs": "10.8.1",
     "jsii": "~6.0.12",
@@ -48,10 +50,7 @@
     "jsii-pacmak": "^1.140.0",
     "jsii-rosetta": "~6.0.13",
     "oxlint": "^1.81.0",
-    "postal-mime": "^3.0.0",
     "projen": "^0.103.19",
-    "ses-mail-catcher-api-contract": "workspace:*",
-    "ses-mail-catcher-viewer": "workspace:*",
     "tsx": "^4.23.13",
     "typescript": "~7.0.2",
     "vitest": "^5.0.0"

@@ -20,7 +20,18 @@ pnpm build
 For the CDK package, `compile` additionally runs jsii:
 
 ```sh
+pnpm --filter cdk-lambda-mail-handler build
+pnpm --filter cdk-lambda-viewer-handler build
 pnpm --filter @s-yoshiki/cdk-ses-mail-catcher compile
+```
+
+The CDK package copies the compiled Lambda workspace into its published asset,
+so build the repository from the root when changing either workspace:
+
+```sh
+pnpm build
+pnpm --filter cdk-lambda-mail-handler test
+pnpm --filter cdk-lambda-viewer-handler test
 ```
 
 For the local package:

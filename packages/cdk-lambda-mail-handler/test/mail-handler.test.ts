@@ -14,6 +14,8 @@ const sdk: MailHandlerDependencies['sdk'] = {
   GetObjectCommand: TestCommand,
   PutItemCommand: TestCommand,
   PutObjectCommand: TestCommand,
+  QueryCommand: TestCommand,
+  ScanCommand: TestCommand,
   S3Client: TestClient,
   SendEmailCommand: TestCommand,
   SESv2Client: TestClient,

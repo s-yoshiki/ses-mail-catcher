@@ -258,7 +258,7 @@
           "spawn": "docgen"
         },
         {
-          "exec": "node scripts/copy-viewer-assets.mjs"
+          "exec": "node scripts/copy-lambda-assets.mjs"
         }
       ]
     },
@@ -361,6 +361,8 @@
             "pnpm",
             "update",
             "@types/node",
+            "cdk-lambda-mail-handler",
+            "cdk-lambda-viewer-handler",
             "commit-and-tag-version",
             "jsii-diff",
             "jsii-docgen",
@@ -368,10 +370,7 @@
             "jsii-rosetta",
             "jsii",
             "oxlint",
-            "postal-mime",
             "projen",
-            "ses-mail-catcher-api-contract",
-            "ses-mail-catcher-viewer",
             "tsx",
             "typescript",
             "vitest",
