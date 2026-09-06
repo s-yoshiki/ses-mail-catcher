@@ -1,6 +1,6 @@
 import { App } from 'aws-cdk-lib';
 
-import { SesMailCatcherExampleStack } from '../lib/ses-mail-catcher-example-stack.js';
+import { SesMailCatcherExampleStack } from '../ses-mail-catcher-example-stack.js';
 
 const app = new App();
 
