@@ -10,7 +10,7 @@ export interface ToolbarProps {
   readonly onRefresh: () => void;
 }
 
-export function Toolbar(props: ToolbarProps): JSX.Element {
+export const Toolbar = (props: ToolbarProps): JSX.Element => {
   return (
     <header className="toolbar">
       <h1 className="toolbar-title">ses-mail-catcher</h1>
@@ -44,4 +44,4 @@ export function Toolbar(props: ToolbarProps): JSX.Element {
       <button type="button" onClick={props.onRefresh}>Refresh</button>
     </header>
   );
-}
+};

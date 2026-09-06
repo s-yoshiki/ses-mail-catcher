@@ -10,7 +10,7 @@ interface CliOptions {
   dbPath: string;
 }
 
-async function main(): Promise<void> {
+const main = async (): Promise<void> => {
   const options = parseArgs(process.argv.slice(2));
   if (options === undefined) {
     return;
@@ -28,9 +28,9 @@ async function main(): Promise<void> {
   };
   process.once('SIGINT', shutdown);
   process.once('SIGTERM', shutdown);
-}
+};
 
-function parseArgs(args: string[]): CliOptions | undefined {
+const parseArgs = (args: string[]): CliOptions | undefined => {
   const options: CliOptions = {
     host: resolveHost(),
     port: resolvePort(),
@@ -63,15 +63,15 @@ function parseArgs(args: string[]): CliOptions | undefined {
   }
 
   return options;
-}
+};
 
-function requiredValue(args: string[], index: number, option: string): string {
+const requiredValue = (args: string[], index: number, option: string): string => {
   const value = args[index];
   if (!value || value.startsWith('-')) {
     throw new Error(`${option} requires a value`);
   }
   return value;
-}
+};
 
 void main().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : error);

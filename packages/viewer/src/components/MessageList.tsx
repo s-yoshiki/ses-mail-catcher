@@ -10,7 +10,7 @@ export interface MessageListProps {
   readonly onSelect: (id: string) => void;
 }
 
-export function MessageList(props: MessageListProps): JSX.Element {
+export const MessageList = (props: MessageListProps): JSX.Element => {
   if (props.loading && props.messages.length === 0) {
     return <nav className="list"><p className="placeholder">Loading…</p></nav>;
   }
@@ -49,4 +49,4 @@ export function MessageList(props: MessageListProps): JSX.Element {
       </ul>
     </nav>
   );
-}
+};

@@ -3,11 +3,11 @@ import { join } from 'node:path';
 
 export const DB_PATH_ENV = 'SES_MAIL_CATCHER_DB_PATH';
 
-export function resolveDbPath(
+export const resolveDbPath = (
   env: NodeJS.ProcessEnv = process.env,
   platform: NodeJS.Platform = process.platform,
   home = homedir(),
-): string {
+): string => {
   const explicitPath = env[DB_PATH_ENV];
   if (explicitPath) {
     return explicitPath;
@@ -30,4 +30,4 @@ export function resolveDbPath(
     'ses-mail-catcher',
     'mailbox.sqlite3',
   );
-}
+};

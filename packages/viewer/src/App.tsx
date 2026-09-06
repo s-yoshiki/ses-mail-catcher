@@ -19,7 +19,7 @@ interface DetailError {
   readonly message: string;
 }
 
-export function App({ client }: AppProps): JSX.Element {
+export const App = ({ client }: AppProps): JSX.Element => {
   const [messages, setMessages] = useState<MessageSummary[]>([]);
   const [mailboxes, setMailboxes] = useState<string[]>([]);
   const [mailbox, setMailbox] = useState(ALL_MAILBOXES);
@@ -114,12 +114,12 @@ export function App({ client }: AppProps): JSX.Element {
       </div>
     </div>
   );
-}
+};
 
-function isAbort(error: unknown): boolean {
+const isAbort = (error: unknown): boolean => {
   return error instanceof Error && error.name === 'AbortError';
-}
+};
 
-function toMessage(error: unknown): string {
+const toMessage = (error: unknown): string => {
   return error instanceof Error ? error.message : 'Unexpected error';
-}
+};

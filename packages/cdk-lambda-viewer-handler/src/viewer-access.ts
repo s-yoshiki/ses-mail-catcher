@@ -23,12 +23,12 @@ const ALLOWED = { allowed: true } as const;
  * layer, so the checks have to happen here. Both are optional individually but
  * the construct refuses to create an open viewer without one of them.
  */
-export function evaluateAccess(options: {
+export const evaluateAccess = (options: {
   readonly sourceIp: string | undefined;
   readonly authorization: string | undefined;
   readonly allowedCidrs: readonly string[];
   readonly credentials: ViewerCredentials | undefined;
-}): AccessDecision {
+}): AccessDecision => {
   if (options.allowedCidrs.length > 0) {
     if (options.sourceIp === undefined) {
       return { allowed: false, reason: 'Source address unavailable' };
@@ -50,10 +50,10 @@ export function evaluateAccess(options: {
     return { allowed: false, challenge: true, reason: 'Invalid credentials' };
   }
   return ALLOWED;
-}
+};
 
 /** @internal */
-export function parseBasicAuth(header: string | undefined): ViewerCredentials | undefined {
+export const parseBasicAuth = (header: string | undefined): ViewerCredentials | undefined => {
   if (header === undefined) {
     return undefined;
   }
@@ -68,27 +68,27 @@ export function parseBasicAuth(header: string | undefined): ViewerCredentials | 
     return undefined;
   }
   return { username: decoded.slice(0, separator), password: decoded.slice(separator + 1) };
-}
+};
 
 /**
  * Compares credentials without leaking their length or content through timing.
  * Hashing first keeps the compared buffers the same size whatever was sent.
  */
-function matchesCredentials(provided: ViewerCredentials, expected: ViewerCredentials): boolean {
+const matchesCredentials = (provided: ViewerCredentials, expected: ViewerCredentials): boolean => {
   return equalSecret(provided.username, expected.username)
     && equalSecret(provided.password, expected.password);
-}
+};
 
-function equalSecret(left: string, right: string): boolean {
+const equalSecret = (left: string, right: string): boolean => {
   return timingSafeEqual(digest(left), digest(right));
-}
+};
 
-function digest(value: string): Buffer {
+const digest = (value: string): Buffer => {
   return createHash('sha256').update(value, 'utf8').digest();
-}
+};
 
 /** @internal */
-export function isIpAllowed(address: string, cidrs: readonly string[]): boolean {
+export const isIpAllowed = (address: string, cidrs: readonly string[]): boolean => {
   const parsed = parseAddress(address);
   if (parsed === undefined) {
     return false;
@@ -102,7 +102,7 @@ export function isIpAllowed(address: string, cidrs: readonly string[]): boolean 
     const mask = maskFor(range.prefix, range.bits);
     return (parsed.value & mask) === (range.value & mask);
   });
-}
+};
 
 interface ParsedAddress {
   readonly value: bigint;
@@ -113,7 +113,7 @@ interface ParsedCidr extends ParsedAddress {
   readonly prefix: number;
 }
 
-function parseCidr(cidr: string): ParsedCidr | undefined {
+const parseCidr = (cidr: string): ParsedCidr | undefined => {
   const [address, prefixText] = cidr.split('/');
   const parsed = parseAddress(address ?? '');
   if (parsed === undefined) {
@@ -125,13 +125,13 @@ function parseCidr(cidr: string): ParsedCidr | undefined {
     return undefined;
   }
   return { ...parsed, prefix };
-}
+};
 
-function parseAddress(address: string): ParsedAddress | undefined {
+const parseAddress = (address: string): ParsedAddress | undefined => {
   return address.includes(':') ? parseIpV6(address) : parseIpV4(address);
-}
+};
 
-function parseIpV4(address: string): ParsedAddress | undefined {
+const parseIpV4 = (address: string): ParsedAddress | undefined => {
   const parts = address.split('.');
   if (parts.length !== 4) {
     return undefined;
@@ -149,9 +149,9 @@ function parseIpV4(address: string): ParsedAddress | undefined {
     value = (value << 8n) | BigInt(octet);
   }
   return { value, bits: 32 };
-}
+};
 
-function parseIpV6(address: string): ParsedAddress | undefined {
+const parseIpV6 = (address: string): ParsedAddress | undefined => {
   const [head, tail, ...rest] = address.split('::');
   if (rest.length > 0) {
     return undefined;
@@ -174,9 +174,9 @@ function parseIpV6(address: string): ParsedAddress | undefined {
     value = (value << 16n) | BigInt(group);
   }
   return { value, bits: 128 };
-}
+};
 
-function expandGroups(segment: string): number[] | undefined {
+const expandGroups = (segment: string): number[] | undefined => {
   if (segment === '') {
     return [];
   }
@@ -202,9 +202,9 @@ function expandGroups(segment: string): number[] | undefined {
     groups.push(Number.parseInt(part, 16));
   }
   return groups.length > 8 ? undefined : groups;
-}
+};
 
-function maskFor(prefix: number, bits: number): bigint {
+const maskFor = (prefix: number, bits: number): bigint => {
   const suffix = BigInt(bits - prefix);
   return ((1n << BigInt(bits)) - 1n) >> suffix << suffix;
-}
+};

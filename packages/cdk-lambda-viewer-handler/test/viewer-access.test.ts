@@ -4,9 +4,9 @@ import { evaluateAccess, isIpAllowed, parseBasicAuth } from '../src/viewer-acces
 
 const CREDENTIALS = { username: 'reader', password: 'correct horse' };
 
-function basicHeader(username: string, password: string): string {
+const basicHeader = (username: string, password: string): string => {
   return `Basic ${Buffer.from(`${username}:${password}`, 'utf8').toString('base64')}`;
-}
+};
 
 describe('parseBasicAuth', () => {
   test('reads a well formed header', () => {

@@ -54,18 +54,18 @@ let cachedDependencies: ViewerHandlerDependencies | undefined;
 let cachedCredentials: ViewerCredentials | undefined;
 
 /** Lambda entry point for the viewer function URL. */
-export async function handler(event: ViewerRequest): Promise<ViewerResponse> {
+export const handler = async (event: ViewerRequest): Promise<ViewerResponse> => {
   const config = loadConfig();
   cachedDependencies ??= createDefaultDependencies(config);
   return serveViewer(event, config, cachedDependencies);
-}
+};
 
 /** @internal */
-export async function serveViewer(
+export const serveViewer = async (
   event: ViewerRequest,
   config: ViewerHandlerConfig,
   dependencies: ViewerHandlerDependencies,
-): Promise<ViewerResponse> {
+): Promise<ViewerResponse> => {
   const method = event.requestContext?.http?.method ?? 'GET';
   if (method !== 'GET' && method !== 'HEAD') {
     return json(405, { message: 'Method not allowed' });
@@ -99,13 +99,13 @@ export async function serveViewer(
     const message = error instanceof Error ? error.message : 'Unexpected error';
     return json(500, { message });
   }
-}
+};
 
-async function route(
+const route = async (
   path: string,
   event: ViewerRequest,
   dependencies: ViewerHandlerDependencies,
-): Promise<ViewerResponse> {
+): Promise<ViewerResponse> => {
   const query = event.queryStringParameters ?? {};
 
   if (path === '/api/health') {
@@ -162,9 +162,9 @@ async function route(
     attachment.contentType,
     contentDisposition(attachment.filename),
   );
-}
+};
 
-async function serveAsset(path: string, dependencies: ViewerHandlerDependencies): Promise<ViewerResponse> {
+const serveAsset = async (path: string, dependencies: ViewerHandlerDependencies): Promise<ViewerResponse> => {
   if (path.startsWith('/api/')) {
     return json(404, { message: 'Not found' });
   }
@@ -184,14 +184,14 @@ async function serveAsset(path: string, dependencies: ViewerHandlerDependencies)
     body: asset.body.toString('base64'),
     isBase64Encoded: true,
   };
-}
+};
 
 type MessageRoute =
   | { kind: 'detail'; id: string }
   | { kind: 'raw'; id: string }
   | { kind: 'attachment'; id: string; index: number };
 
-function matchMessageRoute(path: string): MessageRoute | undefined {
+const matchMessageRoute = (path: string): MessageRoute | undefined => {
   const parts = path.split('/').filter(Boolean).map((part) => safeDecode(part));
   if (parts[0] !== 'api' || parts[1] !== 'messages' || parts[2] === undefined) {
     return undefined;
@@ -207,9 +207,9 @@ function matchMessageRoute(path: string): MessageRoute | undefined {
     return Number.isInteger(index) && index >= 0 ? { kind: 'attachment', id: parts[2], index } : undefined;
   }
   return undefined;
-}
+};
 
-function createDefaultDependencies(config: ViewerHandlerConfig): ViewerHandlerDependencies {
+const createDefaultDependencies = (config: ViewerHandlerConfig): ViewerHandlerDependencies => {
   const sdk = loadViewerAwsSdk();
   const store = new ViewerStore(
     new sdk.DynamoDBClient({}) as CommandClient,
@@ -224,12 +224,12 @@ function createDefaultDependencies(config: ViewerHandlerConfig): ViewerHandlerDe
     credentials: () => readCredentials(config, sdk),
     parseContent: (rawMime) => parseViewerContent(rawMime),
   };
-}
+};
 
-async function readCredentials(
+const readCredentials = async (
   config: ViewerHandlerConfig,
   sdk: ViewerAwsSdkModules,
-): Promise<ViewerCredentials | undefined> {
+): Promise<ViewerCredentials | undefined> => {
   if (config.basicAuthSecretArn === undefined) {
     return undefined;
   }
@@ -255,9 +255,9 @@ async function readCredentials(
 
   cachedCredentials = { username, password };
   return cachedCredentials;
-}
+};
 
-function loadConfig(): ViewerHandlerConfig {
+const loadConfig = (): ViewerHandlerConfig => {
   const allowedCidrs = (process.env.VIEWER_ALLOWED_CIDRS ?? '')
     .split(',')
     .map((entry) => entry.trim())
@@ -273,39 +273,39 @@ function loadConfig(): ViewerHandlerConfig {
     usernameField: process.env.VIEWER_BASIC_AUTH_USERNAME_FIELD ?? 'username',
     passwordField: process.env.VIEWER_BASIC_AUTH_PASSWORD_FIELD ?? 'password',
   };
-}
+};
 
-function requiredEnvironment(name: string): string {
+const requiredEnvironment = (name: string): string => {
   const value = process.env[name];
   if (!value) throw new Error(`${name} is required`);
   return value;
-}
+};
 
-function parseLimit(value: string | undefined): number {
+const parseLimit = (value: string | undefined): number => {
   const limit = Number.parseInt(value ?? '100', 10);
   return Number.isNaN(limit) ? 100 : Math.min(Math.max(limit, 1), 1000);
-}
+};
 
-function contentDisposition(filename: string): string {
+const contentDisposition = (filename: string): string => {
   const ascii = filename.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_');
   return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(filename)}`;
-}
+};
 
-function safeDecode(value: string): string {
+const safeDecode = (value: string): string => {
   try {
     return decodeURIComponent(value);
   } catch {
     return value;
   }
-}
+};
 
-function header(event: ViewerRequest, name: string): string | undefined {
+const header = (event: ViewerRequest, name: string): string | undefined => {
   const headers = event.headers ?? {};
   const match = Object.entries(headers).find(([key]) => key.toLowerCase() === name);
   return match?.[1];
-}
+};
 
-function json(statusCode: number, body: unknown): ViewerResponse {
+const json = (statusCode: number, body: unknown): ViewerResponse => {
   return {
     statusCode,
     headers: {
@@ -315,14 +315,14 @@ function json(statusCode: number, body: unknown): ViewerResponse {
     },
     body: JSON.stringify(body),
   };
-}
+};
 
-function binary(
+const binary = (
   statusCode: number,
   body: Buffer,
   contentType: string,
   disposition?: string,
-): ViewerResponse {
+): ViewerResponse => {
   return {
     statusCode,
     headers: {
@@ -334,4 +334,4 @@ function binary(
     body: body.toString('base64'),
     isBase64Encoded: true,
   };
-}
+};

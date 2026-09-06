@@ -24,7 +24,7 @@ export interface ParsedMessageContent {
  * so this has to cope with multipart nesting, transfer encodings and charsets
  * rather than only with the messages `createSimpleMime` produces.
  */
-export async function parseMessageContent(rawMime: Uint8Array): Promise<ParsedMessageContent> {
+export const parseMessageContent = async (rawMime: Uint8Array): Promise<ParsedMessageContent> => {
   const email = await PostalMime.parse(rawMime, { attachmentEncoding: 'arraybuffer' });
 
   return {
@@ -43,17 +43,17 @@ export async function parseMessageContent(rawMime: Uint8Array): Promise<ParsedMe
       };
     }),
   };
-}
+};
 
-export function toContentResponse(parsed: ParsedMessageContent): MessageContentResponse {
+export const toContentResponse = (parsed: ParsedMessageContent): MessageContentResponse => {
   return {
     ...(parsed.text === undefined ? {} : { text: parsed.text }),
     ...(parsed.html === undefined ? {} : { html: parsed.html }),
     attachments: parsed.attachments.map(({ content: _content, ...summary }) => summary),
   };
-}
+};
 
-export async function toDetailResponse(message: StoredMessage): Promise<MessageDetailResponse> {
+export const toDetailResponse = async (message: StoredMessage): Promise<MessageDetailResponse> => {
   return {
     id: message.id,
     ...(message.fromAddress === undefined ? {} : { fromAddress: message.fromAddress }),
@@ -67,11 +67,11 @@ export async function toDetailResponse(message: StoredMessage): Promise<MessageD
     mailbox: message.mailbox,
     content: toContentResponse(await parseMessageContent(message.rawMime)),
   };
-}
+};
 
-function toBytes(content: ArrayBuffer | Uint8Array | string): Uint8Array {
+const toBytes = (content: ArrayBuffer | Uint8Array | string): Uint8Array => {
   if (typeof content === 'string') {
     return Buffer.from(content, 'base64');
   }
   return content instanceof Uint8Array ? content : new Uint8Array(content);
-}
+};

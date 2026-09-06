@@ -1,7 +1,7 @@
 import type { SendMailEvent } from './event-types.js';
 
 /** @internal */
-export function validateEvent(event: unknown): asserts event is SendMailEvent {
+export const validateEvent: (event: unknown) => asserts event is SendMailEvent = (event) => {
   if (!event || typeof event !== 'object' || Array.isArray(event)) {
     throw new Error('event must be an object');
   }
@@ -37,18 +37,18 @@ export function validateEvent(event: unknown): asserts event is SendMailEvent {
   if (value.metadata !== undefined && (typeof value.metadata !== 'object' || Array.isArray(value.metadata))) {
     throw new Error('metadata must be an object');
   }
-}
+};
 
-function requireString(value: unknown, name: string): asserts value is string {
+const requireString: (value: unknown, name: string) => asserts value is string = (value, name) => {
   if (typeof value !== 'string' || value.length === 0 || /[\r\n]/.test(value)) {
     throw new Error(`${name} must be a non-empty string without CR or LF`);
   }
-}
+};
 
-function requireAddresses(value: unknown, name: string, required: boolean): asserts value is string[] | undefined {
+const requireAddresses: (value: unknown, name: string, required: boolean) => asserts value is string[] | undefined = (value, name, required) => {
   if (value === undefined && !required) return;
   if (!Array.isArray(value) || (required && value.length === 0)) {
     throw new Error(`${name} must be a non-empty array`);
   }
   for (const address of value) requireString(address, `${name}[]`);
-}
+};

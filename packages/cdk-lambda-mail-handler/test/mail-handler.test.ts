@@ -3,9 +3,13 @@ import { processMail, type MailHandlerConfig, type MailHandlerDependencies } fro
 
 const TestClient = vi.fn<(_config: Record<string, unknown>) => void>();
 
-const TestCommand = vi.fn<(input: unknown) => void>(function (this: { input: unknown }, input: unknown): void {
-  this.input = input;
-});
+class TestCommand {
+  public readonly input: unknown;
+
+  public constructor(input: unknown) {
+    this.input = input;
+  }
+}
 
 type Send = (command: unknown) => Promise<unknown>;
 
@@ -21,7 +25,7 @@ const sdk: MailHandlerDependencies['sdk'] = {
   SESv2Client: TestClient,
 };
 
-function config(mode: 'CATCH' | 'RELAY'): MailHandlerConfig {
+const config = (mode: 'CATCH' | 'RELAY'): MailHandlerConfig => {
   return {
     mode,
     bucketName: 'mail-bucket',
@@ -31,9 +35,9 @@ function config(mode: 'CATCH' | 'RELAY'): MailHandlerConfig {
       configurationSetName: 'test-config-set',
     },
   };
-}
+};
 
-function dependencies(overrides: Partial<MailHandlerDependencies> = {}): MailHandlerDependencies {
+const dependencies = (overrides: Partial<MailHandlerDependencies> = {}): MailHandlerDependencies => {
   return {
     ddb: { send: vi.fn<Send>().mockResolvedValue({}) },
     s3: { send: vi.fn<Send>().mockResolvedValue({}) },
@@ -41,7 +45,7 @@ function dependencies(overrides: Partial<MailHandlerDependencies> = {}): MailHan
     sdk,
     ...overrides,
   };
-}
+};
 
 test('validates, creates MIME, and stores a message with an S3 attachment', async () => {
   const s3 = {

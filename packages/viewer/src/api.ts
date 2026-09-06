@@ -15,12 +15,12 @@ export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>
  * default is relative to the document. `?api=` points a bundle at a different
  * backend, which is what makes one build usable against more than one of them.
  */
-export function resolveApiBase(documentBaseUri: string, search = ''): string {
+export const resolveApiBase = (documentBaseUri: string, search = ''): string => {
   const override = new URLSearchParams(search).get('api');
   const base = override ?? 'api/';
   const resolved = new URL(base, documentBaseUri).toString();
   return resolved.endsWith('/') ? resolved : `${resolved}/`;
-}
+};
 
 export interface ListMessagesOptions {
   mailbox?: string;
@@ -75,7 +75,7 @@ export class MailCatcherClient {
   }
 }
 
-async function readErrorMessage(response: Response): Promise<string> {
+const readErrorMessage = async (response: Response): Promise<string> => {
   try {
     const result = apiErrorSchema.safeParse(await response.json());
     if (result.success) {
@@ -85,4 +85,4 @@ async function readErrorMessage(response: Response): Promise<string> {
     // Fall through to the status line below.
   }
   return `Request failed with status ${response.status}`;
-}
+};

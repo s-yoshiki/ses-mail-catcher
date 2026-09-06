@@ -11,7 +11,7 @@ export interface HtmlPreviewProps {
  * input, and an empty sandbox denies scripts, forms, popups and same-origin
  * access to the viewer itself.
  */
-export function HtmlPreview({ html }: HtmlPreviewProps): JSX.Element {
+export const HtmlPreview = ({ html }: HtmlPreviewProps): JSX.Element => {
   return (
     <iframe
       className="html-preview"
@@ -21,4 +21,4 @@ export function HtmlPreview({ html }: HtmlPreviewProps): JSX.Element {
       srcDoc={html}
     />
   );
-}
+};

@@ -85,7 +85,7 @@ describe('local SES server', () => {
 });
 
 describe('viewer API', () => {
-  async function seed(): Promise<{ url: string; id: string }> {
+  const seed = async (): Promise<{ url: string; id: string }> => {
     const directory = await mkdtemp(join(tmpdir(), 'ses-mail-catcher-api-'));
     temporaryDirectories.push(directory);
     const server = await startServer({ dbPath: join(directory, 'mailbox.sqlite3'), port: 0 });
@@ -114,7 +114,7 @@ describe('viewer API', () => {
 
     const { MessageId } = await response.json() as { MessageId: string };
     return { url: server.url, id: MessageId };
-  }
+  };
 
   it('lists messages together with the known mailboxes', async () => {
     const { url } = await seed();

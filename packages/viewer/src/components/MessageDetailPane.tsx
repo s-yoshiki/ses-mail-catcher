@@ -15,7 +15,7 @@ export interface MessageDetailPaneProps {
   readonly error: string | undefined;
 }
 
-export function MessageDetailPane(props: MessageDetailPaneProps): JSX.Element {
+export const MessageDetailPane = (props: MessageDetailPaneProps): JSX.Element => {
   if (props.error !== undefined) {
     return <section className="detail"><p className="banner banner-error">{props.error}</p></section>;
   }
@@ -31,14 +31,14 @@ export function MessageDetailPane(props: MessageDetailPaneProps): JSX.Element {
   // Keying on the message id resets the tab and the fetched raw body when the
   // selection changes, instead of synchronising them from an effect.
   return <MessageBody key={props.detail.id} client={props.client} detail={props.detail} />;
-}
+};
 
 interface MessageBodyProps {
   readonly client: MailCatcherClient;
   readonly detail: MessageDetail;
 }
 
-function MessageBody({ client, detail }: MessageBodyProps): JSX.Element {
+const MessageBody = ({ client, detail }: MessageBodyProps): JSX.Element => {
   const [tab, setTab] = useState<Tab>(detail.content.html ? 'html' : 'text');
   const [raw, setRaw] = useState<string | undefined>(undefined);
   const [rawError, setRawError] = useState<string | undefined>(undefined);
@@ -110,7 +110,7 @@ function MessageBody({ client, detail }: MessageBodyProps): JSX.Element {
       </div>
     </section>
   );
-}
+};
 
 interface TabButtonProps {
   readonly current: Tab;
@@ -120,7 +120,7 @@ interface TabButtonProps {
   readonly children: ReactNode;
 }
 
-function TabButton(props: TabButtonProps): JSX.Element {
+const TabButton = (props: TabButtonProps): JSX.Element => {
   return (
     <button
       type="button"
@@ -133,4 +133,4 @@ function TabButton(props: TabButtonProps): JSX.Element {
       {props.children}
     </button>
   );
-}
+};
