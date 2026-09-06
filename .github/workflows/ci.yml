@@ -1,11 +1,13 @@
 name: CI
 
 # Pull requests are gated by the build workflow, which runs the same checks and
-# additionally produces the release artifact. This workflow guards main itself.
+# additionally produces the release artifact. This workflow guards the
+# integration and release branches after merges.
 on:
   push:
     branches:
       - main
+      - develop
 
 permissions:
   contents: read

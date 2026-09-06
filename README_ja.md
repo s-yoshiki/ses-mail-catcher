@@ -107,6 +107,7 @@ Construct API、viewer の設定、IAM 権限、公開方法の詳細は [`packa
 
 - [アーキテクチャ](./docs/architecture.md)
 - [開発ガイド](./docs/development.md)
+- [ブランチ運用戦略](./docs/branching-strategy.md)
 - [リリースガイド](./docs/release.md)
 - [デプロイ可能な CDK サンプル](./examples/cdk/README.md)
 - [AWS SDK でメールを送信するサンプル](./examples/sdk/README.md)

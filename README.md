@@ -133,6 +133,7 @@ API, viewer configuration, IAM permissions, and publishing details.
 
 - [Architecture](./docs/architecture.md)
 - [Development guide](./docs/development.md)
+- [Branching strategy](./docs/branching-strategy.md)
 - [Release guide](./docs/release.md)
 - [Deployable CDK example](./examples/cdk/README.md)
 - [AWS SDK mail sender example](./examples/sdk/README.md)
