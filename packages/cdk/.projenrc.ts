@@ -14,7 +14,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
   packageManager: javascript.NodePackageManager.PNPM,
   pnpmVersion: '11.25.0',
   projenCommand: 'projen --no-post',
-  projenVersion: '^0.103.16',
+  projenVersion: '^0.103.19',
   devDeps: [
     '@types/node@^26.4.1',
     'commit-and-tag-version@^13.1.2',
@@ -23,6 +23,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
     'jsii-pacmak@^1.140.0',
     'oxlint@^1.81.0',
     'postal-mime@^3.0.0',
+    'ses-mail-catcher-api-contract@workspace:*',
     'ses-mail-catcher-viewer@workspace:*',
     'tsx@^4.23.13',
     'vitest@^5.0.0',

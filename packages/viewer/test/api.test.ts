@@ -1,7 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
+import { http, HttpResponse } from 'msw';
+import { describe, expect, it } from 'vitest';
 
-import type { FetchLike } from '../src/api.js';
 import { MailCatcherClient, resolveApiBase } from '../src/api.js';
+import { server } from './setup.js';
 
 describe('resolveApiBase', () => {
   it('defaults to the api path next to the document', () => {
@@ -19,16 +20,35 @@ describe('resolveApiBase', () => {
 });
 
 describe('MailCatcherClient', () => {
+  it('reads list and detail responses from the default MSW handlers', async () => {
+    const client = new MailCatcherClient('http://localhost/api/');
+
+    const list = await client.listMessages();
+    const detail = await client.getMessage('mock-welcome');
+
+    expect(list.messages.map((message) => message.id)).toEqual(['mock-welcome', 'mock-orders']);
+    expect(list.messages[0]).not.toHaveProperty('content');
+    expect(detail.content.html).toContain('This message is served by MSW.');
+  });
+
+  it('rejects a response that does not match the shared contract', async () => {
+    server.use(http.get('*/api/messages', () => HttpResponse.json({ messages: [], mailboxes: [42] })));
+    const client = new MailCatcherClient('http://localhost/api/');
+
+    await expect(client.listMessages()).rejects.toThrow('Invalid input');
+  });
+
   it('builds a filtered list request', async () => {
-    const fetchImpl = vi.fn<FetchLike>().mockResolvedValue(jsonResponse({ messages: [], mailboxes: [] }));
-    const client = new MailCatcherClient('http://localhost/api/', fetchImpl);
+    const client = new MailCatcherClient('http://localhost/api/');
+
+    server.use(http.get('*/api/messages', ({ request }) => {
+      const url = new URL(request.url);
+      expect(url.searchParams.get('mailbox')).toBe('orders');
+      expect(url.searchParams.get('limit')).toBe('25');
+      return HttpResponse.json({ messages: [], mailboxes: ['orders'] });
+    }));
 
     await client.listMessages({ mailbox: 'orders', limit: 25 });
-
-    expect(fetchImpl).toHaveBeenCalledWith(
-      'http://localhost/api/messages?mailbox=orders&limit=25',
-      expect.objectContaining({ headers: { accept: 'application/json' } }),
-    );
   });
 
   it('escapes identifiers in resource URLs', () => {
@@ -39,23 +59,18 @@ describe('MailCatcherClient', () => {
   });
 
   it('surfaces the server error message', async () => {
-    const fetchImpl = vi.fn<FetchLike>().mockResolvedValue(jsonResponse({ message: 'Message not found' }, 404));
-    const client = new MailCatcherClient('http://localhost/api/', fetchImpl);
+    server.use(http.get('*/api/messages/:id', () => {
+      return HttpResponse.json({ message: 'Message not found' }, { status: 404 });
+    }));
+    const client = new MailCatcherClient('http://localhost/api/');
 
     await expect(client.getMessage('missing')).rejects.toThrow('Message not found');
   });
 
   it('falls back to the status code when the error body is not JSON', async () => {
-    const fetchImpl = vi.fn<FetchLike>().mockResolvedValue(new Response('boom', { status: 500 }));
-    const client = new MailCatcherClient('http://localhost/api/', fetchImpl);
+    server.use(http.get('*/api/messages/:id', () => new HttpResponse('boom', { status: 500 })));
+    const client = new MailCatcherClient('http://localhost/api/');
 
     await expect(client.getMessage('any')).rejects.toThrow('Request failed with status 500');
   });
 });
-
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}

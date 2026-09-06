@@ -1,3 +1,9 @@
+import {
+  apiErrorSchema,
+  messageDetailSchema,
+  messageListResponseSchema,
+} from 'ses-mail-catcher-api-contract';
+
 import type { MessageDetail, MessageListResponse } from './types.js';
 
 export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
@@ -37,11 +43,11 @@ export class MailCatcherClient {
       query.set('limit', String(options.limit));
     }
     const suffix = query.size > 0 ? `?${query.toString()}` : '';
-    return this.requestJson<MessageListResponse>(`messages${suffix}`, options.signal);
+    return this.requestJson<MessageListResponse>(`messages${suffix}`, messageListResponseSchema, options.signal);
   }
 
   public async getMessage(id: string, signal?: AbortSignal): Promise<MessageDetail> {
-    return this.requestJson<MessageDetail>(`messages/${encodeURIComponent(id)}`, signal);
+    return this.requestJson<MessageDetail>(`messages/${encodeURIComponent(id)}`, messageDetailSchema, signal);
   }
 
   public rawUrl(id: string): string {
@@ -52,7 +58,11 @@ export class MailCatcherClient {
     return new URL(`messages/${encodeURIComponent(id)}/attachments/${index}`, this.base).toString();
   }
 
-  private async requestJson<T>(path: string, signal?: AbortSignal): Promise<T> {
+  private async requestJson<T>(
+    path: string,
+    schema: { parse: (value: unknown) => T },
+    signal?: AbortSignal,
+  ): Promise<T> {
     const response = await this.fetchImpl(new URL(path, this.base).toString(), {
       headers: { accept: 'application/json' },
       ...(signal ? { signal } : {}),
@@ -61,15 +71,15 @@ export class MailCatcherClient {
     if (!response.ok) {
       throw new Error(await readErrorMessage(response));
     }
-    return await response.json() as T;
+    return schema.parse(await response.json());
   }
 }
 
 async function readErrorMessage(response: Response): Promise<string> {
   try {
-    const body = await response.json() as { message?: unknown };
-    if (typeof body.message === 'string') {
-      return body.message;
+    const result = apiErrorSchema.safeParse(await response.json());
+    if (result.success) {
+      return result.data.message;
     }
   } catch {
     // Fall through to the status line below.
