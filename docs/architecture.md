@@ -7,7 +7,9 @@ Application
    ├─ local SES v2 endpoint ──> packages/local ──> SQLite cache
    │                                  └─ serves packages/viewer at /
    └─ SendMailEvent invoke ──> packages/cdk ──> Lambda ──> S3 + DynamoDB
-                                                        └─> SES (RELAY only)
+                                       │                └─> SES (RELAY only)
+                                       └─ viewer function URL ──> serves
+                                          packages/viewer over the same data
 ```
 
 ## CDK / AWS serverless
@@ -60,6 +62,22 @@ resolves its API root from the document, so any host that answers the `/api`
 contract in `packages/viewer/src/types.ts` can serve it. Message HTML is
 rendered inside an iframe with an empty `sandbox` attribute, because captured
 mail is untrusted input.
+
+Two backends serve it today:
+
+- `packages/local` over SQLite, from its own HTTP server.
+- `packages/cdk` over DynamoDB and S3, from an optional Lambda function URL.
+
+The CDK viewer is opt-in and refuses to exist without access control. Basic
+authentication reads its credentials from Secrets Manager at run time, so they
+stay out of the template, and the address allow list matches the function URL
+request context rather than a forwarded header. Both are enforced inside the
+function, because a function URL a browser can open is unauthenticated at the
+AWS layer.
+
+The Lambda asset is the compiled `lib` directory and carries no `node_modules`,
+so the build copies the viewer bundle into `lib/viewer` and vendors the MIME
+parser into `lib/vendor`.
 
 ## Distribution
 

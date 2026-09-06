@@ -256,6 +256,9 @@
       "steps": [
         {
           "spawn": "docgen"
+        },
+        {
+          "exec": "node scripts/copy-viewer-assets.mjs"
         }
       ]
     },
@@ -365,7 +368,9 @@
             "jsii-rosetta",
             "jsii",
             "oxlint",
+            "postal-mime",
             "projen",
+            "ses-mail-catcher-viewer",
             "tsx",
             "typescript",
             "vitest",

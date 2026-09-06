@@ -5,6 +5,7 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import { Construct } from 'constructs';
 
 const packageLibDirectory = dirname(fileURLToPath(import.meta.url));
@@ -38,6 +39,61 @@ export interface RelayOptions {
   readonly feedbackForwardingEmailAddress?: string;
 }
 
+/** Basic authentication credentials for the hosted viewer. */
+export interface ViewerBasicAuth {
+  /**
+   * A secret holding the credentials as JSON.
+   *
+   * The value is read by the viewer function at run time, so the credentials
+   * never appear in the synthesized template.
+   */
+  readonly secret: secretsmanager.ISecret;
+
+  /** The JSON field holding the user name. @default username */
+  readonly usernameField?: string;
+
+  /** The JSON field holding the password. @default password */
+  readonly passwordField?: string;
+}
+
+/** Settings for the hosted message viewer. */
+export interface ViewerOptions {
+  /**
+   * How the function URL itself is authorised.
+   *
+   * The default lets a browser open the viewer, which means the checks below
+   * are the ones protecting captured mail. Use `AWS_IAM` when the viewer is
+   * reached through a signing client instead of a browser.
+   *
+   * @default lambda.FunctionUrlAuthType.NONE
+   */
+  readonly authType?: lambda.FunctionUrlAuthType;
+
+  /** Basic authentication enforced by the viewer function. */
+  readonly basicAuth?: ViewerBasicAuth;
+
+  /**
+   * The IPv4 and IPv6 ranges allowed to reach the viewer.
+   *
+   * The address is taken from the function URL request context, not from a
+   * forwarded header, so it cannot be spoofed by the caller.
+   */
+  readonly allowedIpCidrs?: string[];
+
+  /**
+   * Acknowledges a viewer that anyone with the URL can read.
+   *
+   * Without basic authentication or an address range, the construct refuses to
+   * create an unauthenticated viewer unless this is set.
+   *
+   * @default false
+   */
+  readonly allowPublicAccess?: boolean;
+
+  /** How long a viewer request may run. @default Duration.seconds(30) */
+  readonly timeout?: Duration;
+}
+
 /** Properties for {@link SesMailCatcher}. */
 export interface SesMailCatcherProps {
   /** How long captured messages remain available. @default Duration.days(7) */
@@ -51,6 +107,13 @@ export interface SesMailCatcherProps {
 
   /** Optional settings for relay mode. */
   readonly relay?: RelayOptions;
+
+  /**
+   * Serves a browser viewer for captured mail from a Lambda function URL.
+   *
+   * Omitted by default: no viewer function and no URL are created.
+   */
+  readonly viewer?: ViewerOptions;
 }
 
 /**
@@ -78,6 +141,12 @@ export class SesMailCatcher extends Construct {
 
   /** The configured mail handling mode. */
   public readonly mode: MailMode;
+
+  /** The function serving the viewer, when one is configured. */
+  public readonly viewerFunction?: lambda.Function;
+
+  /** The URL the viewer is served from, when one is configured. */
+  public readonly viewerUrl?: string;
 
   public constructor(scope: Construct, id: string, props: SesMailCatcherProps = {}) {
     super(scope, id);
@@ -146,6 +215,62 @@ export class SesMailCatcher extends Construct {
         resources: this.relayResources(relay),
       }));
     }
+
+    if (props.viewer !== undefined) {
+      const viewer = this.createViewer(props.viewer);
+      this.viewerFunction = viewer.function;
+      this.viewerUrl = viewer.url;
+    }
+  }
+
+  private createViewer(options: ViewerOptions): { function: lambda.Function; url: string } {
+    if (this.mode !== MailMode.CATCH) {
+      throw new Error('the viewer only has messages to show in CATCH mode');
+    }
+
+    const authType = options.authType ?? lambda.FunctionUrlAuthType.NONE;
+    const allowedIpCidrs = options.allowedIpCidrs ?? [];
+    if (
+      authType === lambda.FunctionUrlAuthType.NONE
+      && options.basicAuth === undefined
+      && allowedIpCidrs.length === 0
+      && options.allowPublicAccess !== true
+    ) {
+      throw new Error(
+        'an unauthenticated viewer would expose captured mail to anyone with the URL; '
+        + 'set viewer.basicAuth, viewer.allowedIpCidrs, an authType of AWS_IAM, or acknowledge it with viewer.allowPublicAccess',
+      );
+    }
+
+    const usernameField = options.basicAuth?.usernameField ?? 'username';
+    const passwordField = options.basicAuth?.passwordField ?? 'password';
+    const viewerFunction = new lambda.Function(this, 'ViewerHandler', {
+      code: lambda.Code.fromAsset(join(packageLibDirectory, '../lib')),
+      description: 'Serves captured mail for ses-mail-catcher',
+      environment: {
+        METADATA_TABLE_NAME: this.table.tableName,
+        STORAGE_BUCKET_NAME: this.bucket.bucketName,
+        ...(allowedIpCidrs.length > 0 ? { VIEWER_ALLOWED_CIDRS: allowedIpCidrs.join(',') } : {}),
+        ...(options.basicAuth
+          ? {
+            VIEWER_BASIC_AUTH_SECRET_ARN: options.basicAuth.secret.secretArn,
+            VIEWER_BASIC_AUTH_USERNAME_FIELD: usernameField,
+            VIEWER_BASIC_AUTH_PASSWORD_FIELD: passwordField,
+          }
+          : {}),
+      },
+      handler: 'viewer-handler.handler',
+      memorySize: 512,
+      runtime: lambda.Runtime.NODEJS_22_X,
+      timeout: options.timeout ?? Duration.seconds(30),
+    });
+
+    this.bucket.grantRead(viewerFunction);
+    this.table.grantReadData(viewerFunction);
+    options.basicAuth?.secret.grantRead(viewerFunction);
+
+    const functionUrl = viewerFunction.addFunctionUrl({ authType });
+    return { function: viewerFunction, url: functionUrl.url };
   }
 
   /**

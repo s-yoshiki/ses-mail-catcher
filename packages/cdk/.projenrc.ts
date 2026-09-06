@@ -22,6 +22,8 @@ const project = new awscdk.AwsCdkConstructLibrary({
     'jsii-docgen@^10.12.6',
     'jsii-pacmak@^1.140.0',
     'oxlint@^1.81.0',
+    'postal-mime@^3.0.0',
+    'ses-mail-catcher-viewer@workspace:*',
     'tsx@^4.23.13',
     'vitest@^5.0.0',
   ],
@@ -72,6 +74,11 @@ project.testTask.reset('vitest run', { receiveArgs: true });
 project.tasks.tryFind('test:watch')?.reset('vitest');
 project.setScript('test', 'vitest run');
 project.setScript('test:watch', 'vitest');
+// The viewer function serves the built single page app and parses MIME, so
+// both have to travel inside the Lambda asset, which is the compiled lib
+// directory and carries no node_modules.
+project.postCompileTask.exec('node scripts/copy-viewer-assets.mjs');
+
 project.package.addVersion('0.1.0');
 
 project.synth();

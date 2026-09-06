@@ -157,6 +157,8 @@ Any object.
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.function">function</a></code> | <code>aws-cdk-lib.aws_lambda.Function</code> | The Lambda function that receives mail events. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.mode">mode</a></code> | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailMode">MailMode</a></code> | The configured mail handling mode. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.table">table</a></code> | <code>aws-cdk-lib.aws_dynamodb.ITable</code> | The message metadata table. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerFunction">viewerFunction</a></code> | <code>aws-cdk-lib.aws_lambda.Function</code> | The function serving the viewer, when one is configured. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerUrl">viewerUrl</a></code> | <code>string</code> | The URL the viewer is served from, when one is configured. |
 
 ---
 
@@ -217,6 +219,30 @@ public readonly table: ITable;
 - *Type:* aws-cdk-lib.aws_dynamodb.ITable
 
 The message metadata table.
+
+---
+
+##### `viewerFunction`<sup>Optional</sup> <a name="viewerFunction" id="@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerFunction"></a>
+
+```typescript
+public readonly viewerFunction: Function;
+```
+
+- *Type:* aws-cdk-lib.aws_lambda.Function
+
+The function serving the viewer, when one is configured.
+
+---
+
+##### `viewerUrl`<sup>Optional</sup> <a name="viewerUrl" id="@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerUrl"></a>
+
+```typescript
+public readonly viewerUrl: string;
+```
+
+- *Type:* string
+
+The URL the viewer is served from, when one is configured.
 
 ---
 
@@ -580,6 +606,7 @@ const sesMailCatcherProps: SesMailCatcherProps = { ... }
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcherProps.property.relay">relay</a></code> | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.RelayOptions">RelayOptions</a></code> | Optional settings for relay mode. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcherProps.property.retention">retention</a></code> | <code>aws-cdk-lib.Duration</code> | How long captured messages remain available. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcherProps.property.storage">storage</a></code> | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailStorage">MailStorage</a></code> | Existing or custom storage resources. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcherProps.property.viewer">viewer</a></code> | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions">ViewerOptions</a></code> | Serves a browser viewer for captured mail from a Lambda function URL. |
 
 ---
 
@@ -630,6 +657,180 @@ public readonly storage: MailStorage;
 - *Type:* <a href="#@s-yoshiki/cdk-ses-mail-catcher.MailStorage">MailStorage</a>
 
 Existing or custom storage resources.
+
+---
+
+##### `viewer`<sup>Optional</sup> <a name="viewer" id="@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcherProps.property.viewer"></a>
+
+```typescript
+public readonly viewer: ViewerOptions;
+```
+
+- *Type:* <a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions">ViewerOptions</a>
+
+Serves a browser viewer for captured mail from a Lambda function URL.
+
+Omitted by default: no viewer function and no URL are created.
+
+---
+
+### ViewerBasicAuth <a name="ViewerBasicAuth" id="@s-yoshiki/cdk-ses-mail-catcher.ViewerBasicAuth"></a>
+
+Basic authentication credentials for the hosted viewer.
+
+#### Initializer <a name="Initializer" id="@s-yoshiki/cdk-ses-mail-catcher.ViewerBasicAuth.Initializer"></a>
+
+```typescript
+import { ViewerBasicAuth } from '@s-yoshiki/cdk-ses-mail-catcher'
+
+const viewerBasicAuth: ViewerBasicAuth = { ... }
+```
+
+#### Properties <a name="Properties" id="Properties"></a>
+
+| **Name** | **Type** | **Description** |
+| --- | --- | --- |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerBasicAuth.property.secret">secret</a></code> | <code>aws-cdk-lib.aws_secretsmanager.ISecret</code> | A secret holding the credentials as JSON. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerBasicAuth.property.passwordField">passwordField</a></code> | <code>string</code> | The JSON field holding the password. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerBasicAuth.property.usernameField">usernameField</a></code> | <code>string</code> | The JSON field holding the user name. |
+
+---
+
+##### `secret`<sup>Required</sup> <a name="secret" id="@s-yoshiki/cdk-ses-mail-catcher.ViewerBasicAuth.property.secret"></a>
+
+```typescript
+public readonly secret: ISecret;
+```
+
+- *Type:* aws-cdk-lib.aws_secretsmanager.ISecret
+
+A secret holding the credentials as JSON.
+
+The value is read by the viewer function at run time, so the credentials
+never appear in the synthesized template.
+
+---
+
+##### `passwordField`<sup>Optional</sup> <a name="passwordField" id="@s-yoshiki/cdk-ses-mail-catcher.ViewerBasicAuth.property.passwordField"></a>
+
+```typescript
+public readonly passwordField: string;
+```
+
+- *Type:* string
+- *Default:* password
+
+The JSON field holding the password.
+
+---
+
+##### `usernameField`<sup>Optional</sup> <a name="usernameField" id="@s-yoshiki/cdk-ses-mail-catcher.ViewerBasicAuth.property.usernameField"></a>
+
+```typescript
+public readonly usernameField: string;
+```
+
+- *Type:* string
+- *Default:* username
+
+The JSON field holding the user name.
+
+---
+
+### ViewerOptions <a name="ViewerOptions" id="@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions"></a>
+
+Settings for the hosted message viewer.
+
+#### Initializer <a name="Initializer" id="@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.Initializer"></a>
+
+```typescript
+import { ViewerOptions } from '@s-yoshiki/cdk-ses-mail-catcher'
+
+const viewerOptions: ViewerOptions = { ... }
+```
+
+#### Properties <a name="Properties" id="Properties"></a>
+
+| **Name** | **Type** | **Description** |
+| --- | --- | --- |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.allowedIpCidrs">allowedIpCidrs</a></code> | <code>string[]</code> | The IPv4 and IPv6 ranges allowed to reach the viewer. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.allowPublicAccess">allowPublicAccess</a></code> | <code>boolean</code> | Acknowledges a viewer that anyone with the URL can read. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.authType">authType</a></code> | <code>aws-cdk-lib.aws_lambda.FunctionUrlAuthType</code> | How the function URL itself is authorised. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.basicAuth">basicAuth</a></code> | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerBasicAuth">ViewerBasicAuth</a></code> | Basic authentication enforced by the viewer function. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.timeout">timeout</a></code> | <code>aws-cdk-lib.Duration</code> | How long a viewer request may run. |
+
+---
+
+##### `allowedIpCidrs`<sup>Optional</sup> <a name="allowedIpCidrs" id="@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.allowedIpCidrs"></a>
+
+```typescript
+public readonly allowedIpCidrs: string[];
+```
+
+- *Type:* string[]
+
+The IPv4 and IPv6 ranges allowed to reach the viewer.
+
+The address is taken from the function URL request context, not from a
+forwarded header, so it cannot be spoofed by the caller.
+
+---
+
+##### `allowPublicAccess`<sup>Optional</sup> <a name="allowPublicAccess" id="@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.allowPublicAccess"></a>
+
+```typescript
+public readonly allowPublicAccess: boolean;
+```
+
+- *Type:* boolean
+- *Default:* false
+
+Acknowledges a viewer that anyone with the URL can read.
+
+Without basic authentication or an address range, the construct refuses to
+create an unauthenticated viewer unless this is set.
+
+---
+
+##### `authType`<sup>Optional</sup> <a name="authType" id="@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.authType"></a>
+
+```typescript
+public readonly authType: FunctionUrlAuthType;
+```
+
+- *Type:* aws-cdk-lib.aws_lambda.FunctionUrlAuthType
+- *Default:* lambda.FunctionUrlAuthType.NONE
+
+How the function URL itself is authorised.
+
+The default lets a browser open the viewer, which means the checks below
+are the ones protecting captured mail. Use `AWS_IAM` when the viewer is
+reached through a signing client instead of a browser.
+
+---
+
+##### `basicAuth`<sup>Optional</sup> <a name="basicAuth" id="@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.basicAuth"></a>
+
+```typescript
+public readonly basicAuth: ViewerBasicAuth;
+```
+
+- *Type:* <a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerBasicAuth">ViewerBasicAuth</a>
+
+Basic authentication enforced by the viewer function.
+
+---
+
+##### `timeout`<sup>Optional</sup> <a name="timeout" id="@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.timeout"></a>
+
+```typescript
+public readonly timeout: Duration;
+```
+
+- *Type:* aws-cdk-lib.Duration
+- *Default:* Duration.seconds(30)
+
+How long a viewer request may run.
 
 ---
 

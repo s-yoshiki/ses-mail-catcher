@@ -47,9 +47,15 @@ importers:
       oxlint:
         specifier: ^1.81.0
         version: 1.81.0
+      postal-mime:
+        specifier: ^3.0.0
+        version: 3.0.0
       projen:
         specifier: ^0.103.16
         version: 0.103.16(constructs@10.8.1)
+      ses-mail-catcher-viewer:
+        specifier: workspace:*
+        version: link:../viewer
       tsx:
         specifier: ^4.23.13
         version: 4.23.13

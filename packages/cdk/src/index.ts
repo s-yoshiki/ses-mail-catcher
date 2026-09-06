@@ -10,4 +10,6 @@ export type {
   MailStorage,
   RelayOptions,
   SesMailCatcherProps,
+  ViewerBasicAuth,
+  ViewerOptions,
 } from './ses-mail-catcher.js';

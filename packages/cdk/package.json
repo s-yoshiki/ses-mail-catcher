@@ -48,7 +48,9 @@
     "jsii-pacmak": "^1.140.0",
     "jsii-rosetta": "~6.0.13",
     "oxlint": "^1.81.0",
+    "postal-mime": "^3.0.0",
     "projen": "^0.103.16",
+    "ses-mail-catcher-viewer": "workspace:*",
     "tsx": "^4.23.13",
     "typescript": "~7.0.2",
     "vitest": "^5.0.0"

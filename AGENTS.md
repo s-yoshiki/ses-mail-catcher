@@ -20,6 +20,7 @@ This repository is an ESM-first pnpm + Turborepo monorepo for `ses-mail-catcher`
 - Preserve the existing Lambda + S3 + DynamoDB architecture for the CDK package.
 - Keep the viewer backend-agnostic. `packages/viewer/src/types.ts` is the `/api` contract; every backend that serves the viewer answers the same shapes.
 - Render captured message HTML only inside a sandboxed iframe. It is untrusted input.
+- The AWS viewer must not be creatable without access control, and its credentials must never reach the synthesized template.
 
 ## Commands
 
