@@ -183,9 +183,10 @@ export class SesMailCatcher extends Construct {
 
     const relay = props.relay ?? {};
     this.function = new lambda.Function(this, 'MailHandler', {
-      // The handler is compiled from src/mail-handler.ts and included in the
-      // published lib/ directory. Keeping the asset path deterministic makes
-      // local synthesis and installed-package synthesis behave identically.
+      // The handler is compiled from the cdk-lambda-mail-handler workspace and
+      // included in the published lib/ directory. Keeping the asset path
+      // deterministic makes local synthesis and installed-package synthesis
+      // behave identically.
       code: lambda.Code.fromAsset(join(packageLibDirectory, '../lib')),
       description: 'Captures or relays mail events for ses-mail-catcher',
       environment: {
@@ -197,7 +198,7 @@ export class SesMailCatcher extends Construct {
         ...(relay.fromEmailAddressIdentityArn ? { SES_FROM_EMAIL_ADDRESS_IDENTITY_ARN: relay.fromEmailAddressIdentityArn } : {}),
         ...(relay.feedbackForwardingEmailAddress ? { SES_FEEDBACK_FORWARDING_EMAIL_ADDRESS: relay.feedbackForwardingEmailAddress } : {}),
       },
-      handler: 'mail-handler.handler',
+      handler: 'mail-handler/mail-handler.handler',
       memorySize: 512,
       runtime: lambda.Runtime.NODEJS_22_X,
       timeout: Duration.seconds(30),
@@ -259,7 +260,7 @@ export class SesMailCatcher extends Construct {
           }
           : {}),
       },
-      handler: 'viewer-handler.handler',
+      handler: 'viewer-handler/viewer-handler.handler',
       memorySize: 512,
       runtime: lambda.Runtime.NODEJS_22_X,
       timeout: options.timeout ?? Duration.seconds(30),

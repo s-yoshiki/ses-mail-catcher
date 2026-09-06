@@ -19,7 +19,7 @@ function createStack(mode?: MailMode, relay?: RelayOptions): { stack: Stack; cat
 
 function mailHandlers(template: Template): Record<string, unknown> {
   return template.findResources('AWS::Lambda::Function', {
-    Properties: { Handler: 'mail-handler.handler' },
+    Properties: { Handler: 'mail-handler/mail-handler.handler' },
   });
 }
 
@@ -47,7 +47,7 @@ test('creates catch-mode storage, TTL, and a directly invokable Lambda', () => {
     },
   });
   template.hasResourceProperties('AWS::Lambda::Function', {
-    Handler: 'mail-handler.handler',
+    Handler: 'mail-handler/mail-handler.handler',
     Environment: Match.objectLike({
       Variables: Match.objectLike({
         MAIL_MODE: 'CATCH',
@@ -176,7 +176,7 @@ test('serves the viewer from a function url with an address allow list', () => {
   expect(urls[0]).toMatchObject({ Properties: { AuthType: 'NONE' } });
 
   const viewers = template.findResources('AWS::Lambda::Function', {
-    Properties: { Handler: 'viewer-handler.handler' },
+    Properties: { Handler: 'viewer-handler/viewer-handler.handler' },
   });
   expect(Object.keys(viewers)).toHaveLength(1);
   expect(JSON.stringify(viewers)).toContain('203.0.113.0/24,2001:db8::/32');
@@ -196,7 +196,7 @@ test('reads basic auth credentials from a secret rather than the template', () =
   expect(catcher.viewerUrl).toBeDefined();
 
   template.hasResourceProperties('AWS::Lambda::Function', {
-    Handler: 'viewer-handler.handler',
+    Handler: 'viewer-handler/viewer-handler.handler',
     Environment: Match.objectLike({
       Variables: Match.objectLike({
         VIEWER_BASIC_AUTH_SECRET_ARN: { Ref: Match.stringLikeRegexp('ViewerCredentials') },

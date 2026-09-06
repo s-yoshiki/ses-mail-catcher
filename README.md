@@ -14,7 +14,8 @@ development baseline is Node.js 24 and pnpm 11.25.0.
 | [`ses-mail-catcher-local`](./packages/local) | Local SES v2-compatible server for development and integration tests | SQLite |
 | [`ses-mail-catcher-viewer`](./packages/viewer) | React viewer for captured messages | Bundled into the local server and the AWS viewer |
 | [`ses-mail-catcher-api-contract`](./packages/api-contract) | Shared TypeScript types and Zod schemas for the viewer API | Workspace-only package |
-| [`ses-mail-catcher-lambda`](./packages/lambda) | Lambda handlers and runtime modules used by the CDK construct | Workspace-only package |
+| [`ses-mail-catcher-cdk-lambda-mail-handler`](./packages/cdk-lambda-mail-handler) | Mail Lambda handler used by the CDK construct | Workspace-only package |
+| [`ses-mail-catcher-cdk-lambda-viewer-handler`](./packages/cdk-lambda-viewer-handler) | Viewer Lambda handler used by the CDK construct | Workspace-only package |
 
 ## Development
 
@@ -34,7 +35,8 @@ To run commands for an individual package:
 ```sh
 pnpm --filter @s-yoshiki/cdk-ses-mail-catcher compile
 pnpm --filter @s-yoshiki/cdk-ses-mail-catcher test
-pnpm --filter ses-mail-catcher-lambda test
+pnpm --filter ses-mail-catcher-cdk-lambda-mail-handler test
+pnpm --filter ses-mail-catcher-cdk-lambda-viewer-handler test
 pnpm --filter ses-mail-catcher-local build
 pnpm --filter ses-mail-catcher-local test
 pnpm --filter ses-mail-catcher-viewer dev
@@ -136,7 +138,8 @@ API, viewer configuration, IAM permissions, and publishing details.
 - [AWS SDK mail sender example](./examples/sdk/README.md)
 - [Local server](./packages/local/README.md)
 - [AWS CDK construct](./packages/cdk/README.md)
-- [Lambda workspace](./packages/lambda/README.md)
+- [CDK mail Lambda workspace](./packages/cdk-lambda-mail-handler/README.md)
+- [CDK viewer Lambda workspace](./packages/cdk-lambda-viewer-handler/README.md)
 - [React viewer](./packages/viewer/README.md)
 
 ## Projen

@@ -44,7 +44,12 @@
       "type": "build"
     },
     {
-      "name": "ses-mail-catcher-lambda",
+      "name": "ses-mail-catcher-cdk-lambda-mail-handler",
+      "version": "workspace:*",
+      "type": "build"
+    },
+    {
+      "name": "ses-mail-catcher-cdk-lambda-viewer-handler",
       "version": "workspace:*",
       "type": "build"
     },

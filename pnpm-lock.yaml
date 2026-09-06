@@ -107,9 +107,12 @@ importers:
       projen:
         specifier: ^0.103.19
         version: 0.103.19(constructs@10.8.1)
-      ses-mail-catcher-lambda:
+      ses-mail-catcher-cdk-lambda-mail-handler:
         specifier: workspace:*
-        version: link:../lambda
+        version: link:../cdk-lambda-mail-handler
+      ses-mail-catcher-cdk-lambda-viewer-handler:
+        specifier: workspace:*
+        version: link:../cdk-lambda-viewer-handler
       tsx:
         specifier: ^4.23.13
         version: 4.23.13
@@ -120,7 +123,22 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(@types/node@26.4.1)(msw@2.15.0(@types/node@26.4.1)(typescript@7.0.2))(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0))
 
-  packages/lambda:
+  packages/cdk-lambda-mail-handler:
+    devDependencies:
+      '@types/node':
+        specifier: ^26.4.1
+        version: 26.4.1
+      oxlint:
+        specifier: ^1.81.0
+        version: 1.81.0
+      typescript:
+        specifier: ~7.0.2
+        version: 7.0.2
+      vitest:
+        specifier: ^5.0.0
+        version: 5.0.0(@types/node@26.4.1)(msw@2.15.0(@types/node@26.4.1)(typescript@7.0.2))(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0))
+
+  packages/cdk-lambda-viewer-handler:
     devDependencies:
       '@types/node':
         specifier: ^26.4.1

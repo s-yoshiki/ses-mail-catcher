@@ -123,18 +123,21 @@ The Lambda asset carries the built viewer bundle and a vendored copy of
 `lib/vendor`, because the asset is the compiled `lib` directory and has no
 `node_modules` of its own.
 
-The Lambda implementation is kept as regular TypeScript modules in the private
-[`ses-mail-catcher-lambda`](../lambda) workspace: the handler only orchestrates
-validation, MIME creation, storage, and relay; each concern has its own module
-and AWS clients are injected in tests. The Lambda workspace's compiled asset is
-copied into the CDK package's `lib/` directory and used as the Lambda source.
+The Lambda implementation is kept in two private workspaces:
+[`ses-mail-catcher-cdk-lambda-mail-handler`](../cdk-lambda-mail-handler) owns
+validation, MIME creation, storage, and relay, while
+[`ses-mail-catcher-cdk-lambda-viewer-handler`](../cdk-lambda-viewer-handler)
+owns the viewer API and static assets. Each workspace has its own tests and
+compiled asset; the CDK package copies them into separate directories in its
+`lib/` directory and uses those directories as the Lambda sources.
 
 ## Development
 
 ```sh
 pnpm install
 pnpm build
-pnpm --filter ses-mail-catcher-lambda test
+pnpm --filter ses-mail-catcher-cdk-lambda-mail-handler test
+pnpm --filter ses-mail-catcher-cdk-lambda-viewer-handler test
 pnpm --filter @s-yoshiki/cdk-ses-mail-catcher test
 ```
 

@@ -49,7 +49,8 @@
     "jsii-rosetta": "~6.0.13",
     "oxlint": "^1.81.0",
     "projen": "^0.103.19",
-    "ses-mail-catcher-lambda": "workspace:*",
+    "ses-mail-catcher-cdk-lambda-mail-handler": "workspace:*",
+    "ses-mail-catcher-cdk-lambda-viewer-handler": "workspace:*",
     "tsx": "^4.23.13",
     "typescript": "~7.0.2",
     "vitest": "^5.0.0"
