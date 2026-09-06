@@ -14,7 +14,24 @@
   },
   "categories": {
     "correctness": "deny",
-    "suspicious": "deny"
+    "suspicious": "deny",
+    "pedantic": "warn"
+  },
+  "rules": {
+    "func-style": [
+      "error",
+      "expression",
+      {
+        "allowArrowFunctions": true
+      }
+    ],
+    "prefer-arrow-callback": [
+      "error",
+      {
+        "allowNamedFunctions": false,
+        "allowUnboundThis": true
+      }
+    ]
   },
   "ignorePatterns": [
     "**/node_modules/**",

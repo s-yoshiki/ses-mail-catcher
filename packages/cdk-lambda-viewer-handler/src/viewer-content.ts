@@ -40,15 +40,15 @@ interface MimeParser {
 // postal-mime is vendored into the Lambda asset by the package build, because
 // the asset is the compiled lib directory and carries no node_modules. It is
 // loaded the same way as the AWS SDK so unit tests can inject a parser.
-function loadParser(): MimeParser {
+const loadParser = (): MimeParser => {
   return require('./vendor/postal-mime/postal-mime.cjs') as MimeParser;
-}
+};
 
 /** @internal */
-export async function parseViewerContent(
+export const parseViewerContent = async (
   rawMime: Uint8Array,
   parser: MimeParser = loadParser(),
-): Promise<ViewerContent> {
+): Promise<ViewerContent> => {
   const email = await parser.parse(rawMime, { attachmentEncoding: 'arraybuffer' });
 
   return {
@@ -67,16 +67,16 @@ export async function parseViewerContent(
       };
     }),
   };
-}
+};
 
 /** @internal */
-export function toAttachmentSummaries(content: ViewerContent): ViewerAttachmentSummary[] {
+export const toAttachmentSummaries = (content: ViewerContent): ViewerAttachmentSummary[] => {
   return content.attachments.map(({ content: _content, ...summary }) => summary);
-}
+};
 
-function toBytes(content: ArrayBuffer | Uint8Array | string): Uint8Array {
+const toBytes = (content: ArrayBuffer | Uint8Array | string): Uint8Array => {
   if (typeof content === 'string') {
     return Buffer.from(content, 'base64');
   }
   return content instanceof Uint8Array ? content : new Uint8Array(content);
-}
+};

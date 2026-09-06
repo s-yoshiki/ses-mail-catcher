@@ -26,10 +26,10 @@ export interface ViewerAwsSdkModules {
 // Lambda's supported Node.js runtimes provide these AWS SDK v3 modules. The
 // adapter is isolated so viewer logic can use injected clients in unit tests
 // without embedding a second copy of the SDK in the Lambda asset.
-export function loadViewerAwsSdk(): ViewerAwsSdkModules {
+export const loadViewerAwsSdk = (): ViewerAwsSdkModules => {
   return {
     ...require('@aws-sdk/client-dynamodb'),
     ...require('@aws-sdk/client-s3'),
     ...require('@aws-sdk/client-secrets-manager'),
   };
-}
+};

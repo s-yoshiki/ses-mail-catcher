@@ -146,7 +146,7 @@ jobs:
         run: cd .repo && pnpm i --frozen-lockfile
       - name: Extract build artifact
         id: extract_build_artifact
-        run: tar --strip-components=1 -xzvf dist/js/*.tgz -C .repo
+        run: tar --strip-components=1 -xzvf dist/js/*.tgz -C .repo/packages/cdk
       - name: Move build artifact out of the way
         id: move_build_artifact_out_of_the_way
         run: mv dist dist.old

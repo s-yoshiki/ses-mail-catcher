@@ -34,7 +34,7 @@ const CONTENT: ViewerContent = {
   }],
 };
 
-function baseConfig(overrides: Partial<ViewerHandlerConfig> = {}): ViewerHandlerConfig {
+const baseConfig = (overrides: Partial<ViewerHandlerConfig> = {}): ViewerHandlerConfig => {
   return {
     tableName: 'table',
     bucketName: 'bucket',
@@ -43,9 +43,9 @@ function baseConfig(overrides: Partial<ViewerHandlerConfig> = {}): ViewerHandler
     passwordField: 'password',
     ...overrides,
   };
-}
+};
 
-function baseDependencies(overrides: Partial<ViewerHandlerDependencies> = {}): ViewerHandlerDependencies {
+const baseDependencies = (overrides: Partial<ViewerHandlerDependencies> = {}): ViewerHandlerDependencies => {
   const store = {
     list: async () => [SUMMARY],
     mailboxes: async () => ['orders'],
@@ -66,15 +66,15 @@ function baseDependencies(overrides: Partial<ViewerHandlerDependencies> = {}): V
     parseContent: async () => CONTENT,
     ...overrides,
   };
-}
+};
 
-function request(rawPath: string, overrides: Partial<ViewerRequest> = {}): ViewerRequest {
+const request = (rawPath: string, overrides: Partial<ViewerRequest> = {}): ViewerRequest => {
   return {
     rawPath,
     requestContext: { http: { method: 'GET', sourceIp: '203.0.113.9' } },
     ...overrides,
   };
-}
+};
 
 describe('access control', () => {
   test('challenges an anonymous caller when basic auth is configured', async () => {

@@ -138,11 +138,11 @@ export class ViewerStore {
   }
 }
 
-function readItems(response: unknown): Array<Record<string, AttributeValue>> {
+const readItems = (response: unknown): Array<Record<string, AttributeValue>> => {
   return (response as { Items?: Array<Record<string, AttributeValue>> }).Items ?? [];
-}
+};
 
-function toSummary(item: Record<string, AttributeValue>): ViewerMessageSummary {
+const toSummary = (item: Record<string, AttributeValue>): ViewerMessageSummary => {
   const from = readString(item.from);
   return {
     id: readString(item.messageId) ?? '',
@@ -155,17 +155,17 @@ function toSummary(item: Record<string, AttributeValue>): ViewerMessageSummary {
     size: Number.parseInt(item.size?.N ?? '0', 10),
     mailbox: readString(item.mailbox) ?? 'default',
   };
-}
+};
 
-function readString(value: AttributeValue | undefined): string | undefined {
+const readString = (value: AttributeValue | undefined): string | undefined => {
   return value?.S;
-}
+};
 
-function readStringList(value: AttributeValue | undefined): string[] {
+const readStringList = (value: AttributeValue | undefined): string[] => {
   return (value?.L ?? []).flatMap((entry) => entry.S === undefined ? [] : [entry.S]);
-}
+};
 
-function concat(chunks: Uint8Array[]): Uint8Array {
+const concat = (chunks: Uint8Array[]): Uint8Array => {
   const length = chunks.reduce((total, chunk) => total + chunk.byteLength, 0);
   const result = new Uint8Array(length);
   let offset = 0;
@@ -174,4 +174,4 @@ function concat(chunks: Uint8Array[]): Uint8Array {
     offset += chunk.byteLength;
   }
   return result;
-}
+};

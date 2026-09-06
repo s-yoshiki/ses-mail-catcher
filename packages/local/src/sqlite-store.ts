@@ -145,10 +145,10 @@ export class SqliteStore {
   }
 }
 
-function parseStringArray(value: string): string[] {
+const parseStringArray = (value: string): string[] => {
   const parsed: unknown = JSON.parse(value);
   if (!Array.isArray(parsed) || !parsed.every((item) => typeof item === 'string')) {
     throw new Error('Invalid message address data in SQLite');
   }
   return parsed;
-}
+};

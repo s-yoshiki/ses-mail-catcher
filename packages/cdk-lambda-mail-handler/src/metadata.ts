@@ -9,7 +9,7 @@ export interface AttributeValue {
 }
 
 /** @internal */
-export function createMetadataItem(
+export const createMetadataItem = (
   event: SendMailEvent,
   messageId: string,
   createdAt: string,
@@ -17,7 +17,7 @@ export function createMetadataItem(
   key: string,
   size: number,
   expiresAt: number,
-): Record<string, AttributeValue> {
+): Record<string, AttributeValue> => {
   const item: Record<string, AttributeValue> = {
     mailbox: { S: mailbox },
     sortKey: { S: `${createdAt}#${messageId}` },
@@ -39,8 +39,8 @@ export function createMetadataItem(
     item.metadata = { M: map };
   }
   return item;
-}
+};
 
-function stringList(values: readonly string[]): AttributeValue {
+const stringList = (values: readonly string[]): AttributeValue => {
   return { L: values.map((value) => ({ S: value })) };
-}
+};

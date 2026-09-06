@@ -14,13 +14,28 @@
   },
   "categories": {
     "correctness": "deny",
-    "suspicious": "deny"
+    "suspicious": "deny",
+    "pedantic": "warn"
   },
   "ignorePatterns": [
     "**/node_modules/**",
     "**/dist/**"
   ],
   "rules": {
+    "func-style": [
+      "error",
+      "expression",
+      {
+        "allowArrowFunctions": true
+      }
+    ],
+    "prefer-arrow-callback": [
+      "error",
+      {
+        "allowNamedFunctions": false,
+        "allowUnboundThis": true
+      }
+    ],
     "react/react-in-jsx-scope": "off",
     "import/no-unassigned-import": [
       "error",

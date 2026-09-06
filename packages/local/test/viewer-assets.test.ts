@@ -12,14 +12,14 @@ afterEach(async () => {
   await Promise.all(directories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })));
 });
 
-async function createBundle(): Promise<string> {
+const createBundle = async (): Promise<string> => {
   const root = await mkdtemp(join(tmpdir(), 'ses-mail-catcher-viewer-'));
   directories.push(root);
   await writeFile(join(root, 'index.html'), '<!doctype html><div id="root"></div>');
   await mkdir(join(root, 'assets'));
   await writeFile(join(root, 'assets', 'index-abc.js'), 'console.log(1);');
   return root;
-}
+};
 
 describe('ViewerAssets', () => {
   it('reports no bundle when the directory is missing', async () => {

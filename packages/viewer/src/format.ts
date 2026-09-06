@@ -1,6 +1,6 @@
 const SIZE_UNITS = ['B', 'KB', 'MB', 'GB'];
 
-export function formatSize(bytes: number): string {
+export const formatSize = (bytes: number): string => {
   if (!Number.isFinite(bytes) || bytes < 0) {
     return '-';
   }
@@ -13,9 +13,9 @@ export function formatSize(bytes: number): string {
   }
   const rounded = unit === 0 ? String(Math.round(value)) : value.toFixed(1);
   return `${rounded} ${SIZE_UNITS[unit]}`;
-}
+};
 
-export function formatTimestamp(isoString: string, now = new Date()): string {
+export const formatTimestamp = (isoString: string, now = new Date()): string => {
   const date = new Date(isoString);
   if (Number.isNaN(date.getTime())) {
     return isoString;
@@ -34,17 +34,17 @@ export function formatTimestamp(isoString: string, now = new Date()): string {
       hour: '2-digit',
       minute: '2-digit',
     });
-}
+};
 
-export function formatAddressList(addresses: string[]): string {
+export const formatAddressList = (addresses: string[]): string => {
   return addresses.length > 0 ? addresses.join(', ') : '-';
-}
+};
 
 /**
  * Picks the label shown in the message list. Mail without a subject is common
  * enough in tests that an empty row would be hard to click.
  */
-export function subjectLabel(subject: string): string {
+export const subjectLabel = (subject: string): string => {
   const trimmed = subject.trim();
   return trimmed.length > 0 ? trimmed : '(no subject)';
-}
+};

@@ -6,7 +6,7 @@ import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import { expect, test } from 'vitest';
 import { MailMode, SesMailCatcher, type RelayOptions, type ViewerOptions } from '../src/index.js';
 
-function createStack(mode?: MailMode, relay?: RelayOptions): { stack: Stack; catcher: SesMailCatcher } {
+const createStack = (mode?: MailMode, relay?: RelayOptions): { stack: Stack; catcher: SesMailCatcher } => {
   const app = new App();
   const stack = new Stack(app, 'TestStack', { env: { account: '123456789012', region: 'us-east-1' } });
   const catcher = new SesMailCatcher(stack, 'Catcher', {
@@ -15,13 +15,13 @@ function createStack(mode?: MailMode, relay?: RelayOptions): { stack: Stack; cat
     retention: Duration.days(3),
   });
   return { stack, catcher };
-}
+};
 
-function mailHandlers(template: Template): Record<string, unknown> {
+const mailHandlers = (template: Template): Record<string, unknown> => {
   return template.findResources('AWS::Lambda::Function', {
     Properties: { Handler: 'mail-handler/mail-handler.handler' },
   });
-}
+};
 
 test('creates catch-mode storage, TTL, and a directly invokable Lambda', () => {
   const { stack, catcher } = createStack();
@@ -141,12 +141,12 @@ test('rejects non-positive retention', () => {
   expect(() => new SesMailCatcher(stack, 'Catcher', { retention: Duration.seconds(0) })).toThrow('retention must be greater than zero');
 });
 
-function viewerStack(viewer?: ViewerOptions, mode?: MailMode): Stack {
+const viewerStack = (viewer?: ViewerOptions, mode?: MailMode): Stack => {
   const app = new App();
   const stack = new Stack(app, 'ViewerStack', { env: { account: '123456789012', region: 'us-east-1' } });
   const catcher = new SesMailCatcher(stack, 'Catcher', { mode, viewer, retention: Duration.days(3) });
   return catcher.node.scope as Stack;
-}
+};
 
 test('creates no viewer unless one is asked for', () => {
   const { stack, catcher } = createStack();

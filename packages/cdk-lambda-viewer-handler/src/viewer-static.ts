@@ -63,14 +63,14 @@ export class ViewerStatic {
   }
 }
 
-function decodeUri(value: string): string | undefined {
+const decodeUri = (value: string): string | undefined => {
   try {
     return decodeURIComponent(value);
   } catch {
     return undefined;
   }
-}
+};
 
-function defaultRoot(): string {
+const defaultRoot = (): string => {
   return join(dirname(fileURLToPath(import.meta.url)), 'viewer');
-}
+};

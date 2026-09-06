@@ -36,7 +36,7 @@ export interface RunningLocalServer {
   close(): Promise<void>;
 }
 
-export async function startServer(options: LocalServerOptions = {}): Promise<RunningLocalServer> {
+export const startServer = async (options: LocalServerOptions = {}): Promise<RunningLocalServer> => {
   const host = options.host ?? resolveHost();
   const requestedPort = options.port ?? resolvePort();
   const dbPath = options.dbPath ?? resolveDbPath();
@@ -69,13 +69,13 @@ export async function startServer(options: LocalServerOptions = {}): Promise<Run
       store.close();
     },
   };
-}
+};
 
-async function handleRequest(
+const handleRequest = async (
   request: IncomingMessage,
   response: ServerResponse,
   context: RequestContext,
-): Promise<void> {
+): Promise<void> => {
   const url = new URL(request.url ?? '/', 'http://localhost');
 
   try {
@@ -104,7 +104,7 @@ async function handleRequest(
     }
     writeJson(response, 400, { message });
   }
-}
+};
 
 /**
  * Answers the inspection API.
@@ -112,11 +112,11 @@ async function handleRequest(
  * `/api` is the contract the bundled viewer is built against. The original
  * `/store` routes stay as aliases so existing scripts keep working.
  */
-async function handleApiRequest(
+const handleApiRequest = async (
   url: URL,
   response: ServerResponse,
   store: SqliteStore,
-): Promise<boolean> {
+): Promise<boolean> => {
   if (url.pathname === '/health-check' || url.pathname === '/api/health') {
     writeJson(response, 200, { status: 'ok' });
     return true;
@@ -172,13 +172,13 @@ async function handleApiRequest(
     contentDisposition(attachment.filename),
   );
   return true;
-}
+};
 
-async function handleViewerRequest(
+const handleViewerRequest = async (
   url: URL,
   response: ServerResponse,
   viewer: ViewerAssets | undefined,
-): Promise<boolean> {
+): Promise<boolean> => {
   if (viewer === undefined) {
     if (url.pathname !== '/') {
       return false;
@@ -211,7 +211,7 @@ async function handleViewerRequest(
   });
   response.end(asset.body);
   return true;
-}
+};
 
 type MessageRoute =
   | { kind: 'legacy'; id: string }
@@ -219,7 +219,7 @@ type MessageRoute =
   | { kind: 'raw'; id: string }
   | { kind: 'attachment'; id: string; index: number };
 
-function matchMessageRoute(pathname: string): MessageRoute | undefined {
+const matchMessageRoute = (pathname: string): MessageRoute | undefined => {
   const parts = pathname.split('/').filter(Boolean).map((part) => decodeURIComponent(part));
 
   if (parts[0] === 'store' && parts.length === 2) {
@@ -242,24 +242,24 @@ function matchMessageRoute(pathname: string): MessageRoute | undefined {
     return Number.isInteger(index) && index >= 0 ? { kind: 'attachment', id: parts[2], index } : undefined;
   }
   return undefined;
-}
+};
 
-function parseLimit(value: string | null): number {
+const parseLimit = (value: string | null): number => {
   const limit = Number.parseInt(value ?? '100', 10);
   return Number.isNaN(limit) ? 100 : limit;
-}
+};
 
-function contentDisposition(filename: string): string {
+const contentDisposition = (filename: string): string => {
   // Keep the header itself ASCII and carry the real name in the RFC 5987 form.
   const ascii = filename.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_');
   return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(filename)}`;
-}
+};
 
-function saveSesMessage(
+const saveSesMessage = (
   input: Record<string, unknown>,
   targetHeader: string | string[] | undefined,
   store: SqliteStore,
-): StoredMessage {
+): StoredMessage => {
   const target = Array.isArray(targetHeader) ? targetHeader[0] : targetHeader;
   const operation = target?.split('.').at(-1)?.toLowerCase();
   const content = asRecord(input.Content);
@@ -295,14 +295,14 @@ function saveSesMessage(
   };
 
   return store.save(message);
-}
+};
 
-function createSimpleEmail(
+const createSimpleEmail = (
   input: Record<string, unknown>,
   content: Record<string, unknown> | undefined,
   toAddresses: string[],
   ccAddresses: string[],
-): Uint8Array {
+): Uint8Array => {
   const simple = asRecord(content?.Simple);
   if (!simple) {
     throw new Error('Content.Simple or Content.Raw is required');
@@ -323,25 +323,25 @@ function createSimpleEmail(
     ...(text || html ? { Body: { ...(text ? { Text: text } : {}), ...(html ? { Html: html } : {}) } } : {}),
     ...(attachments && attachments.length > 0 ? { Attachments: attachments } : {}),
   });
-}
+};
 
-function readMailbox(input: Record<string, unknown>): string {
+const readMailbox = (input: Record<string, unknown>): string => {
   const tags = Array.isArray(input.EmailTags) ? input.EmailTags : Array.isArray(input.Tags) ? input.Tags : [];
   const mailboxTag = tags.find((tag): tag is { Name: string; Value: string } => {
     const record = asRecord(tag);
     return asString(record?.Name)?.toLowerCase() === 'mailbox' && typeof record?.Value === 'string';
   });
   return mailboxTag?.Value ?? 'default';
-}
+};
 
-function asAttachment(value: unknown): {
+const asAttachment = (value: unknown): {
   RawContent: string;
   FileName: string;
   ContentDisposition?: string;
   ContentDescription?: string;
   ContentTransferEncoding?: string;
   ContentType?: string;
-} {
+} => {
   const record = asRecord(value);
   const rawContent = asString(record?.RawContent);
   const fileName = asString(record?.FileName);
@@ -356,17 +356,17 @@ function asAttachment(value: unknown): {
     ...(asString(record?.ContentTransferEncoding) ? { ContentTransferEncoding: asString(record?.ContentTransferEncoding) } : {}),
     ...(asString(record?.ContentType) ? { ContentType: asString(record?.ContentType) } : {}),
   };
-}
+};
 
-function asContentValue(value: unknown): { Data: string; Charset?: string } | undefined {
+const asContentValue = (value: unknown): { Data: string; Charset?: string } | undefined => {
   const record = asRecord(value);
   const data = asString(record?.Data);
   return data === undefined
     ? undefined
     : { Data: data, ...(asString(record?.Charset) ? { Charset: asString(record?.Charset) } : {}) };
-}
+};
 
-function stringArray(value: unknown): string[] {
+const stringArray = (value: unknown): string[] => {
   if (value === undefined) {
     return [];
   }
@@ -374,23 +374,23 @@ function stringArray(value: unknown): string[] {
     throw new Error('Email addresses must be an array of strings');
   }
   return value;
-}
+};
 
-function asRecord(value: unknown): Record<string, unknown> | undefined {
+const asRecord = (value: unknown): Record<string, unknown> | undefined => {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
     ? value as Record<string, unknown>
     : undefined;
-}
+};
 
-function asString(value: unknown): string | undefined {
+const asString = (value: unknown): string | undefined => {
   return typeof value === 'string' ? value : undefined;
-}
+};
 
-function isSesSendPath(path: string): boolean {
+const isSesSendPath = (path: string): boolean => {
   return path === '/' || path === '/v2/email/outbound-emails';
-}
+};
 
-async function readJson(request: IncomingMessage): Promise<Record<string, unknown>> {
+const readJson = async (request: IncomingMessage): Promise<Record<string, unknown>> => {
   const chunks: Buffer[] = [];
   let total = 0;
   for await (const chunk of request) {
@@ -407,46 +407,46 @@ async function readJson(request: IncomingMessage): Promise<Record<string, unknow
     throw new Error('Request body must be a JSON object');
   }
   return record;
-}
+};
 
-function writeJson(response: ServerResponse, statusCode: number, body: unknown): void {
+const writeJson = (response: ServerResponse, statusCode: number, body: unknown): void => {
   writeJsonAs(response, statusCode, body, 'application/json; charset=utf-8');
-}
+};
 
-function writeSesJson(response: ServerResponse, statusCode: number, body: unknown): void {
+const writeSesJson = (response: ServerResponse, statusCode: number, body: unknown): void => {
   writeJsonAs(response, statusCode, body, 'application/x-amz-json-1.1; charset=utf-8');
-}
+};
 
-function writeJsonAs(
+const writeJsonAs = (
   response: ServerResponse,
   statusCode: number,
   body: unknown,
   contentType: string,
-): void {
+): void => {
   const payload = JSON.stringify(body);
   response.writeHead(statusCode, {
     'Content-Length': Buffer.byteLength(payload),
     'Content-Type': contentType,
   });
   response.end(payload);
-}
+};
 
-function writeBinary(
+const writeBinary = (
   response: ServerResponse,
   statusCode: number,
   body: Buffer,
   contentType: string,
   disposition?: string,
-): void {
+): void => {
   response.writeHead(statusCode, {
     'Content-Length': body.byteLength,
     'Content-Type': contentType,
     ...(disposition ? { 'Content-Disposition': disposition } : {}),
   });
   response.end(body);
-}
+};
 
-function listen(server: Server, host: string, port: number): Promise<void> {
+const listen = (server: Server, host: string, port: number): Promise<void> => {
   return new Promise((resolve, reject) => {
     const onError = (error: Error) => reject(error);
     server.once('error', onError);
@@ -455,10 +455,10 @@ function listen(server: Server, host: string, port: number): Promise<void> {
       resolve();
     });
   });
-}
+};
 
-function closeServer(server: Server): Promise<void> {
+const closeServer = (server: Server): Promise<void> => {
   return new Promise((resolve, reject) => {
     server.close((error) => error ? reject(error) : resolve());
   });
-}
+};

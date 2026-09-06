@@ -8,7 +8,7 @@ export interface AttachmentListProps {
   readonly urlFor: (index: number) => string;
 }
 
-export function AttachmentList(props: AttachmentListProps): JSX.Element {
+export const AttachmentList = (props: AttachmentListProps): JSX.Element => {
   if (props.attachments.length === 0) {
     return <p className="placeholder">No attachments.</p>;
   }
@@ -28,4 +28,4 @@ export function AttachmentList(props: AttachmentListProps): JSX.Element {
       ))}
     </ul>
   );
-}
+};

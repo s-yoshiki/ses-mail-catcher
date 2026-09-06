@@ -17,10 +17,7 @@ const require = createRequire(import.meta.url);
 const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const libRoot = join(packageRoot, 'lib');
 
-await copyViewer();
-await vendorPostalMime();
-
-async function copyViewer() {
+const copyViewer = async () => {
   const source = join(packageRoot, '..', 'viewer', 'dist');
   const target = join(libRoot, 'viewer');
 
@@ -36,9 +33,9 @@ async function copyViewer() {
     filter: (path) => !path.endsWith('.map'),
   });
   console.log(`[copy-viewer-assets] copied ${source} -> ${target}`);
-}
+};
 
-async function vendorPostalMime() {
+const vendorPostalMime = async () => {
   // The CommonJS build is a self-contained set of files that require each
   // other relatively, so copying the directory is enough.
   const distDirectory = dirname(require.resolve('postal-mime'));
@@ -58,4 +55,7 @@ async function vendorPostalMime() {
   await cp(join(packageDirectory, 'LICENSE.txt'), join(target, 'LICENSE.txt'));
 
   console.log(`[copy-viewer-assets] vendored postal-mime -> ${target}`);
-}
+};
+
+await copyViewer();
+await vendorPostalMime();

@@ -37,7 +37,7 @@ export interface MailHandlerDependencies {
   readonly sdk: AwsSdkModules;
 }
 
-function createDefaultDependencies(): MailHandlerDependencies {
+const createDefaultDependencies = (): MailHandlerDependencies => {
   const sdk = loadAwsSdk();
   return {
     ddb: new sdk.DynamoDBClient({}) as CommandClient,
@@ -45,19 +45,19 @@ function createDefaultDependencies(): MailHandlerDependencies {
     ses: new sdk.SESv2Client({}) as CommandClient,
     sdk,
   };
-}
+};
 
 /** Lambda entry point for the generated CDK function. */
-export async function handler(event: unknown): Promise<MailHandlerResult> {
+export const handler = async (event: unknown): Promise<MailHandlerResult> => {
   return processMail(event, loadConfig());
-}
+};
 
 /** @internal */
-export async function processMail(
+export const processMail = async (
   event: unknown,
   config: MailHandlerConfig,
   dependencies: MailHandlerDependencies = createDefaultDependencies(),
-): Promise<MailHandlerResult> {
+): Promise<MailHandlerResult> => {
   validateEvent(event);
 
   const messageId = randomUUID();
@@ -99,9 +99,9 @@ export async function processMail(
   }));
 
   return { messageId, mailbox, mode: 'CATCH', createdAt, s3Key: key };
-}
+};
 
-function loadConfig(): MailHandlerConfig {
+const loadConfig = (): MailHandlerConfig => {
   const mode = process.env.MAIL_MODE;
   if (mode !== 'CATCH' && mode !== 'RELAY') {
     throw new Error('MAIL_MODE must be CATCH or RELAY');
@@ -123,15 +123,15 @@ function loadConfig(): MailHandlerConfig {
       feedbackForwardingEmailAddress: process.env.SES_FEEDBACK_FORWARDING_EMAIL_ADDRESS,
     },
   };
-}
+};
 
-function requiredEnvironment(name: string): string {
+const requiredEnvironment = (name: string): string => {
   const value = process.env[name];
   if (!value) throw new Error(`${name} is required`);
   return value;
-}
+};
 
-async function readAttachment(client: CommandClient, sdk: AwsSdkModules, bucket: string, key: string): Promise<Uint8Array> {
+const readAttachment = async (client: CommandClient, sdk: AwsSdkModules, bucket: string, key: string): Promise<Uint8Array> => {
   const response = await client.send(new sdk.GetObjectCommand({ Bucket: bucket, Key: key }));
   const body = (response as { Body?: unknown }).Body;
   if (!body) throw new Error('attachment S3 object has no body');
@@ -148,4 +148,4 @@ async function readAttachment(client: CommandClient, sdk: AwsSdkModules, bucket:
     offset += chunk.byteLength;
   }
   return result;
-}
+};

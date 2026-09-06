@@ -5,7 +5,7 @@ import { App } from './App.js';
 import { MailCatcherClient, resolveApiBase } from './api.js';
 import './styles.css';
 
-async function bootstrap(): Promise<void> {
+const bootstrap = async (): Promise<void> => {
   if (import.meta.env.DEV && import.meta.env.VITE_ENABLE_MOCKS === 'true') {
     const { worker } = await import('./mocks/browser.js');
     await worker.start({
@@ -26,6 +26,6 @@ async function bootstrap(): Promise<void> {
       <App client={client} />
     </StrictMode>,
   );
-}
+};
 
 void bootstrap();

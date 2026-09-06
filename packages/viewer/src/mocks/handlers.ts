@@ -45,16 +45,16 @@ export const handlers = [
   }),
 ];
 
-function parseLimit(value: string | null): number | undefined {
+const parseLimit = (value: string | null): number | undefined => {
   if (value === null) {
     return undefined;
   }
 
   const limit = Number(value);
   return Number.isInteger(limit) && limit >= 0 ? limit : undefined;
-}
+};
 
-function toSummary({
+const toSummary = ({
   id,
   fromAddress,
   toAddresses,
@@ -64,6 +64,6 @@ function toSummary({
   receivedAt,
   size,
   mailbox,
-}: MessageSummary): MessageSummary {
+}: MessageSummary): MessageSummary => {
   return { id, fromAddress, toAddresses, ccAddresses, bccAddresses, subject, receivedAt, size, mailbox };
-}
+};

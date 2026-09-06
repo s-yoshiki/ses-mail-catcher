@@ -6,13 +6,13 @@ export type AttachmentReader = (attachment: MailAttachment) => Promise<Uint8Arra
 const CRLF = '\r\n';
 
 /** @internal */
-export async function createMimeMessage(
+export const createMimeMessage = async (
   event: SendMailEvent,
   messageId: string,
   createdAt: string,
   mailbox: string,
   readAttachment: AttachmentReader,
-): Promise<string> {
+): Promise<string> => {
   const headers = [
     `From: ${event.from}`,
     `To: ${event.to.join(', ')}`,
@@ -52,9 +52,9 @@ export async function createMimeMessage(
   }
 
   return headers.concat(['MIME-Version: 1.0', '', content]).join(CRLF) + CRLF;
-}
+};
 
-function createBody(event: SendMailEvent, messageId: string): string {
+const createBody = (event: SendMailEvent, messageId: string): string => {
   const text = event.text ?? '';
   const html = event.html;
   if (html === undefined) {
@@ -90,17 +90,17 @@ function createBody(event: SendMailEvent, messageId: string): string {
     wrapBase64(Buffer.from(html, 'utf8').toString('base64')),
     `--${boundary}--`,
   ].join(CRLF);
-}
+};
 
-function encodeHeader(value: string): string {
+const encodeHeader = (value: string): string => {
   if (Buffer.from(value, 'utf8').every((byte) => byte <= 0x7f)) return value;
   return `=?UTF-8?B?${Buffer.from(value, 'utf8').toString('base64')}?=`;
-}
+};
 
-function encodeParameter(value: string): string {
+const encodeParameter = (value: string): string => {
   return value.replace(/[\\"]/g, '_');
-}
+};
 
-function wrapBase64(value: string): string {
+const wrapBase64 = (value: string): string => {
   return value.match(/.{1,76}/g)?.join(CRLF) ?? '';
-}
+};

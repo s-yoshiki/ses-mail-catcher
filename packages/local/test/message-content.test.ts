@@ -4,7 +4,7 @@ import { parseMessageContent, toContentResponse } from '../src/message-content.j
 
 const BOUNDARY = 'boundary-1';
 
-function buildMultipart(): Uint8Array {
+const buildMultipart = (): Uint8Array => {
   const parts = [
     'From: sender@example.com',
     'To: recipient@example.com',
@@ -32,7 +32,7 @@ function buildMultipart(): Uint8Array {
     '',
   ];
   return Buffer.from(parts.join('\r\n'), 'utf8');
-}
+};
 
 describe('parseMessageContent', () => {
   it('decodes both body parts and lists attachments', async () => {
