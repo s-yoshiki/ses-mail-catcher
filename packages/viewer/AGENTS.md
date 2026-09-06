@@ -6,8 +6,9 @@ that package.
 
 - Keep relative imports explicit with `.js` suffixes; the repository is
   ESM-first and TypeScript resolves them through NodeNext.
-- Keep the bundle backend-agnostic. `src/types.ts` is the contract; a change
-  there has to be matched in every backend that serves `/api`.
+- Keep the bundle backend-agnostic. `packages/api-contract/src/index.ts` is the
+  contract source; a change there has to be matched in every backend that
+  serves `/api`. `src/types.ts` re-exports the viewer-facing types.
 - Keep `base: './'` in the Vite config. The bundle has to work from any path
   prefix, because it is served by more than one host.
 - Render message HTML only inside the sandboxed iframe in `HtmlPreview`.

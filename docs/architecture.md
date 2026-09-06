@@ -59,9 +59,14 @@ no second process are involved.
 
 The bundle is deliberately backend-agnostic. It uses relative asset URLs and
 resolves its API root from the document, so any host that answers the `/api`
-contract in `packages/viewer/src/types.ts` can serve it. Message HTML is
+contract in `packages/api-contract/src/index.ts` can serve it. Message HTML is
 rendered inside an iframe with an empty `sandbox` attribute, because captured
 mail is untrusted input.
+
+The viewer, local server and CDK viewer share the API's TypeScript contract
+from `packages/api-contract`. The viewer validates JSON responses with the
+contract's Zod schemas at its HTTP boundary; server-side code uses type-only
+imports so the CDK Lambda asset remains free of workspace runtime dependencies.
 
 Two backends serve it today:
 

@@ -63,6 +63,9 @@ The request/inspection shape is inspired by [aws-ses-v2-local](https://github.co
 
 `/api` is the contract the viewer is built against:
 
+The shared TypeScript types and Zod schemas are maintained in
+[`packages/api-contract/src/index.ts`](../api-contract/src/index.ts).
+
 | Route | Response |
 | --- | --- |
 | `GET /api/messages?mailbox=&limit=` | `{ messages, mailboxes }` |

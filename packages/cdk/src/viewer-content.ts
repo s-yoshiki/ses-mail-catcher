@@ -1,16 +1,11 @@
 import { createRequire } from 'node:module';
 
+import type { MessageAttachment } from 'ses-mail-catcher-api-contract';
+
 const require = createRequire(import.meta.url);
 
 /** @internal */
-export interface ViewerAttachmentSummary {
-  index: number;
-  filename: string;
-  contentType: string;
-  size: number;
-  contentId?: string;
-  inline: boolean;
-}
+export type ViewerAttachmentSummary = MessageAttachment;
 
 /** @internal */
 export interface ViewerAttachment extends ViewerAttachmentSummary {

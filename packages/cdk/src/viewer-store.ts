@@ -1,18 +1,10 @@
+import type { MessageSummary } from 'ses-mail-catcher-api-contract';
+
 import type { CommandClient, ViewerAwsSdkModules } from './aws-sdk.js';
 import type { AttributeValue } from './metadata.js';
 
 /** @internal */
-export interface ViewerMessageSummary {
-  id: string;
-  fromAddress?: string;
-  toAddresses: string[];
-  ccAddresses: string[];
-  bccAddresses: string[];
-  subject: string;
-  receivedAt: string;
-  size: number;
-  mailbox: string;
-}
+export type ViewerMessageSummary = MessageSummary;
 
 /** @internal */
 export interface ViewerMessageRecord extends ViewerMessageSummary {

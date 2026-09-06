@@ -370,6 +370,7 @@
             "oxlint",
             "postal-mime",
             "projen",
+            "ses-mail-catcher-api-contract",
             "ses-mail-catcher-viewer",
             "tsx",
             "typescript",

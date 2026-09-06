@@ -23,13 +23,24 @@ Point the proxy somewhere else with `SES_MAIL_CATCHER_URL`:
 SES_MAIL_CATCHER_URL=http://127.0.0.1:9000 pnpm --filter ses-mail-catcher-viewer dev
 ```
 
+To run the viewer without a local backend, enable the MSW browser mock:
+
+```sh
+VITE_ENABLE_MOCKS=true pnpm --filter ses-mail-catcher-viewer dev
+```
+
+The mock data is in [`src/mocks/data.ts`](./src/mocks/data.ts), and the same
+handlers are used by the Vitest API tests.
+
 A built bundle can also be aimed at another backend at runtime with the `api`
 query parameter, for example `http://127.0.0.1:8005/?api=http://other-host/api/`.
 
 ## The API it expects
 
 Any backend that wants to reuse this viewer has to answer these routes. The
-shapes live in [`src/types.ts`](./src/types.ts).
+Shapes and their Zod schemas live in
+[`packages/api-contract/src/index.ts`](../api-contract/src/index.ts). The local
+`src/types.ts` file re-exports the viewer types for compatibility.
 
 | Route | Response |
 | --- | --- |
