@@ -5,6 +5,7 @@ import type { MailCatcherClient } from './api.js';
 import { MessageDetailPane } from './components/MessageDetailPane.js';
 import { MessageList } from './components/MessageList.js';
 import { Toolbar } from './components/Toolbar.js';
+import { filterMessagesByMailbox } from './message-filter.js';
 import type { MessageDetail, MessageSummary } from './types.js';
 
 const REFRESH_INTERVAL_MS = 5000;
@@ -38,7 +39,12 @@ export const App = ({ client }: AppProps): JSX.Element => {
       ...(signal ? { signal } : {}),
     })
       .then((response) => {
-        setMessages(response.messages);
+        // Keep the filter correct even when an intermediary drops the query
+        // string before the backend sees it (for example, a stale proxy or
+        // cache policy). The backend still receives the filter so it can avoid
+        // transferring unrelated messages whenever the request path supports
+        // it.
+        setMessages(filterMessagesByMailbox(response.messages, mailbox));
         setMailboxes(response.mailboxes);
         setListError(undefined);
       })
