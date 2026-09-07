@@ -60,12 +60,15 @@ export class SesMailCatcherExampleStack extends Stack {
 
     // The viewer uses query strings for mailbox filtering. The managed
     // CACHING_DISABLED policy does not forward query strings to the origin,
-    // so use an equivalent no-cache policy that includes them in the request.
+    // so use a policy that includes them in the request. CloudFront rejects a
+    // query-string cache policy when all three TTLs are zero; the origin sends
+    // Cache-Control: no-store for API responses, so a zero default/minimum TTL
+    // still prevents API responses from being cached.
     const viewerCachePolicy = new cloudfront.CachePolicy(this, 'ViewerCachePolicy', {
       comment: 'Disable viewer caching while forwarding API query strings',
       defaultTtl: Duration.seconds(0),
       minTtl: Duration.seconds(0),
-      maxTtl: Duration.seconds(0),
+      maxTtl: Duration.seconds(1),
       queryStringBehavior: cloudfront.CacheQueryStringBehavior.all(),
     });
 
