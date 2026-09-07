@@ -1,5 +1,5 @@
 {
-  "name": "cdk-lambda-viewer-handler",
+  "name": "@ses-mail-catcher/cdk-viewer-handler",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -16,8 +16,8 @@
     "@types/node": "^26.4.1",
     "oxlint": "^1.81.0",
     "postal-mime": "^3.0.0",
-    "ses-mail-catcher-api-contract": "workspace:*",
-    "ses-mail-catcher-viewer": "workspace:*",
+    "@ses-mail-catcher/api-contract": "workspace:*",
+    "@ses-mail-catcher/viewer": "workspace:*",
     "typescript": "~7.0.2",
     "vitest": "^5.0.0"
   }

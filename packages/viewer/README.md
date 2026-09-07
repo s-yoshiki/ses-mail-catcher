@@ -1,4 +1,4 @@
-# ses-mail-catcher-viewer
+# @ses-mail-catcher/viewer
 
 React viewer for messages captured by ses-mail-catcher.
 
@@ -14,19 +14,19 @@ proxies `/api` to the server, so the UI reloads without rebuilding the backend.
 
 ```sh
 node packages/local/lib/cli.js
-pnpm --filter ses-mail-catcher-viewer dev
+pnpm --filter @ses-mail-catcher/viewer dev
 ```
 
 Point the proxy somewhere else with `SES_MAIL_CATCHER_URL`:
 
 ```sh
-SES_MAIL_CATCHER_URL=http://127.0.0.1:9000 pnpm --filter ses-mail-catcher-viewer dev
+SES_MAIL_CATCHER_URL=http://127.0.0.1:9000 pnpm --filter @ses-mail-catcher/viewer dev
 ```
 
 To run the viewer without a local backend, enable the MSW browser mock:
 
 ```sh
-VITE_ENABLE_MOCKS=true pnpm --filter ses-mail-catcher-viewer dev
+VITE_ENABLE_MOCKS=true pnpm --filter @ses-mail-catcher/viewer dev
 ```
 
 The mock data is in [`src/mocks/data.ts`](./src/mocks/data.ts), and the same

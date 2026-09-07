@@ -1,7 +1,7 @@
 # AWS SDK mail sender example
 
 This workspace sends an email to the SES v2-compatible endpoint exposed by
-[`ses-mail-catcher-local`](../../packages/local/README.md), using the AWS SDK
+[`@ses-mail-catcher/local`](../../packages/local/README.md), using the AWS SDK
 for JavaScript v3 and `SESv2Client`.
 
 The endpoint is configurable, so the same client shape can be used with any

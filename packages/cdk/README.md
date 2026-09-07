@@ -124,9 +124,9 @@ The Lambda asset carries the built viewer bundle and a vendored copy of
 `node_modules` of its own.
 
 The Lambda implementation is kept in two private workspaces:
-[`cdk-lambda-mail-handler`](../cdk-lambda-mail-handler) owns
+[`@ses-mail-catcher/cdk-mail-handler`](../cdk-lambda-mail-handler) owns
 validation, MIME creation, storage, and relay, while
-[`cdk-lambda-viewer-handler`](../cdk-lambda-viewer-handler)
+[`@ses-mail-catcher/cdk-viewer-handler`](../cdk-lambda-viewer-handler)
 owns the viewer API and static assets. Each workspace has its own tests and
 compiled asset; the CDK package copies them into separate directories in its
 `lib/` directory and uses those directories as the Lambda sources.
@@ -136,8 +136,8 @@ compiled asset; the CDK package copies them into separate directories in its
 ```sh
 pnpm install
 pnpm build
-pnpm --filter cdk-lambda-mail-handler test
-pnpm --filter cdk-lambda-viewer-handler test
+pnpm --filter @ses-mail-catcher/cdk-mail-handler test
+pnpm --filter @ses-mail-catcher/cdk-viewer-handler test
 pnpm --filter @s-yoshiki/cdk-ses-mail-catcher test
 ```
 

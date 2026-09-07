@@ -39,7 +39,7 @@ The image stores its SQLite database at `/data/mailbox.sqlite3` through `SES_MAI
 ## Native binary
 
 ```sh
-pnpm --filter ses-mail-catcher-local build:binary
+pnpm --filter @ses-mail-catcher/local build:binary
 ```
 
 Native output is host-specific. Keep the Docker image and Node.js CLI as the primary distribution options until scriptc support is validated across the target platforms.

@@ -1,4 +1,4 @@
-# ses-mail-catcher-local
+# @ses-mail-catcher/local
 
 Local Amazon SES v2-compatible mail catcher for development and integration tests.
 Messages are stored in a SQLite database and can be inspected through a small HTTP API.
@@ -103,7 +103,7 @@ container loopback interface is not reachable through a published port.
 The repository provides a `scriptc` build command for an experimental native binary:
 
 ```sh
-pnpm --filter ses-mail-catcher-local build:binary
+pnpm --filter @ses-mail-catcher/local build:binary
 ```
 
 The resulting binary is host-native. The Node.js CLI and container image are the supported distribution paths while native binary support is evaluated.

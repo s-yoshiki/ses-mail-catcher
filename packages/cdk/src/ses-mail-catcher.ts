@@ -183,7 +183,7 @@ export class SesMailCatcher extends Construct {
 
     const relay = props.relay ?? {};
     this.function = new lambda.Function(this, 'MailHandler', {
-      // The handler is compiled from the cdk-lambda-mail-handler workspace and
+      // The handler is compiled from the @ses-mail-catcher/cdk-mail-handler workspace and
       // included in the published lib/ directory. Keeping the asset path
       // deterministic makes local synthesis and installed-package synthesis
       // behave identically.

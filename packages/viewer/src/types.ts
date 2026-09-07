@@ -4,4 +4,4 @@ export type {
   MessageDetail,
   MessageListResponse,
   MessageSummary,
-} from 'ses-mail-catcher-api-contract';
+} from '@ses-mail-catcher/api-contract';

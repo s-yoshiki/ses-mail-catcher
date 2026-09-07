@@ -1,18 +1,18 @@
 {
   "dependencies": [
     {
+      "name": "@ses-mail-catcher/cdk-mail-handler",
+      "version": "workspace:*",
+      "type": "build"
+    },
+    {
+      "name": "@ses-mail-catcher/cdk-viewer-handler",
+      "version": "workspace:*",
+      "type": "build"
+    },
+    {
       "name": "@types/node",
       "version": "^26.4.1",
-      "type": "build"
-    },
-    {
-      "name": "cdk-lambda-mail-handler",
-      "version": "workspace:*",
-      "type": "build"
-    },
-    {
-      "name": "cdk-lambda-viewer-handler",
-      "version": "workspace:*",
       "type": "build"
     },
     {

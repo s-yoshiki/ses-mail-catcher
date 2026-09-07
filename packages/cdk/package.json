@@ -38,10 +38,10 @@
     "organization": false
   },
   "devDependencies": {
+    "@ses-mail-catcher/cdk-mail-handler": "workspace:*",
+    "@ses-mail-catcher/cdk-viewer-handler": "workspace:*",
     "@types/node": "^26.4.1",
     "aws-cdk-lib": "2.268.0",
-    "cdk-lambda-mail-handler": "workspace:*",
-    "cdk-lambda-viewer-handler": "workspace:*",
     "commit-and-tag-version": "^13.1.2",
     "constructs": "10.8.1",
     "jsii": "~6.0.12",
