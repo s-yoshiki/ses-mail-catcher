@@ -1,8 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { Aws, CfnOutput, Duration, Stack, type StackProps } from 'aws-cdk-lib';
+import { CfnOutput, Duration, Stack, type StackProps } from 'aws-cdk-lib';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import { Construct } from 'constructs';
@@ -79,24 +80,18 @@ export class SesMailCatcherExampleStack extends Stack {
       },
     });
 
-    // CDK adds InvokeFunctionUrl for the OAC. Lambda also evaluates
-    // InvokeFunction for IAM-authenticated Function URLs.
-    // eslint-disable-next-line no-new
-    new lambda.CfnPermission(this, 'ViewerInvokeFromCloudFront', {
-      action: 'lambda:InvokeFunction',
-      functionName: mailCatcher.viewerFunction.functionArn,
-      principal: 'cloudfront.amazonaws.com',
-      sourceArn: `arn:${Aws.PARTITION}:cloudfront::${Aws.ACCOUNT_ID}:distribution/${viewerDistribution.distributionId}`,
+    const cloudFrontPrincipal = new iam.ServicePrincipal('cloudfront.amazonaws.com');
+
+    mailCatcher.viewerFunction.addPermission('ViewerInvokeFromCloudFront', {
+      principal: cloudFrontPrincipal,
+      sourceArn: viewerDistribution.distributionArn,
+      invokedViaFunctionUrl: true,
     });
 
-    // CDK adds InvokeFunctionUrl for the OAC. Lambda also evaluates
-    // InvokeFunction for IAM-authenticated Function URLs.
-    // eslint-disable-next-line no-new
-    new lambda.CfnPermission(this, 'MailApiInvokeFromCloudFront', {
-      action: 'lambda:InvokeFunction',
-      functionName: mailCatcher.function.functionArn,
-      principal: 'cloudfront.amazonaws.com',
-      sourceArn: `arn:${Aws.PARTITION}:cloudfront::${Aws.ACCOUNT_ID}:distribution/${viewerDistribution.distributionId}`,
+    mailCatcher.function.addPermission('MailApiInvokeFromCloudFront', {
+      principal: cloudFrontPrincipal,
+      sourceArn: viewerDistribution.distributionArn,
+      invokedViaFunctionUrl: true,
     });
 
     // CfnOutput registers itself with the construct tree as a side effect.

@@ -75,8 +75,10 @@ const bcc = process.env.MAIL_BCC === undefined
 const replyTo = process.env.MAIL_REPLY_TO === undefined
   ? undefined
   : splitAddresses(process.env.MAIL_REPLY_TO, 'MAIL_REPLY_TO');
-const subject = process.env.MAIL_SUBJECT ?? 'ses-mail-catcher SDK example';
-const text = process.env.MAIL_TEXT ?? 'This message was sent with AWS SDK for JavaScript v3.';
+// Keep the defaults multilingual so every mail pattern exercises UTF-8
+// handling, including Japanese text and emoji.
+const subject = process.env.MAIL_SUBJECT ?? '日本語と絵文字を含む SDK サンプル 📬';
+const text = process.env.MAIL_TEXT ?? 'こんにちは、ses-mail-catcher の SDK サンプルです。日本語と絵文字が正しく表示されることを確認します。📧✨';
 const pattern = getMailPattern();
 const generatedHtml = ([
   'html',
@@ -85,7 +87,7 @@ const generatedHtml = ([
   'raw',
   'template',
 ] as MailPattern[]).includes(pattern)
-  ? `<html><body><h1>${escapeHtml(subject)}</h1><p>${escapeHtml(text)}</p></body></html>`
+  ? `<html lang="ja"><body><h1>${escapeHtml(subject)}</h1><p>${escapeHtml(text).replaceAll('\n', '<br>')}</p></body></html>`
   : undefined;
 const html = process.env.MAIL_HTML ?? generatedHtml;
 const mailbox = process.env.MAILBOX;
@@ -178,7 +180,7 @@ const createSimpleMessage = (): Message => {
       ? {
           Attachments: [{
             RawContent: Buffer.from(
-              process.env.MAIL_ATTACHMENT_CONTENT ?? 'This is an attachment from the SDK example.\n',
+              process.env.MAIL_ATTACHMENT_CONTENT ?? 'これは SDK サンプルからの添付ファイルです。📎\n',
               'utf8',
             ),
             FileName: process.env.MAIL_ATTACHMENT_FILENAME ?? 'example.txt',
