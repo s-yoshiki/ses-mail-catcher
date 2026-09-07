@@ -97,8 +97,9 @@ const mailCatcher = new SesMailCatcher(stack, "MailCatcher", {
 });
 ```
 
-`mailCatcher.viewerUrl` is the address to open, and `mailCatcher.viewerFunction`
-is the function behind it.
+`mailCatcher.viewerUrl` is the address to open, `mailCatcher.viewerFunctionUrl`
+is the CDK Function URL resource, and `mailCatcher.viewerFunction` is the
+function behind it.
 
 - **Basic authentication** reads its credentials from a Secrets Manager secret
   at run time, so they never appear in the synthesized template. The secret

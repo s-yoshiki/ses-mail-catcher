@@ -4,6 +4,7 @@ import { loadAwsSdk, type AwsSdkModules, type CommandClient } from './aws-sdk.js
 import { createMetadataItem } from './metadata.js';
 import { createMimeMessage } from './mime.js';
 import { validateEvent } from './mail-validation.js';
+import { toSesApiMailEvent, type SesApiMailEvent, type SesApiRequest } from './ses-api.js';
 
 type MailHandlerMode = 'CATCH' | 'RELAY';
 
@@ -48,7 +49,10 @@ const createDefaultDependencies = (): MailHandlerDependencies => {
 };
 
 /** Lambda entry point for the generated CDK function. */
-export const handler = async (event: unknown): Promise<MailHandlerResult> => {
+export const handler = async (event: unknown): Promise<MailHandlerResult | SesApiResponse> => {
+  if (isSesApiRequest(event)) {
+    return serveSesApi(event, loadConfig());
+  }
   return processMail(event, loadConfig());
 };
 
@@ -59,21 +63,24 @@ export const processMail = async (
   dependencies: MailHandlerDependencies = createDefaultDependencies(),
 ): Promise<MailHandlerResult> => {
   validateEvent(event);
+  const mailEvent = event as SesApiMailEvent;
 
   const messageId = randomUUID();
   const createdAt = new Date().toISOString();
   const mailbox = event.mailbox ?? 'default';
-  const rawMime = await createMimeMessage(
-    event,
-    messageId,
-    createdAt,
-    mailbox,
-    (attachment) => readAttachment(dependencies.s3, dependencies.sdk, attachment.bucket, attachment.key),
-  );
+  const rawMime = mailEvent.rawMimeBase64 === undefined
+    ? Buffer.from(await createMimeMessage(
+      event,
+      messageId,
+      createdAt,
+      mailbox,
+      (attachment) => readAttachment(dependencies.s3, dependencies.sdk, attachment.bucket, attachment.key),
+    ), 'utf8')
+    : Buffer.from(mailEvent.rawMimeBase64, 'base64');
 
   if (config.mode === 'RELAY') {
     const relayParameters = {
-      Content: { Raw: { Data: Buffer.from(rawMime, 'utf8') } },
+      Content: { Raw: { Data: rawMime } },
       ...(config.relay?.configurationSetName ? { ConfigurationSetName: config.relay.configurationSetName } : {}),
       ...(config.relay?.fromEmailAddressIdentityArn ? { FromEmailAddressIdentityArn: config.relay.fromEmailAddressIdentityArn } : {}),
       ...(config.relay?.feedbackForwardingEmailAddress ? { FeedbackForwardingEmailAddress: config.relay.feedbackForwardingEmailAddress } : {}),
@@ -87,7 +94,7 @@ export const processMail = async (
   await dependencies.s3.send(new dependencies.sdk.PutObjectCommand({
     Bucket: config.bucketName,
     Key: key,
-    Body: Buffer.from(rawMime, 'utf8'),
+    Body: rawMime,
     ContentType: 'message/rfc822',
     Metadata: { messageid: messageId, mailbox },
   }));
@@ -95,10 +102,68 @@ export const processMail = async (
   const expiresAt = Math.floor(Date.now() / 1000) + config.retentionSeconds;
   await dependencies.ddb.send(new dependencies.sdk.PutItemCommand({
     TableName: config.tableName,
-    Item: createMetadataItem(event, messageId, createdAt, mailbox, key, Buffer.byteLength(rawMime, 'utf8'), expiresAt),
+    Item: createMetadataItem(event, messageId, createdAt, mailbox, key, rawMime.byteLength, expiresAt),
   }));
 
   return { messageId, mailbox, mode: 'CATCH', createdAt, s3Key: key };
+};
+
+interface SesApiResponse {
+  readonly statusCode: number;
+  readonly headers: Record<string, string>;
+  readonly body: string;
+}
+
+const serveSesApi = async (request: SesApiRequest, config: MailHandlerConfig): Promise<SesApiResponse> => {
+  if (request.requestContext?.http?.method !== 'POST') {
+    return sesError(405, 'MethodNotAllowed', 'Only POST is supported');
+  }
+  if (request.rawPath !== '/' && request.rawPath !== '/v2/email/outbound-emails') {
+    return sesError(404, 'NotFound', 'Not found');
+  }
+
+  try {
+    const body = request.body === undefined
+      ? ''
+      : Buffer.from(request.body, request.isBase64Encoded === true ? 'base64' : 'utf8').toString('utf8');
+    const parsed: unknown = JSON.parse(body);
+    const input = asRecord(parsed);
+    if (input === undefined) {
+      throw new Error('request body must be a JSON object');
+    }
+    const mailEvent = toSesApiMailEvent(input, header(request, 'x-amz-target'));
+    const result = await processMail(mailEvent, config);
+    return sesJson(200, { MessageId: result.messageId });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Invalid request';
+    return sesError(400, 'InvalidParameterValue', message);
+  }
+};
+
+const isSesApiRequest = (event: unknown): event is SesApiRequest => {
+  const value = asRecord(event);
+  return value?.requestContext !== undefined && ('rawPath' in value || 'body' in value);
+};
+
+const header = (request: SesApiRequest, name: string): string | undefined => {
+  const headers = request.headers ?? {};
+  const entry = Object.entries(headers).find(([key]) => key.toLowerCase() === name);
+  return entry?.[1];
+};
+
+const sesError = (statusCode: number, type: string, message: string): SesApiResponse => {
+  return sesJson(statusCode, { __type: type, message });
+};
+
+const sesJson = (statusCode: number, body: unknown): SesApiResponse => {
+  return {
+    statusCode,
+    headers: {
+      'Content-Type': 'application/x-amz-json-1.1',
+      'Cache-Control': 'no-store',
+    },
+    body: JSON.stringify(body),
+  };
 };
 
 const loadConfig = (): MailHandlerConfig => {
@@ -129,6 +194,12 @@ const requiredEnvironment = (name: string): string => {
   const value = process.env[name];
   if (!value) throw new Error(`${name} is required`);
   return value;
+};
+
+const asRecord = (value: unknown): Record<string, unknown> | undefined => {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : undefined;
 };
 
 const readAttachment = async (client: CommandClient, sdk: AwsSdkModules, bucket: string, key: string): Promise<Uint8Array> => {

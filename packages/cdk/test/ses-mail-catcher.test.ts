@@ -153,6 +153,7 @@ test('creates no viewer unless one is asked for', () => {
   const template = Template.fromStack(stack);
 
   expect(catcher.viewerFunction).toBeUndefined();
+  expect(catcher.viewerFunctionUrl).toBeUndefined();
   expect(catcher.viewerUrl).toBeUndefined();
   expect(Object.keys(template.findResources('AWS::Lambda::Url'))).toHaveLength(0);
 });
@@ -193,6 +194,7 @@ test('reads basic auth credentials from a secret rather than the template', () =
   const template = Template.fromStack(stack);
 
   expect(catcher.viewerFunction).toBeDefined();
+  expect(catcher.viewerFunctionUrl).toBeDefined();
   expect(catcher.viewerUrl).toBeDefined();
 
   template.hasResourceProperties('AWS::Lambda::Function', {

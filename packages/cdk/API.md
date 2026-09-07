@@ -158,6 +158,7 @@ Any object.
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.mode">mode</a></code> | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailMode">MailMode</a></code> | The configured mail handling mode. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.table">table</a></code> | <code>aws-cdk-lib.aws_dynamodb.ITable</code> | The message metadata table. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerFunction">viewerFunction</a></code> | <code>aws-cdk-lib.aws_lambda.Function</code> | The function serving the viewer, when one is configured. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerFunctionUrl">viewerFunctionUrl</a></code> | <code>aws-cdk-lib.aws_lambda.IFunctionUrl</code> | The Function URL serving the viewer, when one is configured. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerUrl">viewerUrl</a></code> | <code>string</code> | The URL the viewer is served from, when one is configured. |
 
 ---
@@ -231,6 +232,18 @@ public readonly viewerFunction: Function;
 - *Type:* aws-cdk-lib.aws_lambda.Function
 
 The function serving the viewer, when one is configured.
+
+---
+
+##### `viewerFunctionUrl`<sup>Optional</sup> <a name="viewerFunctionUrl" id="@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerFunctionUrl"></a>
+
+```typescript
+public readonly viewerFunctionUrl: IFunctionUrl;
+```
+
+- *Type:* aws-cdk-lib.aws_lambda.IFunctionUrl
+
+The Function URL serving the viewer, when one is configured.
 
 ---
 

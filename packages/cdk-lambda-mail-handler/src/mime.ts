@@ -51,7 +51,7 @@ export const createMimeMessage = async (
     content = parts.join(CRLF);
   }
 
-  return headers.concat(['MIME-Version: 1.0', '', content]).join(CRLF) + CRLF;
+  return headers.concat(['MIME-Version: 1.0', content]).join(CRLF) + CRLF;
 };
 
 const createBody = (event: SendMailEvent, messageId: string): string => {
