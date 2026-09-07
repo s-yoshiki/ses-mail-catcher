@@ -5,7 +5,7 @@
 // its own build, tests, and dependencies without adding node_modules to the
 // deployed functions.
 
-import { cp, mkdir, rm, stat } from 'node:fs/promises';
+import { cp, mkdir, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -33,6 +33,10 @@ const legacyAssetEntries = [
 
 await mkdir(targetRoot, { recursive: true });
 await Promise.all(legacyAssetEntries.map((entry) => rm(join(targetRoot, entry), { recursive: true, force: true })));
+// Lambda determines whether .js files are ESM from the nearest package.json.
+// The published CDK package's package.json is outside this asset directory,
+// so carry the module marker into the deployed archive explicitly.
+await writeFile(join(targetRoot, 'package.json'), '{"type":"module"}\n', 'utf8');
 for (const asset of assets) {
   const built = await stat(asset.sourceRoot).then((entry) => entry.isDirectory()).catch(() => false);
   if (!built) {
