@@ -80,8 +80,8 @@ Open the `ViewerUrl` output in a browser. The browser should show the Basic
 Auth dialog; use the username and password from the secret. The `ViewerUrl`
 and `SesApiUrl` outputs point to the same CloudFront distribution. The root
 path serves the viewer, while `/v2/email/outbound-emails` accepts SES v2
-`SendEmail` requests. The `ViewerOriginUrl` and `SesApiOriginUrl` outputs are
-direct Lambda URLs and are intentionally IAM protected.
+`SendEmail` requests. The underlying Lambda Function URLs are IAM protected
+and are not exposed as public application endpoints.
 
 The viewer-request CloudFront Function checks the browser's
 `Authorization: Basic ...` header against the `basic-auth` key in CloudFront

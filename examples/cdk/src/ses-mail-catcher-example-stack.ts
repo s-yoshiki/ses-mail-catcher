@@ -69,13 +69,13 @@ export class SesMailCatcherExampleStack extends Stack {
         }],
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
       },
-        additionalBehaviors: {
-          '/v2/email/*': {
-            origin: origins.FunctionUrlOrigin.withOriginAccessControl(sesApiFunctionUrl),
-            allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
-            cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
-            viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-          },
+      additionalBehaviors: {
+        '/v2/email/outbound-emails': {
+          origin: origins.FunctionUrlOrigin.withOriginAccessControl(sesApiFunctionUrl),
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+          cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        },
       },
     });
 
@@ -108,23 +108,9 @@ export class SesMailCatcherExampleStack extends Stack {
 
     // CfnOutput registers itself with the construct tree as a side effect.
     // eslint-disable-next-line no-new
-    new CfnOutput(this, 'ViewerOriginUrl', {
-      description: 'Direct Lambda URL, which is IAM-protected and should not be opened by users',
-      value: mailCatcher.viewerUrl!,
-    });
-
-    // CfnOutput registers itself with the construct tree as a side effect.
-    // eslint-disable-next-line no-new
     new CfnOutput(this, 'SesApiUrl', {
       description: 'CloudFront URL for the SES v2-compatible SendEmail API',
       value: `https://${viewerDistribution.distributionDomainName}`,
-    });
-
-    // CfnOutput registers itself with the construct tree as a side effect.
-    // eslint-disable-next-line no-new
-    new CfnOutput(this, 'SesApiOriginUrl', {
-      description: 'Direct Mail Handler Lambda URL, which is IAM-protected and should not be opened directly',
-      value: sesApiFunctionUrl.url,
     });
 
     // CfnOutput registers itself with the construct tree as a side effect.
