@@ -10,7 +10,6 @@ export const createMimeMessage = async (
   event: SendMailEvent,
   messageId: string,
   createdAt: string,
-  mailbox: string,
   readAttachment: AttachmentReader,
 ): Promise<string> => {
   const headers = [
@@ -20,7 +19,6 @@ export const createMimeMessage = async (
     `Date: ${new Date(createdAt).toUTCString()}`,
     `Message-ID: <${messageId}@mail-catcher.local>`,
     `X-Mail-Catcher-Id: ${messageId}`,
-    `X-Mailbox: ${mailbox}`,
   ];
   if (event.cc && event.cc.length > 0) headers.splice(2, 0, `Cc: ${event.cc.join(', ')}`);
   if (event.bcc && event.bcc.length > 0) headers.splice(3, 0, `Bcc: ${event.bcc.join(', ')}`);

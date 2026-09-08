@@ -61,7 +61,6 @@ export const toSesApiMailEvent = (
     throw new Error('Destination.ToAddresses or a raw To header is required');
   }
 
-  const mailbox = readMailbox(input);
   const metadata = readMetadata(input);
   if (rawMime !== undefined) {
     return {
@@ -71,7 +70,6 @@ export const toSesApiMailEvent = (
       ...(rawBcc.length > 0 ? { bcc: rawBcc } : {}),
       ...(replyTo.length > 0 ? { replyTo } : {}),
       subject,
-      mailbox,
       ...(metadata === undefined ? {} : { metadata }),
       rawMimeBase64: rawMime.toString('base64'),
     };
@@ -109,7 +107,6 @@ export const toSesApiMailEvent = (
     subject,
     ...(text === undefined ? {} : { text }),
     ...(html === undefined ? {} : { html }),
-    mailbox,
     ...(metadata === undefined ? {} : { metadata }),
     rawMimeBase64: simpleMime.toString('base64'),
   };
@@ -248,14 +245,6 @@ const readContentValue = (value: Record<string, unknown> | undefined): string | 
   return asString(value?.Data);
 };
 
-const readMailbox = (input: Record<string, unknown>): string | undefined => {
-  const tags = Array.isArray(input.EmailTags) ? input.EmailTags : [];
-  const mailbox = tags
-    .map(asRecord)
-    .find((tag) => asString(tag?.Name)?.toLowerCase() === 'mailbox');
-  return asString(mailbox?.Value);
-};
-
 const readMetadata = (input: Record<string, unknown>): Record<string, string> | undefined => {
   const tags = Array.isArray(input.EmailTags) ? input.EmailTags : [];
   const entries = tags
@@ -263,7 +252,7 @@ const readMetadata = (input: Record<string, unknown>): Record<string, string> | 
     .flatMap((tag) => {
       const name = asString(tag?.Name);
       const value = asString(tag?.Value);
-      return name === undefined || value === undefined || name.toLowerCase() === 'mailbox'
+      return name === undefined || value === undefined
         ? []
         : [[name, value] as const];
     });

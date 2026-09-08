@@ -107,7 +107,7 @@ mail_handler_name="$(aws cloudformation describe-stacks \
 aws lambda invoke \
   --function-name "$mail_handler_name" \
   --cli-binary-format raw-in-base64-out \
-  --payload '{"from":"noreply@example.com","to":["developer@example.com"],"subject":"ses-mail-catcher example","text":"This message was captured by the CDK example.","mailbox":"example"}' \
+  --payload '{"from":"noreply@example.com","to":["developer@example.com"],"subject":"ses-mail-catcher example","text":"This message was captured by the CDK example."}' \
   /tmp/ses-mail-catcher-example-response.json
 ```
 

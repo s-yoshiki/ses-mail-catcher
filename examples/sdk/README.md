@@ -31,7 +31,6 @@ SES_MAIL_CATCHER_URL=http://127.0.0.1:8005 \
   MAIL_TO=developer@example.com \
   MAIL_SUBJECT='SDK example message' \
   MAIL_TEXT='This message was sent to the mail catcher with AWS SDK v3.' \
-  MAILBOX=example \
   pnpm --filter ses-mail-catcher-sdk-example run send
 ```
 
@@ -107,7 +106,6 @@ The following environment variables customize the event:
 | `MAIL_ATTACHMENT_FILENAME` | `example.txt` |
 | `MAIL_ATTACHMENT_CONTENT` | A short attachment body |
 | `MAIL_ATTACHMENT_CONTENT_TYPE` | `text/plain` |
-| `MAILBOX` | Omitted, which stores the message in `default` |
 | `MAIL_TEMPLATE_NAME` | `ses-mail-catcher-sdk-example-template` for `template` |
 | `MAIL_TEMPLATE_DATA` | `{"name":"developer"}` |
 

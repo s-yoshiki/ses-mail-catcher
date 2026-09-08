@@ -16,10 +16,9 @@ const SUMMARY: ViewerMessageSummary = {
   subject: 'Receipt',
   receivedAt: '2026-09-06T00:00:00.000Z',
   size: RAW_MIME.byteLength,
-  mailbox: 'orders',
 };
 
-const RECORD: ViewerMessageRecord = { ...SUMMARY, replyToAddresses: [], s3Key: 'mail/orders/message-1.eml' };
+const RECORD: ViewerMessageRecord = { ...SUMMARY, replyToAddresses: [], s3Key: 'messages/message-1.eml' };
 
 const CONTENT: ViewerContent = {
   text: 'body',
@@ -48,7 +47,6 @@ const baseConfig = (overrides: Partial<ViewerHandlerConfig> = {}): ViewerHandler
 const baseDependencies = (overrides: Partial<ViewerHandlerDependencies> = {}): ViewerHandlerDependencies => {
   const store = {
     list: async () => [SUMMARY],
-    mailboxes: async () => ['orders'],
     find: async (id: string) => id === SUMMARY.id ? RECORD : undefined,
     readRaw: async () => RAW_MIME,
   } as unknown as ViewerStore;
@@ -122,11 +120,11 @@ describe('access control', () => {
 });
 
 describe('routing', () => {
-  test('lists messages with the known mailboxes', async () => {
+  test('lists captured messages without synthetic metadata', async () => {
     const response = await serveViewer(request('/api/messages'), baseConfig(), baseDependencies());
 
     expect(response.statusCode).toBe(200);
-    expect(JSON.parse(response.body)).toEqual({ messages: [SUMMARY], mailboxes: ['orders'] });
+    expect(JSON.parse(response.body)).toEqual({ messages: [SUMMARY] });
   });
 
   test('returns parsed content without the storage key', async () => {
@@ -193,7 +191,7 @@ describe('routing', () => {
       request('/api/messages'),
       baseConfig(),
       baseDependencies({
-        store: { list: async () => { throw new Error('table missing'); }, mailboxes: async () => [] } as unknown as ViewerStore,
+        store: { list: async () => { throw new Error('table missing'); } } as unknown as ViewerStore,
       }),
     );
 

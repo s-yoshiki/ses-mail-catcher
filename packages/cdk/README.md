@@ -39,12 +39,11 @@ The application invokes `mailCatcher.function` with an event such as:
   subject: "Registration complete",
   text: "Welcome!",
   html: "<h1>Welcome!</h1>",
-  mailbox: "development",
 }
 ```
 
 In `CATCH` mode the Lambda writes a canonical raw MIME message to S3 under
-`mail/{mailbox}/YYYY/MM/DD/{messageId}.eml` and stores its index in DynamoDB.
+`messages/YYYY/MM/DD/{messageId}.eml` and stores its index in DynamoDB.
 Both resources use the configured retention period; DynamoDB uses TTL and S3
 uses a lifecycle expiration rule. The construct deliberately does not grant
 SES permissions in this mode.

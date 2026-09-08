@@ -178,7 +178,7 @@ export class SesMailCatcher extends Construct {
 
     this.table = props.storage?.table ?? new dynamodb.Table(this, 'MailTable', {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      partitionKey: { name: 'mailbox', type: dynamodb.AttributeType.STRING },
+      partitionKey: { name: 'pk', type: dynamodb.AttributeType.STRING },
       sortKey: { name: 'sortKey', type: dynamodb.AttributeType.STRING },
       removalPolicy: RemovalPolicy.DESTROY,
       timeToLiveAttribute: 'expiresAt',

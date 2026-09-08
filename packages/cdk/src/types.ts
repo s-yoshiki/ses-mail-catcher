@@ -44,7 +44,4 @@ export interface SendMailEvent {
 
   /** Arbitrary string metadata stored with the message index. */
   readonly metadata?: Record<string, string>;
-
-  /** The mailbox partition in which to store the message. @default default */
-  readonly mailbox?: string;
 }

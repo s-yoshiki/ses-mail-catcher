@@ -9,7 +9,6 @@ export const messageSummarySchema = z.object({
   subject: z.string(),
   receivedAt: z.string(),
   size: z.number(),
-  mailbox: z.string(),
 });
 
 export type MessageSummary = z.infer<typeof messageSummarySchema>;
@@ -42,7 +41,6 @@ export type MessageDetail = z.infer<typeof messageDetailSchema>;
 
 export const messageListResponseSchema = z.object({
   messages: z.array(messageSummarySchema),
-  mailboxes: z.array(z.string()),
 });
 
 export type MessageListResponse = z.infer<typeof messageListResponseSchema>;

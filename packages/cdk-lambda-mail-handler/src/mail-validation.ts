@@ -12,12 +12,6 @@ export const validateEvent: (event: unknown) => asserts event is SendMailEvent =
   requireAddresses(value.cc, 'cc', false);
   requireAddresses(value.bcc, 'bcc', false);
   requireAddresses(value.replyTo, 'replyTo', false);
-  if (value.mailbox !== undefined) {
-    requireString(value.mailbox, 'mailbox');
-    if (!/^[A-Za-z0-9._-]+$/.test(value.mailbox as string)) {
-      throw new Error('mailbox may contain only letters, numbers, dot, underscore, and hyphen');
-    }
-  }
   for (const field of ['text', 'html']) {
     if (value[field] !== undefined) requireString(value[field], field);
   }

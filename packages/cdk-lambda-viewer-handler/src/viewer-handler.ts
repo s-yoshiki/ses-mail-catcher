@@ -113,13 +113,9 @@ const route = async (
   }
 
   if (path === '/api/messages') {
-    const mailbox = query.mailbox === '' ? undefined : query.mailbox;
     const limit = parseLimit(query.limit);
-    const [messages, mailboxes] = await Promise.all([
-      dependencies.store.list(mailbox, limit),
-      dependencies.store.mailboxes(),
-    ]);
-    return json(200, { messages, mailboxes });
+    const messages = await dependencies.store.list(limit);
+    return json(200, { messages });
   }
 
   const messageRoute = matchMessageRoute(path);
@@ -127,7 +123,7 @@ const route = async (
     return serveAsset(path, dependencies);
   }
 
-  const record = await dependencies.store.find(messageRoute.id, query.mailbox || undefined);
+  const record = await dependencies.store.find(messageRoute.id);
   if (record === undefined) {
     return json(404, { message: 'Message not found' });
   }

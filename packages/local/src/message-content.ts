@@ -64,7 +64,6 @@ export const toDetailResponse = async (message: StoredMessage): Promise<MessageD
     subject: message.subject,
     receivedAt: message.receivedAt,
     size: message.rawMime.byteLength,
-    mailbox: message.mailbox,
     content: toContentResponse(await parseMessageContent(message.rawMime)),
   };
 };

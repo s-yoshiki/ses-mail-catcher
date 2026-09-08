@@ -11,7 +11,6 @@ export const mockMessages: MessageDetail[] = [
     subject: 'Welcome to ses-mail-catcher',
     receivedAt: '2026-09-06T00:00:00.000Z',
     size: 1420,
-    mailbox: 'default',
     content: {
       text: 'This is a sample message from the MSW browser mock.',
       html: '<!doctype html><html><body><h1>Welcome</h1><p>This message is served by MSW.</p></body></html>',
@@ -28,7 +27,6 @@ export const mockMessages: MessageDetail[] = [
     subject: 'Order confirmation #1042',
     receivedAt: '2026-09-05T15:30:00.000Z',
     size: 3840,
-    mailbox: 'orders',
     content: {
       text: 'Thanks for your order. The receipt is attached.',
       attachments: [

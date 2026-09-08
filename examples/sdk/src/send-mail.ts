@@ -90,7 +90,6 @@ const generatedHtml = ([
   ? `<html lang="ja"><body><h1>${escapeHtml(subject)}</h1><p>${escapeHtml(text).replaceAll('\n', '<br>')}</p></body></html>`
   : undefined;
 const html = process.env.MAIL_HTML ?? generatedHtml;
-const mailbox = process.env.MAILBOX;
 const templateName = process.env.MAIL_TEMPLATE_NAME ?? 'ses-mail-catcher-sdk-example-template';
 
 const isLocalEndpoint = (endpoint: string): boolean => {
@@ -220,7 +219,6 @@ const response = await ses.send(new SendEmailCommand({
   },
   ...(replyTo === undefined ? {} : { ReplyToAddresses: replyTo }),
   Content: createContent(),
-  ...(mailbox === undefined ? {} : { EmailTags: [{ Name: 'mailbox', Value: mailbox }] }),
 }));
 
 console.log(`mail catcher accepted ${pattern} message ${response.MessageId ?? '(no message id)'}`);

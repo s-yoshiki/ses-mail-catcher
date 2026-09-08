@@ -16,7 +16,6 @@ export interface StoredMessage {
   subject: string;
   rawMime: Uint8Array;
   receivedAt: string;
-  mailbox: string;
 }
 
 export type { MessageSummary, MessageListResponse };

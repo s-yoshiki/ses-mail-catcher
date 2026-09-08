@@ -32,23 +32,22 @@ describe('MailCatcherClient', () => {
   });
 
   it('rejects a response that does not match the shared contract', async () => {
-    server.use(http.get('*/api/messages', () => HttpResponse.json({ messages: [], mailboxes: [42] })));
+    server.use(http.get('*/api/messages', () => HttpResponse.json({ messages: [{}] })));
     const client = new MailCatcherClient('http://localhost/api/');
 
     await expect(client.listMessages()).rejects.toThrow('Invalid input');
   });
 
-  it('builds a filtered list request', async () => {
+  it('builds a limited list request', async () => {
     const client = new MailCatcherClient('http://localhost/api/');
 
     server.use(http.get('*/api/messages', ({ request }) => {
       const url = new URL(request.url);
-      expect(url.searchParams.get('mailbox')).toBe('orders');
       expect(url.searchParams.get('limit')).toBe('25');
-      return HttpResponse.json({ messages: [], mailboxes: ['orders'] });
+      return HttpResponse.json({ messages: [] });
     }));
 
-    await client.listMessages({ mailbox: 'orders', limit: 25 });
+    await client.listMessages({ limit: 25 });
   });
 
   it('escapes identifiers in resource URLs', () => {

@@ -37,7 +37,7 @@ test('creates catch-mode storage, TTL, and a directly invokable Lambda', () => {
   template.hasResourceProperties('AWS::DynamoDB::Table', {
     TimeToLiveSpecification: { AttributeName: 'expiresAt', Enabled: true },
     KeySchema: [
-      { AttributeName: 'mailbox', KeyType: 'HASH' },
+      { AttributeName: 'pk', KeyType: 'HASH' },
       { AttributeName: 'sortKey', KeyType: 'RANGE' },
     ],
   });

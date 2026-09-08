@@ -33,10 +33,8 @@ export class ViewerStore {
     private readonly config: ViewerStoreConfig,
   ) {}
 
-  public async list(mailbox: string | undefined, limit: number): Promise<ViewerMessageSummary[]> {
-    const items = mailbox === undefined
-      ? await this.scanItems(limit)
-      : await this.queryMailbox(mailbox, limit);
+  public async list(limit: number): Promise<ViewerMessageSummary[]> {
+    const items = await this.scanItems(limit);
 
     // `map` already produced a fresh array, and the package targets ES2022,
     // which has no `toSorted`.
@@ -46,18 +44,8 @@ export class ViewerStore {
     return summaries.slice(0, limit);
   }
 
-  public async mailboxes(): Promise<string[]> {
-    const items = await this.scanItems(MAX_SCANNED_ITEMS, 'mailbox');
-    // eslint-disable-next-line unicorn/no-array-sort
-    return [...new Set(items.map((item) => readString(item.mailbox) ?? 'default'))].sort();
-  }
-
-  public async find(id: string, mailbox: string | undefined): Promise<ViewerMessageRecord | undefined> {
-    // The table is keyed by mailbox, so a known mailbox turns this into a
-    // query. Without one the message id has to be searched for.
-    const items = mailbox === undefined
-      ? await this.scanItems(MAX_SCANNED_ITEMS, undefined, id)
-      : await this.queryMailbox(mailbox, MAX_SCANNED_ITEMS);
+  public async find(id: string): Promise<ViewerMessageRecord | undefined> {
+    const items = await this.scanItems(MAX_SCANNED_ITEMS, undefined, id);
 
     const item = items.find((candidate) => readString(candidate.messageId) === id);
     if (item === undefined) {
@@ -92,17 +80,6 @@ export class ViewerStore {
       chunks.push(chunk);
     }
     return concat(chunks);
-  }
-
-  private async queryMailbox(mailbox: string, limit: number): Promise<Array<Record<string, AttributeValue>>> {
-    const response = await this.ddb.send(new this.sdk.QueryCommand({
-      TableName: this.config.tableName,
-      KeyConditionExpression: 'mailbox = :mailbox',
-      ExpressionAttributeValues: { ':mailbox': { S: mailbox } },
-      ScanIndexForward: false,
-      Limit: Math.min(limit, MAX_SCANNED_ITEMS),
-    }));
-    return readItems(response);
   }
 
   private async scanItems(
@@ -153,7 +130,6 @@ const toSummary = (item: Record<string, AttributeValue>): ViewerMessageSummary =
     subject: readString(item.subject) ?? '',
     receivedAt: readString(item.createdAt) ?? '',
     size: Number.parseInt(item.size?.N ?? '0', 10),
-    mailbox: readString(item.mailbox) ?? 'default',
   };
 };
 
