@@ -44,7 +44,7 @@ describe('local SES server', () => {
 
     const listResponse = await fetch(`${server.url}/store`);
     const list = await listResponse.json() as { messages: Array<{ id: string; subject: string }> };
-    expect(list.messages).toEqual([{ id: result.MessageId, fromAddress: 'sender@example.com', toAddresses: ['recipient@example.com'], ccAddresses: [], bccAddresses: [], subject: 'テスト', receivedAt: expect.any(String), size: expect.any(Number), mailbox: 'default' }]);
+    expect(list.messages).toEqual([{ id: result.MessageId, fromAddress: 'sender@example.com', toAddresses: ['recipient@example.com'], ccAddresses: [], bccAddresses: [], subject: 'テスト', receivedAt: expect.any(String), size: expect.any(Number) }]);
 
     const rawResponse = await fetch(`${server.url}/store/${result.MessageId}/raw`);
     expect(await rawResponse.text()).toContain('Subject: =?UTF-8?B?');
@@ -97,7 +97,7 @@ describe('viewer API', () => {
       body: JSON.stringify({
         FromEmailAddress: 'sender@example.com',
         Destination: { ToAddresses: ['recipient@example.com'] },
-        EmailTags: [{ Name: 'mailbox', Value: 'orders' }],
+        EmailTags: [{ Name: 'campaign', Value: 'spring' }],
         Content: {
           Simple: {
             Subject: { Data: 'Receipt' },
@@ -116,25 +116,15 @@ describe('viewer API', () => {
     return { url: server.url, id: MessageId };
   };
 
-  it('lists messages together with the known mailboxes', async () => {
+  it('lists captured messages without synthetic metadata', async () => {
     const { url } = await seed();
 
     const response = await fetch(`${url}/api/messages`);
     expect(response.headers.get('content-type')).toContain('application/json');
 
-    const body = await response.json() as { messages: Array<{ subject: string }>; mailboxes: string[] };
+    const body = await response.json() as { messages: Array<{ subject: string }> };
     expect(body.messages).toHaveLength(1);
-    expect(body.mailboxes).toEqual(['orders']);
-  });
-
-  it('filters the list by mailbox', async () => {
-    const { url } = await seed();
-
-    const matching = await (await fetch(`${url}/api/messages?mailbox=orders`)).json() as { messages: unknown[] };
-    const other = await (await fetch(`${url}/api/messages?mailbox=default`)).json() as { messages: unknown[] };
-
-    expect(matching.messages).toHaveLength(1);
-    expect(other.messages).toHaveLength(0);
+    expect(body.messages[0]).not.toHaveProperty('mailbox');
   });
 
   it('returns the decoded body parts and attachment metadata', async () => {

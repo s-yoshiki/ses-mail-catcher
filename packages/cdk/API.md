@@ -459,7 +459,6 @@ const sendMailEvent: SendMailEvent = { ... }
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.bcc">bcc</a></code> | <code>string[]</code> | Blind-carbon-copy recipients. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.cc">cc</a></code> | <code>string[]</code> | Carbon-copy recipients. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.html">html</a></code> | <code>string</code> | HTML message content. |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.mailbox">mailbox</a></code> | <code>string</code> | The mailbox partition in which to store the message. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.metadata">metadata</a></code> | <code>{[ key: string ]: string}</code> | Arbitrary string metadata stored with the message index. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.replyTo">replyTo</a></code> | <code>string[]</code> | Reply-to addresses. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.text">text</a></code> | <code>string</code> | Plain-text message content. |
@@ -547,19 +546,6 @@ public readonly html: string;
 - *Type:* string
 
 HTML message content.
-
----
-
-##### `mailbox`<sup>Optional</sup> <a name="mailbox" id="@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.mailbox"></a>
-
-```typescript
-public readonly mailbox: string;
-```
-
-- *Type:* string
-- *Default:* default
-
-The mailbox partition in which to store the message.
 
 ---
 

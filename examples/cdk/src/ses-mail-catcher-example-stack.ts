@@ -58,26 +58,12 @@ export class SesMailCatcherExampleStack extends Stack {
       authType: lambda.FunctionUrlAuthType.AWS_IAM,
     });
 
-    // The viewer uses query strings for mailbox filtering. The managed
-    // CACHING_DISABLED policy does not forward query strings to the origin,
-    // so use a policy that includes them in the request. CloudFront rejects a
-    // query-string cache policy when all three TTLs are zero; the origin sends
-    // Cache-Control: no-store for API responses, so a zero default/minimum TTL
-    // still prevents API responses from being cached.
-    const viewerCachePolicy = new cloudfront.CachePolicy(this, 'ViewerCachePolicy', {
-      comment: 'Disable viewer caching while forwarding API query strings',
-      defaultTtl: Duration.seconds(0),
-      minTtl: Duration.seconds(0),
-      maxTtl: Duration.seconds(1),
-      queryStringBehavior: cloudfront.CacheQueryStringBehavior.all(),
-    });
-
     const viewerDistribution = new cloudfront.Distribution(this, 'ViewerDistribution', {
       comment: 'CloudFront + Edge Basic Auth for the ses-mail-catcher viewer',
       defaultBehavior: {
         origin: origins.FunctionUrlOrigin.withOriginAccessControl(mailCatcher.viewerFunctionUrl),
         allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD,
-        cachePolicy: viewerCachePolicy,
+        cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
         functionAssociations: [{
           eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
           function: edgeBasicAuthFunction,

@@ -8,16 +8,11 @@ export const handlers = [
 
   http.get('*/api/messages', ({ request }) => {
     const url = new URL(request.url);
-    const mailbox = url.searchParams.get('mailbox');
     const limit = parseLimit(url.searchParams.get('limit'));
 
-    const filtered = mockMessages.filter((message) => mailbox === null || message.mailbox === mailbox);
-    const messages = (limit === undefined ? filtered : filtered.slice(0, limit)).map(toSummary);
+    const messages = (limit === undefined ? mockMessages : mockMessages.slice(0, limit)).map(toSummary);
 
-    return HttpResponse.json({
-      messages,
-      mailboxes: [...new Set(mockMessages.map((message) => message.mailbox))],
-    });
+    return HttpResponse.json({ messages });
   }),
 
   http.get('*/api/messages/:id', ({ params }) => {
@@ -54,16 +49,6 @@ const parseLimit = (value: string | null): number | undefined => {
   return Number.isInteger(limit) && limit >= 0 ? limit : undefined;
 };
 
-const toSummary = ({
-  id,
-  fromAddress,
-  toAddresses,
-  ccAddresses,
-  bccAddresses,
-  subject,
-  receivedAt,
-  size,
-  mailbox,
-}: MessageSummary): MessageSummary => {
-  return { id, fromAddress, toAddresses, ccAddresses, bccAddresses, subject, receivedAt, size, mailbox };
+const toSummary = ({ id, fromAddress, toAddresses, ccAddresses, bccAddresses, subject, receivedAt, size }: MessageSummary): MessageSummary => {
+  return { id, fromAddress, toAddresses, ccAddresses, bccAddresses, subject, receivedAt, size };
 };

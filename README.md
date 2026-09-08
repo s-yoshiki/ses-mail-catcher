@@ -115,7 +115,7 @@ const mailCatcher = new SesMailCatcher(stack, 'MailCatcher', {
   only the SES permissions needed for that relay.
 
 Applications invoke `mailCatcher.function` with a small mail event containing
-the sender, recipients, subject, text or HTML body, and optionally a mailbox.
+the sender, recipients, subject, text or HTML body.
 Call `mailCatcher.grantSend()` to allow an application Lambda to invoke the
 handler.
 

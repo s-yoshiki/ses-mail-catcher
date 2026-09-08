@@ -24,7 +24,6 @@ export interface MailHandlerConfig {
 /** @internal */
 export interface MailHandlerResult {
   readonly messageId: string;
-  readonly mailbox: string;
   readonly mode: MailHandlerMode;
   readonly createdAt: string;
   readonly s3Key?: string;
@@ -67,13 +66,11 @@ export const processMail = async (
 
   const messageId = randomUUID();
   const createdAt = new Date().toISOString();
-  const mailbox = event.mailbox ?? 'default';
   const rawMime = mailEvent.rawMimeBase64 === undefined
     ? Buffer.from(await createMimeMessage(
       event,
       messageId,
       createdAt,
-      mailbox,
       (attachment) => readAttachment(dependencies.s3, dependencies.sdk, attachment.bucket, attachment.key),
     ), 'utf8')
     : Buffer.from(mailEvent.rawMimeBase64, 'base64');
@@ -86,26 +83,26 @@ export const processMail = async (
       ...(config.relay?.feedbackForwardingEmailAddress ? { FeedbackForwardingEmailAddress: config.relay.feedbackForwardingEmailAddress } : {}),
     };
     await dependencies.ses.send(new dependencies.sdk.SendEmailCommand(relayParameters));
-    return { messageId, mailbox, mode: 'RELAY', createdAt };
+    return { messageId, mode: 'RELAY', createdAt };
   }
 
   const date = createdAt.slice(0, 10).split('-');
-  const key = `mail/${mailbox}/${date[0]}/${date[1]}/${date[2]}/${messageId}.eml`;
+  const key = `messages/${date[0]}/${date[1]}/${date[2]}/${messageId}.eml`;
   await dependencies.s3.send(new dependencies.sdk.PutObjectCommand({
     Bucket: config.bucketName,
     Key: key,
     Body: rawMime,
     ContentType: 'message/rfc822',
-    Metadata: { messageid: messageId, mailbox },
+    Metadata: { messageid: messageId },
   }));
 
   const expiresAt = Math.floor(Date.now() / 1000) + config.retentionSeconds;
   await dependencies.ddb.send(new dependencies.sdk.PutItemCommand({
     TableName: config.tableName,
-    Item: createMetadataItem(event, messageId, createdAt, mailbox, key, rawMime.byteLength, expiresAt),
+    Item: createMetadataItem(event, messageId, createdAt, key, rawMime.byteLength, expiresAt),
   }));
 
-  return { messageId, mailbox, mode: 'CATCH', createdAt, s3Key: key };
+  return { messageId, mode: 'CATCH', createdAt, s3Key: key };
 };
 
 interface SesApiResponse {

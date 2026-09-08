@@ -123,11 +123,8 @@ const handleApiRequest = async (
   }
 
   if (url.pathname === '/store' || url.pathname === '/api/messages') {
-    const mailbox = url.searchParams.get('mailbox') ?? undefined;
-    const messages = store.list(parseLimit(url.searchParams.get('limit')), mailbox);
-    writeJson(response, 200, url.pathname === '/store'
-      ? { messages }
-      : { messages, mailboxes: store.mailboxes() });
+    const messages = store.list(parseLimit(url.searchParams.get('limit')));
+    writeJson(response, 200, { messages });
     return true;
   }
 
@@ -291,7 +288,6 @@ const saveSesMessage = (
     subject: parsed.subject,
     rawMime,
     receivedAt: new Date().toISOString(),
-    mailbox: readMailbox(input),
   };
 
   return store.save(message);
@@ -323,15 +319,6 @@ const createSimpleEmail = (
     ...(text || html ? { Body: { ...(text ? { Text: text } : {}), ...(html ? { Html: html } : {}) } } : {}),
     ...(attachments && attachments.length > 0 ? { Attachments: attachments } : {}),
   });
-};
-
-const readMailbox = (input: Record<string, unknown>): string => {
-  const tags = Array.isArray(input.EmailTags) ? input.EmailTags : Array.isArray(input.Tags) ? input.Tags : [];
-  const mailboxTag = tags.find((tag): tag is { Name: string; Value: string } => {
-    const record = asRecord(tag);
-    return asString(record?.Name)?.toLowerCase() === 'mailbox' && typeof record?.Value === 'string';
-  });
-  return mailboxTag?.Value ?? 'default';
 };
 
 const asAttachment = (value: unknown): {

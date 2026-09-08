@@ -26,8 +26,8 @@ Application
   The statement is narrowed to `relay.fromEmailAddressIdentityArn` (plus the
   configuration set ARN when one is configured) and only falls back to `*` when
   no identity ARN is given.
-- The bucket the construct creates is emptied on stack deletion, so a mailbox
-  that still holds captured messages does not block `cdk destroy`.
+- The bucket the construct creates is emptied on stack deletion, so captured
+  messages do not block `cdk destroy`.
 
 The Lambda asset path is derived from `import.meta.url`, so handler source is not embedded in a hard-coded inline string and the installed package remains relocatable.
 

@@ -68,7 +68,7 @@ The shared TypeScript types and Zod schemas are maintained in
 
 | Route | Response |
 | --- | --- |
-| `GET /api/messages?mailbox=&limit=` | `{ messages, mailboxes }` |
+| `GET /api/messages?limit=` | `{ messages }` |
 | `GET /api/messages/:id` | message with `content.text`, `content.html`, `content.attachments` |
 | `GET /api/messages/:id/raw` | `message/rfc822` |
 | `GET /api/messages/:id/attachments/:index` | the attachment bytes |

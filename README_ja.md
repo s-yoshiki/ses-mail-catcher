@@ -97,7 +97,7 @@ const mailCatcher = new SesMailCatcher(stack, 'MailCatcher', {
 - `CATCH` は標準化した raw MIME メッセージを作成し、S3 に保存するとともに、検索用メタデータを DynamoDB に保存します。SES の送信権限は付与しません。
 - `RELAY` は同じ raw MIME 形式を Amazon SES 経由で送信し、そのリレーに必要な SES 権限だけを付与します。
 
-アプリケーションは、送信元・宛先・件名・テキストまたは HTML 本文、必要に応じてメールボックスを含む小さなメールイベントで `mailCatcher.function` を呼び出します。アプリケーションの Lambda からハンドラーを呼び出せるようにするには `mailCatcher.grantSend()` を使用します。
+アプリケーションは、送信元・宛先・件名・テキストまたは HTML 本文を含む小さなメールイベントで `mailCatcher.function` を呼び出します。アプリケーションの Lambda からハンドラーを呼び出せるようにするには `mailCatcher.grantSend()` を使用します。
 
 捕捉したメール用の AWS ビューアも作成できます。ビューアは `CATCH` モードでのみ利用でき、アクセス制御なしでは作成できません。Basic 認証の認証情報は AWS Secrets Manager から実行時に読み込み、IPv4 または IPv6 の CIDR 範囲を追加の制限として設定できます。認証情報が CDK の合成テンプレートに含まれることはありません。捕捉した HTML はサンドボックス化された iframe 内で表示されます。
 

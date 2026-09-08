@@ -67,7 +67,6 @@ test('validates, creates MIME, and stores a message with an S3 attachment', asyn
     subject: 'こんにちは',
     text: 'Plain text',
     html: '<p>HTML</p>',
-    mailbox: 'development',
     attachments: [{
       filename: 'attachment.txt',
       contentType: 'text/plain',
@@ -78,8 +77,8 @@ test('validates, creates MIME, and stores a message with an S3 attachment', asyn
   }, config('CATCH'), { ddb, s3, ses: { send: vi.fn<Send>() }, sdk });
 
   expect(result.mode).toBe('CATCH');
-  expect(result.mailbox).toBe('development');
-  expect(result.s3Key).toMatch(/^mail\/development\/\d{4}\/\d{2}\/\d{2}\/.+\.eml$/);
+  expect(result).not.toHaveProperty('mailbox');
+  expect(result.s3Key).toMatch(/^messages\/\d{4}\/\d{2}\/\d{2}\/.+\.eml$/);
   expect(s3.send).toHaveBeenCalledTimes(2);
   expect(ddb.send).toHaveBeenCalledTimes(1);
 
@@ -91,9 +90,11 @@ test('validates, creates MIME, and stores a message with an S3 attachment', asyn
   expect(rawMime).toContain('multipart/alternative');
   expect(rawMime).toContain('=?UTF-8?B?44GT44KT44Gr44Gh44Gv?=');
   expect(rawMime).toContain('YXR0YWNobWVudA==');
+  expect(rawMime).not.toContain('X-Mailbox:');
 
   const item = (ddb.send.mock.calls[0][0] as { input: { Item: Record<string, { S?: string }> } }).input.Item;
-  expect(item.mailbox.S).toBe('development');
+  expect(item.pk.S).toBe('messages');
+  expect(item).not.toHaveProperty('mailbox');
   expect(item.subject.S).toBe('こんにちは');
   expect(item.metadata).toBeDefined();
 });
