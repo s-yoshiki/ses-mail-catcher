@@ -116,6 +116,47 @@ test('relays the same raw MIME through SES without writing storage', async () =>
   expect(input.Content.Raw.Data.toString('utf8')).toContain('Subject: Relay test');
 });
 
+test('relays an attachment after reading both supported S3 body forms', async () => {
+  const s3 = {
+    send: vi.fn<Send>().mockResolvedValue({
+      Body: (async function* (): AsyncGenerator<Uint8Array> {
+        yield Buffer.from('streamed ');
+        yield Buffer.from('attachment');
+      })(),
+    }),
+  };
+  const ses = { send: vi.fn<Send>().mockResolvedValue({}) };
+
+  await processMail({
+    from: 'noreply@example.com',
+    to: ['user@example.com'],
+    subject: 'Relay attachment',
+    text: 'Hello',
+    attachments: [{
+      filename: 'streamed.bin',
+      contentType: 'application/octet-stream',
+      bucket: 'source-bucket',
+      key: 'streamed.bin',
+    }],
+  }, config('RELAY'), { ddb: { send: vi.fn<Send>() }, s3, ses, sdk });
+
+  expect(s3.send).toHaveBeenCalledTimes(1);
+  expect(ses.send).toHaveBeenCalledTimes(1);
+  const input = (ses.send.mock.calls[0][0] as { input: { Content: { Raw: { Data: Buffer } } } }).input;
+  expect(input.Content.Raw.Data.toString('utf8')).toContain('c3RyZWFtZWQgYXR0YWNobWVudA==');
+});
+
+test('does not call AWS services for a template-shaped event', async () => {
+  const deps = dependencies();
+
+  await expect(processMail({
+    Content: { Template: { TemplateName: 'welcome' } },
+  }, config('CATCH'), deps)).rejects.toThrow('from must be a non-empty string');
+  expect(deps.s3.send).not.toHaveBeenCalled();
+  expect(deps.ddb.send).not.toHaveBeenCalled();
+  expect(deps.ses.send).not.toHaveBeenCalled();
+});
+
 test('rejects invalid recipient input before calling AWS services', async () => {
   const deps = dependencies();
 

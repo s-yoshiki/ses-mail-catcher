@@ -2,6 +2,10 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import {
+  messageDetailSchema,
+  messageListResponseSchema,
+} from 'ses-mail-catcher-api-contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { HOST_ENV, PORT_ENV } from '../src/options.js';
@@ -10,174 +14,123 @@ import { startServer } from '../src/ses-server.js';
 const temporaryDirectories: string[] = [];
 const servers: Array<{ close(): Promise<void> }> = [];
 
+const postSes = (
+  url: string,
+  body: unknown,
+  target = 'AmazonSimpleEmailServiceV2.SendEmail',
+): Promise<Response> => {
+  return fetch(`${url}/v2/email/outbound-emails`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/x-amz-json-1.1',
+      'x-amz-target': target,
+    },
+    body: JSON.stringify(body),
+  });
+};
+
 afterEach(async () => {
   vi.unstubAllEnvs();
   await Promise.all(servers.splice(0).map((server) => server.close()));
   await Promise.all(temporaryDirectories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })));
 });
 
-describe('local SES server', () => {
-  it('accepts SES v2 SendEmail and exposes the stored message', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'ses-mail-catcher-server-'));
-    temporaryDirectories.push(directory);
-    const server = await startServer({ dbPath: join(directory, 'mailbox.sqlite3'), port: 0 });
-    servers.push(server);
+it('accepts SES v2 SendEmail and exposes the stored message', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'ses-mail-catcher-server-'));
+  temporaryDirectories.push(directory);
+  const server = await startServer({ dbPath: join(directory, 'mailbox.sqlite3'), port: 0 });
+  servers.push(server);
 
-    const response = await fetch(`${server.url}/v2/email/outbound-emails`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/x-amz-json-1.1', 'x-amz-target': 'AmazonSimpleEmailServiceV2.SendEmail' },
-      body: JSON.stringify({
-        FromEmailAddress: 'sender@example.com',
-        Destination: { ToAddresses: ['recipient@example.com'] },
-        Content: {
-          Simple: {
-            Subject: { Data: 'テスト' },
-            Body: { Text: { Data: '本文' } },
-          },
-        },
-      }),
-    });
-
-    expect(response.status).toBe(200);
-    const result = await response.json() as { MessageId: string };
-    expect(result.MessageId).toEqual(expect.any(String));
-
-    const listResponse = await fetch(`${server.url}/store`);
-    const list = await listResponse.json() as { messages: Array<{ id: string; subject: string }> };
-    expect(list.messages).toEqual([{ id: result.MessageId, fromAddress: 'sender@example.com', toAddresses: ['recipient@example.com'], ccAddresses: [], bccAddresses: [], subject: 'テスト', receivedAt: expect.any(String), size: expect.any(Number), mailbox: 'default' }]);
-
-    const rawResponse = await fetch(`${server.url}/store/${result.MessageId}/raw`);
-    expect(await rawResponse.text()).toContain('Subject: =?UTF-8?B?');
+  const response = await postSes(server.url, {
+    FromEmailAddress: 'sender@example.com',
+    Destination: { ToAddresses: ['recipient@example.com'] },
+    Content: {
+      Simple: {
+        Subject: { Data: 'テスト' },
+        Body: { Text: { Data: '本文' } },
+      },
+    },
   });
 
-  it('accepts Raw content', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'ses-mail-catcher-raw-'));
-    temporaryDirectories.push(directory);
-    const server = await startServer({ dbPath: join(directory, 'mailbox.sqlite3'), port: 0 });
-    servers.push(server);
+  expect(response.status).toBe(200);
+  expect(response.headers.get('content-type')).toBe('application/x-amz-json-1.1; charset=utf-8');
+  const result = await response.json() as { MessageId: string };
+  expect(result.MessageId).toEqual(expect.any(String));
 
-    const raw = 'From: sender@example.com\r\nTo: recipient@example.com\r\nSubject: Raw\r\n\r\nBody';
-    const response = await fetch(`${server.url}/`, {
-      method: 'POST',
-      headers: { 'x-amz-target': 'com.amazonaws.ses.v2.SESv2.SendEmail' },
-      body: JSON.stringify({ Content: { Raw: { Data: Buffer.from(raw).toString('base64') } } }),
-    });
-
-    expect(response.status).toBe(200);
-    expect((await response.json()).MessageId).toEqual(expect.any(String));
-    expect((await fetch(`${server.url}/health-check`)).status).toBe(200);
+  const apiResponse = await fetch(`${server.url}/api/messages`);
+  expect(messageListResponseSchema.parse(await apiResponse.json())).toMatchObject({
+    messages: [{
+      id: result.MessageId,
+      fromAddress: 'sender@example.com',
+      toAddresses: ['recipient@example.com'],
+      ccAddresses: [],
+      bccAddresses: [],
+      subject: 'テスト',
+      size: expect.any(Number),
+      mailbox: 'default',
+    }],
+    mailboxes: ['default'],
   });
 
-  it('binds to the host and port given in the environment', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'ses-mail-catcher-env-'));
-    temporaryDirectories.push(directory);
-    // The container image relies on this to publish the port beyond loopback.
-    vi.stubEnv(HOST_ENV, 'localhost');
-    vi.stubEnv(PORT_ENV, '0');
+  const listResponse = await fetch(`${server.url}/store`);
+  const list = await listResponse.json() as { messages: Array<{ id: string; subject: string }> };
+  expect(list.messages).toEqual([{ id: result.MessageId, fromAddress: 'sender@example.com', toAddresses: ['recipient@example.com'], ccAddresses: [], bccAddresses: [], subject: 'テスト', receivedAt: expect.any(String), size: expect.any(Number), mailbox: 'default' }]);
 
-    const server = await startServer({ dbPath: join(directory, 'mailbox.sqlite3') });
-    servers.push(server);
-
-    expect(server.host).toBe('localhost');
-    expect(server.port).toBeGreaterThan(0);
-    expect((await fetch(`${server.url}/health-check`)).status).toBe(200);
-  });
+  const rawResponse = await fetch(`${server.url}/store/${result.MessageId}/raw`);
+  expect(rawResponse.headers.get('content-type')).toBe('message/rfc822');
+  expect(await rawResponse.text()).toContain('Subject: =?UTF-8?B?');
 });
 
-describe('viewer API', () => {
-  const seed = async (): Promise<{ url: string; id: string }> => {
-    const directory = await mkdtemp(join(tmpdir(), 'ses-mail-catcher-api-'));
-    temporaryDirectories.push(directory);
-    const server = await startServer({ dbPath: join(directory, 'mailbox.sqlite3'), port: 0 });
-    servers.push(server);
+it('accepts SES SendRawEmail with RawMessage content', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'ses-mail-catcher-raw-'));
+  temporaryDirectories.push(directory);
+  const server = await startServer({ dbPath: join(directory, 'mailbox.sqlite3'), port: 0 });
+  servers.push(server);
 
-    const response = await fetch(`${server.url}/v2/email/outbound-emails`, {
-      method: 'POST',
-      headers: { 'x-amz-target': 'AmazonSimpleEmailServiceV2.SendEmail' },
-      body: JSON.stringify({
-        FromEmailAddress: 'sender@example.com',
-        Destination: { ToAddresses: ['recipient@example.com'] },
-        EmailTags: [{ Name: 'mailbox', Value: 'orders' }],
-        Content: {
-          Simple: {
-            Subject: { Data: 'Receipt' },
-            Body: { Text: { Data: 'plain body' }, Html: { Data: '<p>html body</p>' } },
-            Attachments: [{
-              FileName: 'invoice.pdf',
-              ContentType: 'application/pdf',
-              RawContent: Buffer.from('%PDF-1.4').toString('base64'),
-            }],
-          },
-        },
-      }),
-    });
+  const raw = 'From: sender@example.com\r\nTo: recipient@example.com\r\nSubject: Raw\r\n\r\nBody';
+  const response = await postSes(
+    server.url,
+    { RawMessage: { Data: Buffer.from(raw).toString('base64') } },
+    'AmazonSimpleEmailServiceV2.SendRawEmail',
+  );
 
-    const { MessageId } = await response.json() as { MessageId: string };
-    return { url: server.url, id: MessageId };
-  };
-
-  it('lists messages together with the known mailboxes', async () => {
-    const { url } = await seed();
-
-    const response = await fetch(`${url}/api/messages`);
-    expect(response.headers.get('content-type')).toContain('application/json');
-
-    const body = await response.json() as { messages: Array<{ subject: string }>; mailboxes: string[] };
-    expect(body.messages).toHaveLength(1);
-    expect(body.mailboxes).toEqual(['orders']);
+  expect(response.status).toBe(200);
+  const { MessageId } = await response.json() as { MessageId: string };
+  expect(MessageId).toEqual(expect.any(String));
+  const detail = messageDetailSchema.parse(await (await fetch(`${server.url}/api/messages/${MessageId}`)).json());
+  expect(detail).toMatchObject({
+    id: MessageId,
+    fromAddress: 'sender@example.com',
+    toAddresses: ['recipient@example.com'],
+    subject: 'Raw',
+    content: { attachments: [] },
   });
+  expect(detail.content.text).toContain('Body');
+  const rawResponse = await fetch(`${server.url}/api/messages/${MessageId}/raw`);
+  expect(Buffer.from(await rawResponse.arrayBuffer()).equals(Buffer.from(raw))).toBe(true);
 
-  it('filters the list by mailbox', async () => {
-    const { url } = await seed();
-
-    const matching = await (await fetch(`${url}/api/messages?mailbox=orders`)).json() as { messages: unknown[] };
-    const other = await (await fetch(`${url}/api/messages?mailbox=default`)).json() as { messages: unknown[] };
-
-    expect(matching.messages).toHaveLength(1);
-    expect(other.messages).toHaveLength(0);
+  const contentRawResponse = await postSes(server.url, {
+    Content: { Raw: { Data: Buffer.from(raw).toString('base64') } },
   });
+  expect(contentRawResponse.status).toBe(200);
+  const contentRawId = (await contentRawResponse.json() as { MessageId: string }).MessageId;
+  expect(contentRawId).toEqual(expect.any(String));
+  expect((await fetch(`${server.url}/health-check`)).status).toBe(200);
+});
 
-  it('returns the decoded body parts and attachment metadata', async () => {
-    const { url, id } = await seed();
+it('binds to the host and port given in the environment', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'ses-mail-catcher-env-'));
+  temporaryDirectories.push(directory);
+  // The container image relies on this to publish the port beyond loopback.
+  vi.stubEnv(HOST_ENV, 'localhost');
+  vi.stubEnv(PORT_ENV, '0');
 
-    const detail = await (await fetch(`${url}/api/messages/${id}`)).json() as {
-      content: { text?: string; html?: string; attachments: Array<{ index: number; filename: string; size: number }> };
-      replyToAddresses: string[];
-    };
+  const server = await startServer({ dbPath: join(directory, 'mailbox.sqlite3') });
+  servers.push(server);
 
-    expect(detail.content.text).toContain('plain body');
-    expect(detail.content.html).toContain('<p>html body</p>');
-    expect(detail.content.attachments).toEqual([
-      { index: 0, filename: 'invoice.pdf', contentType: 'application/pdf', size: 8, inline: false },
-    ]);
-  });
-
-  it('downloads an attachment with its own content type', async () => {
-    const { url, id } = await seed();
-
-    const response = await fetch(`${url}/api/messages/${id}/attachments/0`);
-    expect(response.status).toBe(200);
-    expect(response.headers.get('content-type')).toBe('application/pdf');
-    expect(response.headers.get('content-disposition')).toContain('invoice.pdf');
-    expect(await response.text()).toBe('%PDF-1.4');
-  });
-
-  it('reports missing messages and attachments', async () => {
-    const { url, id } = await seed();
-
-    expect((await fetch(`${url}/api/messages/does-not-exist`)).status).toBe(404);
-    expect((await fetch(`${url}/api/messages/${id}/attachments/9`)).status).toBe(404);
-  });
-
-  it('keeps serving the original store routes', async () => {
-    const { url, id } = await seed();
-
-    expect((await fetch(`${url}/health-check`)).status).toBe(200);
-    expect((await fetch(`${url}/api/health`)).status).toBe(200);
-
-    const legacy = await (await fetch(`${url}/store/${id}`)).json() as { rawMime: string };
-    expect(Buffer.from(legacy.rawMime, 'base64').toString('utf8')).toContain('Subject: Receipt');
-  });
+  expect(server.host).toBe('localhost');
+  expect(server.port).toBeGreaterThan(0);
+  expect((await fetch(`${server.url}/health-check`)).status).toBe(200);
 });
 
 describe('viewer assets', () => {

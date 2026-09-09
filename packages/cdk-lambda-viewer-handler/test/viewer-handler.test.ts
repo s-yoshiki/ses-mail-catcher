@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'vitest';
 
+import {
+  apiErrorSchema,
+  healthResponseSchema,
+  messageDetailSchema,
+  messageListResponseSchema,
+} from 'ses-mail-catcher-api-contract';
 import { serveViewer, type ViewerHandlerConfig, type ViewerHandlerDependencies, type ViewerRequest } from '../src/viewer-handler.js';
 import type { ViewerContent } from '../src/viewer-content.js';
 import type { ViewerMessageRecord, ViewerMessageSummary, ViewerStore } from '../src/viewer-store.js';
@@ -86,6 +92,7 @@ describe('access control', () => {
 
     expect(response.statusCode).toBe(401);
     expect(response.headers['WWW-Authenticate']).toContain('Basic realm');
+    expect(apiErrorSchema.parse(JSON.parse(response.body))).toEqual({ message: 'Authentication required' });
   });
 
   test('refuses an address outside the allow list without prompting', async () => {
@@ -97,6 +104,7 @@ describe('access control', () => {
 
     expect(response.statusCode).toBe(403);
     expect(response.headers['WWW-Authenticate']).toBeUndefined();
+    expect(apiErrorSchema.parse(JSON.parse(response.body))).toEqual({ message: 'Address not allowed' });
   });
 
   test('accepts a caller inside the allow list with valid credentials', async () => {
@@ -126,12 +134,42 @@ describe('routing', () => {
     const response = await serveViewer(request('/api/messages'), baseConfig(), baseDependencies());
 
     expect(response.statusCode).toBe(200);
-    expect(JSON.parse(response.body)).toEqual({ messages: [SUMMARY], mailboxes: ['orders'] });
+    expect(messageListResponseSchema.parse(JSON.parse(response.body))).toEqual({ messages: [SUMMARY], mailboxes: ['orders'] });
+  });
+
+  test('passes the mailbox and bounded limit to the store', async () => {
+    let receivedMailbox: string | undefined;
+    let receivedLimit: number | undefined;
+    const response = await serveViewer(
+      request('/api/messages', { queryStringParameters: { mailbox: 'orders', limit: '9999' } }),
+      baseConfig(),
+      baseDependencies({
+        store: {
+          list: (mailbox: string | undefined, limit: number) => {
+            receivedMailbox = mailbox;
+            receivedLimit = limit;
+            return Promise.resolve([]);
+          },
+          mailboxes: () => Promise.resolve([]),
+        } as unknown as ViewerStore,
+      }),
+    );
+
+    expect(response.statusCode).toBe(200);
+    expect(receivedMailbox).toBe('orders');
+    expect(receivedLimit).toBe(1000);
+  });
+
+  test('returns a health response with the shared shape', async () => {
+    const response = await serveViewer(request('/api/health'), baseConfig(), baseDependencies());
+
+    expect(response.statusCode).toBe(200);
+    expect(healthResponseSchema.parse(JSON.parse(response.body))).toEqual({ status: 'ok' });
   });
 
   test('returns parsed content without the storage key', async () => {
     const response = await serveViewer(request('/api/messages/message-1'), baseConfig(), baseDependencies());
-    const body = JSON.parse(response.body) as Record<string, unknown> & { content: { attachments: unknown[] } };
+    const body = messageDetailSchema.parse(JSON.parse(response.body));
 
     expect(body).not.toHaveProperty('s3Key');
     expect(body.content).toMatchObject({ text: 'body', html: '<p>body</p>' });
@@ -145,7 +183,7 @@ describe('routing', () => {
 
     expect(response.headers['Content-Type']).toBe('message/rfc822');
     expect(response.isBase64Encoded).toBe(true);
-    expect(Buffer.from(response.body, 'base64').toString('utf8')).toContain('Subject: Receipt');
+    expect(Buffer.from(response.body, 'base64')).toEqual(RAW_MIME);
   });
 
   test('serves an attachment with an ascii-safe disposition', async () => {
@@ -157,7 +195,7 @@ describe('routing', () => {
 
     expect(response.headers['Content-Type']).toBe('application/pdf');
     expect(response.headers['Content-Disposition']).toContain("filename*=UTF-8''");
-    expect(Buffer.from(response.body, 'base64').toString('utf8')).toBe('%PDF-1.4');
+    expect(Buffer.from(response.body, 'base64')).toEqual(Buffer.from('%PDF-1.4', 'utf8'));
   });
 
   test('reports missing messages and attachments', async () => {
@@ -170,6 +208,8 @@ describe('routing', () => {
 
     expect(missingMessage.statusCode).toBe(404);
     expect(missingAttachment.statusCode).toBe(404);
+    expect(apiErrorSchema.parse(JSON.parse(missingMessage.body))).toEqual({ message: 'Message not found' });
+    expect(apiErrorSchema.parse(JSON.parse(missingAttachment.body))).toEqual({ message: 'Attachment not found' });
   });
 
   test('never falls through to the bundle for an unknown api route', async () => {
@@ -177,6 +217,7 @@ describe('routing', () => {
 
     expect(response.statusCode).toBe(404);
     expect(response.headers['Content-Type']).toContain('application/json');
+    expect(apiErrorSchema.parse(JSON.parse(response.body))).toEqual({ message: 'Not found' });
   });
 
   test('serves the bundle for everything else', async () => {
@@ -198,6 +239,17 @@ describe('routing', () => {
     );
 
     expect(response.statusCode).toBe(500);
-    expect(JSON.parse(response.body)).toEqual({ message: 'table missing' });
+    expect(apiErrorSchema.parse(JSON.parse(response.body))).toEqual({ message: 'table missing' });
+  });
+
+  test('returns a JSON 404 when a static asset is absent', async () => {
+    const response = await serveViewer(
+      request('/assets/missing.js'),
+      baseConfig(),
+      baseDependencies({ assets: { read: () => Promise.resolve() } as unknown as ViewerStatic }),
+    );
+
+    expect(response.statusCode).toBe(404);
+    expect(apiErrorSchema.parse(JSON.parse(response.body))).toEqual({ message: 'Not found' });
   });
 });
