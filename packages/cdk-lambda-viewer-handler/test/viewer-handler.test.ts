@@ -1,4 +1,10 @@
-import { describe, expect, test } from 'vitest';
+import {
+  apiErrorSchema,
+  healthResponseSchema,
+  messageDetailSchema,
+  messageListResponseSchema,
+} from '@ses-mail-catcher/api-contract';
+import { describe, expect, test, vi } from 'vitest';
 
 import { serveViewer, type ViewerHandlerConfig, type ViewerHandlerDependencies, type ViewerRequest } from '../src/viewer-handler.js';
 import type { ViewerContent } from '../src/viewer-content.js';
@@ -84,6 +90,20 @@ describe('access control', () => {
 
     expect(response.statusCode).toBe(401);
     expect(response.headers['WWW-Authenticate']).toContain('Basic realm');
+    expect(apiErrorSchema.parse(JSON.parse(response.body))).toEqual({ message: 'Authentication required' });
+  });
+
+  test('challenges a caller with invalid basic auth credentials', async () => {
+    const authorization = `Basic ${Buffer.from('reader:wrong', 'utf8').toString('base64')}`;
+    const response = await serveViewer(
+      request('/api/messages', { headers: { Authorization: authorization } }),
+      baseConfig(),
+      baseDependencies({ credentials: async () => ({ username: 'reader', password: 'secret' }) }),
+    );
+
+    expect(response.statusCode).toBe(401);
+    expect(response.headers['WWW-Authenticate']).toContain('Basic realm');
+    expect(apiErrorSchema.parse(JSON.parse(response.body))).toEqual({ message: 'Invalid credentials' });
   });
 
   test('refuses an address outside the allow list without prompting', async () => {
@@ -95,6 +115,7 @@ describe('access control', () => {
 
     expect(response.statusCode).toBe(403);
     expect(response.headers['WWW-Authenticate']).toBeUndefined();
+    expect(apiErrorSchema.parse(JSON.parse(response.body))).toEqual({ message: 'Address not allowed' });
   });
 
   test('accepts a caller inside the allow list with valid credentials', async () => {
@@ -120,16 +141,23 @@ describe('access control', () => {
 });
 
 describe('routing', () => {
+  test('returns the health response shape', async () => {
+    const response = await serveViewer(request('/api/health'), baseConfig(), baseDependencies());
+
+    expect(response.statusCode).toBe(200);
+    expect(healthResponseSchema.parse(JSON.parse(response.body))).toEqual({ status: 'ok' });
+  });
+
   test('lists captured messages without synthetic metadata', async () => {
     const response = await serveViewer(request('/api/messages'), baseConfig(), baseDependencies());
 
     expect(response.statusCode).toBe(200);
-    expect(JSON.parse(response.body)).toEqual({ messages: [SUMMARY] });
+    expect(messageListResponseSchema.parse(JSON.parse(response.body))).toEqual({ messages: [SUMMARY] });
   });
 
   test('returns parsed content without the storage key', async () => {
     const response = await serveViewer(request('/api/messages/message-1'), baseConfig(), baseDependencies());
-    const body = JSON.parse(response.body) as Record<string, unknown> & { content: { attachments: unknown[] } };
+    const body = messageDetailSchema.parse(JSON.parse(response.body));
 
     expect(body).not.toHaveProperty('s3Key');
     expect(body.content).toMatchObject({ text: 'body', html: '<p>body</p>' });
@@ -142,8 +170,9 @@ describe('routing', () => {
     const response = await serveViewer(request('/api/messages/message-1/raw'), baseConfig(), baseDependencies());
 
     expect(response.headers['Content-Type']).toBe('message/rfc822');
+    expect(response.headers['Cache-Control']).toBe('no-store');
     expect(response.isBase64Encoded).toBe(true);
-    expect(Buffer.from(response.body, 'base64').toString('utf8')).toContain('Subject: Receipt');
+    expect(Buffer.from(response.body, 'base64')).toEqual(RAW_MIME);
   });
 
   test('serves an attachment with an ascii-safe disposition', async () => {
@@ -154,6 +183,8 @@ describe('routing', () => {
     );
 
     expect(response.headers['Content-Type']).toBe('application/pdf');
+    expect(response.headers['Cache-Control']).toBe('no-store');
+    expect(response.isBase64Encoded).toBe(true);
     expect(response.headers['Content-Disposition']).toContain("filename*=UTF-8''");
     expect(Buffer.from(response.body, 'base64').toString('utf8')).toBe('%PDF-1.4');
   });
@@ -168,6 +199,8 @@ describe('routing', () => {
 
     expect(missingMessage.statusCode).toBe(404);
     expect(missingAttachment.statusCode).toBe(404);
+    expect(apiErrorSchema.parse(JSON.parse(missingMessage.body))).toEqual({ message: 'Message not found' });
+    expect(apiErrorSchema.parse(JSON.parse(missingAttachment.body))).toEqual({ message: 'Attachment not found' });
   });
 
   test('never falls through to the bundle for an unknown api route', async () => {
@@ -175,6 +208,7 @@ describe('routing', () => {
 
     expect(response.statusCode).toBe(404);
     expect(response.headers['Content-Type']).toContain('application/json');
+    expect(apiErrorSchema.parse(JSON.parse(response.body))).toEqual({ message: 'Not found' });
   });
 
   test('serves the bundle for everything else', async () => {
@@ -182,8 +216,29 @@ describe('routing', () => {
     const script = await serveViewer(request('/assets/index-abc.js'), baseConfig(), baseDependencies());
 
     expect(index.headers['Content-Type']).toBe('text/html; charset=utf-8');
+    expect(index.headers['Cache-Control']).toBe('no-store');
+    expect(index.isBase64Encoded).toBe(true);
     expect(Buffer.from(index.body, 'base64').toString('utf8')).toContain('id="root"');
     expect(script.headers['Content-Type']).toBe('text/javascript; charset=utf-8');
+    expect(script.headers['Cache-Control']).toBe('immutable');
+    expect(script.isBase64Encoded).toBe(true);
+  });
+
+  test('normalizes list limits before calling the store', async () => {
+    const list = vi.fn<(limit: number) => Promise<ViewerMessageSummary[]>>((_limit: number) => Promise.resolve([SUMMARY]));
+    const store = { list } as unknown as ViewerStore;
+    const dependencies = baseDependencies({ store });
+
+    for (const [value, expected] of [['not-a-number', 100], ['0', 1], ['1001', 1000]] as const) {
+      const response = await serveViewer(
+        request('/api/messages', { queryStringParameters: { limit: value } }),
+        baseConfig(),
+        dependencies,
+      );
+      expect(response.statusCode).toBe(200);
+      expect(messageListResponseSchema.parse(JSON.parse(response.body))).toEqual({ messages: [SUMMARY] });
+      expect(list).toHaveBeenLastCalledWith(expected);
+    }
   });
 
   test('turns an unexpected failure into a 500 rather than leaking a stack', async () => {
@@ -196,6 +251,6 @@ describe('routing', () => {
     );
 
     expect(response.statusCode).toBe(500);
-    expect(JSON.parse(response.body)).toEqual({ message: 'table missing' });
+    expect(apiErrorSchema.parse(JSON.parse(response.body))).toEqual({ message: 'table missing' });
   });
 });

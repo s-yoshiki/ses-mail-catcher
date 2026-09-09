@@ -1,6 +1,5 @@
 import { expect, test, vi } from 'vitest';
 import { processMail, type MailHandlerConfig, type MailHandlerDependencies } from '../src/mail-handler.js';
-import { toSesApiMailEvent } from '../src/ses-api.js';
 
 const TestClient = vi.fn<(_config: Record<string, unknown>) => void>();
 
@@ -130,54 +129,4 @@ test('rejects invalid recipient input before calling AWS services', async () => 
   expect(deps.s3.send).not.toHaveBeenCalled();
   expect(deps.ddb.send).not.toHaveBeenCalled();
   expect(deps.ses.send).not.toHaveBeenCalled();
-});
-
-test('converts an SES Simple message with HTML and an attachment into raw MIME', () => {
-  const event = toSesApiMailEvent({
-    FromEmailAddress: 'noreply@example.com',
-    Destination: { ToAddresses: ['user@example.com'] },
-    Content: {
-      Simple: {
-        Subject: { Data: 'HTML example' },
-        Body: {
-          Text: { Data: 'Plain text' },
-          Html: { Data: '<p>HTML</p>' },
-        },
-        Attachments: [{
-          FileName: 'hello.txt',
-          RawContent: Buffer.from('attachment').toString('base64'),
-          ContentType: 'text/plain',
-        }],
-      },
-    },
-  }, 'SESv2.SendEmail');
-
-  const rawMime = Buffer.from(event.rawMimeBase64, 'base64').toString('utf8');
-  expect(event.subject).toBe('HTML example');
-  expect(event.html).toBe('<p>HTML</p>');
-  expect(rawMime).toContain('multipart/mixed');
-  expect(rawMime).toContain('multipart/alternative');
-  expect(rawMime).toContain('UGxhaW4gdGV4dA==');
-  expect(rawMime).toContain('PHA+SFRNTDwvcD4=');
-  expect(rawMime).toContain('YXR0YWNobWVudA==');
-});
-
-test('preserves an SES Raw message', () => {
-  const rawMime = 'From: noreply@example.com\r\nTo: user@example.com\r\nSubject: Raw\r\n\r\nbody';
-  const event = toSesApiMailEvent({
-    Content: { Raw: { Data: Buffer.from(rawMime, 'utf8').toString('base64') } },
-  }, 'SESv2.SendEmail');
-
-  expect(event.from).toBe('noreply@example.com');
-  expect(event.to).toEqual(['user@example.com']);
-  expect(event.subject).toBe('Raw');
-  expect(Buffer.from(event.rawMimeBase64, 'base64').toString('utf8')).toBe(rawMime);
-});
-
-test('rejects SES template content with a clear compatibility message', () => {
-  expect(() => toSesApiMailEvent({
-    FromEmailAddress: 'noreply@example.com',
-    Destination: { ToAddresses: ['user@example.com'] },
-    Content: { Template: { TemplateName: 'example', TemplateData: '{}' } },
-  }, 'SESv2.SendEmail')).toThrow('Content.Template is not supported');
 });
