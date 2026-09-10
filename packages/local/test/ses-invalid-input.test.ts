@@ -2,7 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { apiErrorSchema, messageListResponseSchema } from 'ses-mail-catcher-api-contract';
+import { apiErrorSchema, messageListResponseSchema } from '@ses-mail-catcher/api-contract';
 import { afterEach, expect, it } from 'vitest';
 
 import { startServer } from '../src/ses-server.js';
@@ -56,7 +56,6 @@ it('rejects templates because only Simple and Raw content are supported', async 
   expect(apiErrorSchema.parse(error)).toEqual({ message: error.message });
   expect(messageListResponseSchema.parse(await (await fetch(`${server.url}/api/messages`)).json())).toEqual({
     messages: [],
-    mailboxes: [],
   });
 });
 

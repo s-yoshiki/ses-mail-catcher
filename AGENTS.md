@@ -5,10 +5,10 @@
 This repository is an ESM-first pnpm + Turborepo monorepo for `ses-mail-catcher`.
 
 - `packages/cdk`: the publishable `@s-yoshiki/cdk-ses-mail-catcher` AWS CDK Construct.
-- `packages/cdk-lambda-mail-handler`: the private mail Lambda handler workspace packaged by the CDK construct.
-- `packages/cdk-lambda-viewer-handler`: the private viewer Lambda handler workspace packaged by the CDK construct.
-- `packages/local`: the `ses-mail-catcher-local` development server and container source.
-- `packages/viewer`: the `ses-mail-catcher-viewer` React app, bundled into `packages/local` rather than published.
+- `packages/cdk-lambda-mail-handler`: the private `@ses-mail-catcher/cdk-mail-handler` workspace packaged by the CDK construct.
+- `packages/cdk-lambda-viewer-handler`: the private `@ses-mail-catcher/cdk-viewer-handler` workspace packaged by the CDK construct.
+- `packages/local`: the private `@ses-mail-catcher/local` development server and container source.
+- `packages/viewer`: the private `@ses-mail-catcher/viewer` React app, bundled into `packages/local` rather than published.
 - `docs`: architecture, development, and release documentation.
 
 ## Non-negotiable design rules
@@ -39,10 +39,10 @@ Package-specific commands:
 ```sh
 pnpm --filter @s-yoshiki/cdk-ses-mail-catcher compile
 pnpm --filter @s-yoshiki/cdk-ses-mail-catcher test
-pnpm --filter ses-mail-catcher-local build
-pnpm --filter ses-mail-catcher-local test
-pnpm --filter ses-mail-catcher-viewer build
-pnpm --filter ses-mail-catcher-viewer dev
+pnpm --filter @ses-mail-catcher/local build
+pnpm --filter @ses-mail-catcher/local test
+pnpm --filter @ses-mail-catcher/viewer build
+pnpm --filter @ses-mail-catcher/viewer dev
 ```
 
 `packages/local` serves the viewer bundle from its own `lib/viewer`, so build

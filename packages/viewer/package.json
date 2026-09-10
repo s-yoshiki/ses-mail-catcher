@@ -1,5 +1,5 @@
 {
-  "name": "ses-mail-catcher-viewer",
+  "name": "@ses-mail-catcher/viewer",
   "version": "0.1.0",
   "type": "module",
   "description": "React viewer for messages captured by ses-mail-catcher",
@@ -18,7 +18,7 @@
   "dependencies": {
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "ses-mail-catcher-api-contract": "workspace:*"
+    "@ses-mail-catcher/api-contract": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^26.4.1",

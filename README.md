@@ -11,11 +11,11 @@ development baseline is Node.js 24 and pnpm 11.25.0.
 | Package | Purpose | Storage or runtime |
 | --- | --- | --- |
 | [`@s-yoshiki/cdk-ses-mail-catcher`](./packages/cdk) | AWS Serverless CDK construct for capturing or relaying mail | Lambda + S3 + DynamoDB |
-| [`ses-mail-catcher-local`](./packages/local) | Local SES v2-compatible server for development and integration tests | SQLite |
-| [`ses-mail-catcher-viewer`](./packages/viewer) | React viewer for captured messages | Bundled into the local server and the AWS viewer |
-| [`ses-mail-catcher-api-contract`](./packages/api-contract) | Shared TypeScript types and Zod schemas for the viewer API | Workspace-only package |
-| [`cdk-lambda-mail-handler`](./packages/cdk-lambda-mail-handler) | Mail Lambda handler used by the CDK construct | Workspace-only package |
-| [`cdk-lambda-viewer-handler`](./packages/cdk-lambda-viewer-handler) | Viewer Lambda handler used by the CDK construct | Workspace-only package |
+| [`@ses-mail-catcher/local`](./packages/local) | Local SES v2-compatible server for development and integration tests | Private workspace, distributed through Docker |
+| [`@ses-mail-catcher/viewer`](./packages/viewer) | React viewer for captured messages | Private workspace, bundled into the local server and the AWS viewer |
+| [`@ses-mail-catcher/api-contract`](./packages/api-contract) | Shared TypeScript types and Zod schemas for the viewer API | Private workspace |
+| [`@ses-mail-catcher/cdk-mail-handler`](./packages/cdk-lambda-mail-handler) | Mail Lambda handler used by the CDK construct | Private workspace |
+| [`@ses-mail-catcher/cdk-viewer-handler`](./packages/cdk-lambda-viewer-handler) | Viewer Lambda handler used by the CDK construct | Private workspace |
 
 ## Development
 
@@ -35,11 +35,11 @@ To run commands for an individual package:
 ```sh
 pnpm --filter @s-yoshiki/cdk-ses-mail-catcher compile
 pnpm --filter @s-yoshiki/cdk-ses-mail-catcher test
-pnpm --filter cdk-lambda-mail-handler test
-pnpm --filter cdk-lambda-viewer-handler test
-pnpm --filter ses-mail-catcher-local build
-pnpm --filter ses-mail-catcher-local test
-pnpm --filter ses-mail-catcher-viewer dev
+pnpm --filter @ses-mail-catcher/cdk-mail-handler test
+pnpm --filter @ses-mail-catcher/cdk-viewer-handler test
+pnpm --filter @ses-mail-catcher/local build
+pnpm --filter @ses-mail-catcher/local test
+pnpm --filter @ses-mail-catcher/viewer dev
 ```
 
 Build from the repository root when working with the local server and viewer.
@@ -115,7 +115,7 @@ const mailCatcher = new SesMailCatcher(stack, 'MailCatcher', {
   only the SES permissions needed for that relay.
 
 Applications invoke `mailCatcher.function` with a small mail event containing
-the sender, recipients, subject, text or HTML body, and optionally a mailbox.
+the sender, recipients, subject, text or HTML body.
 Call `mailCatcher.grantSend()` to allow an application Lambda to invoke the
 handler.
 
@@ -133,6 +133,7 @@ API, viewer configuration, IAM permissions, and publishing details.
 
 - [Architecture](./docs/architecture.md)
 - [Development guide](./docs/development.md)
+- [Branching strategy](./docs/branching-strategy.md)
 - [Release guide](./docs/release.md)
 - [Deployable CDK example](./examples/cdk/README.md)
 - [AWS SDK mail sender example](./examples/sdk/README.md)

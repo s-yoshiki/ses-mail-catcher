@@ -77,18 +77,18 @@ importers:
 
   packages/cdk:
     devDependencies:
+      '@ses-mail-catcher/cdk-mail-handler':
+        specifier: workspace:*
+        version: link:../cdk-lambda-mail-handler
+      '@ses-mail-catcher/cdk-viewer-handler':
+        specifier: workspace:*
+        version: link:../cdk-lambda-viewer-handler
       '@types/node':
         specifier: ^26.4.1
         version: 26.4.1
       aws-cdk-lib:
         specifier: 2.268.0
         version: 2.268.0(constructs@10.8.1)
-      cdk-lambda-mail-handler:
-        specifier: workspace:*
-        version: link:../cdk-lambda-mail-handler
-      cdk-lambda-viewer-handler:
-        specifier: workspace:*
-        version: link:../cdk-lambda-viewer-handler
       commit-and-tag-version:
         specifier: ^13.1.2
         version: 13.1.2(conventional-commits-filter@6.0.1)(conventional-commits-parser@7.1.2)
@@ -143,6 +143,12 @@ importers:
 
   packages/cdk-lambda-viewer-handler:
     devDependencies:
+      '@ses-mail-catcher/api-contract':
+        specifier: workspace:*
+        version: link:../api-contract
+      '@ses-mail-catcher/viewer':
+        specifier: workspace:*
+        version: link:../viewer
       '@types/node':
         specifier: ^26.4.1
         version: 26.4.1
@@ -152,12 +158,6 @@ importers:
       postal-mime:
         specifier: ^3.0.0
         version: 3.0.0
-      ses-mail-catcher-api-contract:
-        specifier: workspace:*
-        version: link:../api-contract
-      ses-mail-catcher-viewer:
-        specifier: workspace:*
-        version: link:../viewer
       typescript:
         specifier: ~7.0.2
         version: 7.0.2
@@ -171,18 +171,18 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0
     devDependencies:
+      '@ses-mail-catcher/api-contract':
+        specifier: workspace:*
+        version: link:../api-contract
+      '@ses-mail-catcher/viewer':
+        specifier: workspace:*
+        version: link:../viewer
       '@types/node':
         specifier: ^26.4.1
         version: 26.4.1
       oxlint:
         specifier: ^1.81.0
         version: 1.81.0
-      ses-mail-catcher-api-contract:
-        specifier: workspace:*
-        version: link:../api-contract
-      ses-mail-catcher-viewer:
-        specifier: workspace:*
-        version: link:../viewer
       tsx:
         specifier: ^4.23.13
         version: 4.23.13
@@ -195,15 +195,15 @@ importers:
 
   packages/viewer:
     dependencies:
+      '@ses-mail-catcher/api-contract':
+        specifier: workspace:*
+        version: link:../api-contract
       react:
         specifier: ^19.2.8
         version: 19.2.8
       react-dom:
         specifier: ^19.2.8
         version: 19.2.8(react@19.2.8)
-      ses-mail-catcher-api-contract:
-        specifier: workspace:*
-        version: link:../api-contract
     devDependencies:
       '@types/node':
         specifier: ^26.4.1

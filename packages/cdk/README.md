@@ -39,12 +39,11 @@ The application invokes `mailCatcher.function` with an event such as:
   subject: "Registration complete",
   text: "Welcome!",
   html: "<h1>Welcome!</h1>",
-  mailbox: "development",
 }
 ```
 
 In `CATCH` mode the Lambda writes a canonical raw MIME message to S3 under
-`mail/{mailbox}/YYYY/MM/DD/{messageId}.eml` and stores its index in DynamoDB.
+`messages/YYYY/MM/DD/{messageId}.eml` and stores its index in DynamoDB.
 Both resources use the configured retention period; DynamoDB uses TTL and S3
 uses a lifecycle expiration rule. The construct deliberately does not grant
 SES permissions in this mode.
@@ -97,8 +96,9 @@ const mailCatcher = new SesMailCatcher(stack, "MailCatcher", {
 });
 ```
 
-`mailCatcher.viewerUrl` is the address to open, and `mailCatcher.viewerFunction`
-is the function behind it.
+`mailCatcher.viewerUrl` is the address to open, `mailCatcher.viewerFunctionUrl`
+is the CDK Function URL resource, and `mailCatcher.viewerFunction` is the
+function behind it.
 
 - **Basic authentication** reads its credentials from a Secrets Manager secret
   at run time, so they never appear in the synthesized template. The secret
@@ -124,9 +124,9 @@ The Lambda asset carries the built viewer bundle and a vendored copy of
 `node_modules` of its own.
 
 The Lambda implementation is kept in two private workspaces:
-[`cdk-lambda-mail-handler`](../cdk-lambda-mail-handler) owns
+[`@ses-mail-catcher/cdk-mail-handler`](../cdk-lambda-mail-handler) owns
 validation, MIME creation, storage, and relay, while
-[`cdk-lambda-viewer-handler`](../cdk-lambda-viewer-handler)
+[`@ses-mail-catcher/cdk-viewer-handler`](../cdk-lambda-viewer-handler)
 owns the viewer API and static assets. Each workspace has its own tests and
 compiled asset; the CDK package copies them into separate directories in its
 `lib/` directory and uses those directories as the Lambda sources.
@@ -136,8 +136,8 @@ compiled asset; the CDK package copies them into separate directories in its
 ```sh
 pnpm install
 pnpm build
-pnpm --filter cdk-lambda-mail-handler test
-pnpm --filter cdk-lambda-viewer-handler test
+pnpm --filter @ses-mail-catcher/cdk-mail-handler test
+pnpm --filter @ses-mail-catcher/cdk-viewer-handler test
 pnpm --filter @s-yoshiki/cdk-ses-mail-catcher test
 ```
 

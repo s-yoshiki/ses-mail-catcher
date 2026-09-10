@@ -19,7 +19,6 @@ const SUMMARY = {
   subject: 'Receipt',
   receivedAt: '2026-09-10T00:00:00.000Z',
   size: 42,
-  mailbox: 'default',
 };
 
 const ATTACHMENT = {
@@ -65,7 +64,7 @@ describe('message API schemas', () => {
       replyToAddresses: ['reply@example.com'],
       content: { text: 'plain', html: '<p>html</p>', attachments: [ATTACHMENT] },
     };
-    const list = { messages: [SUMMARY], mailboxes: ['default', 'orders'] };
+    const list = { messages: [SUMMARY] };
 
     expect(messageDetailSchema.parse(detail)).toEqual(detail);
     expect(messageListResponseSchema.parse(list)).toEqual(list);
@@ -76,7 +75,7 @@ describe('message API schemas', () => {
     expect(messageSummarySchema.safeParse({ ...SUMMARY, toAddresses: 'recipient@example.com' }).success).toBe(false);
     expect(messageContentSchema.safeParse({ text: 'plain' }).success).toBe(false);
     expect(messageDetailSchema.safeParse({ ...SUMMARY, content: { attachments: [] } }).success).toBe(false);
-    expect(messageListResponseSchema.safeParse({ messages: [SUMMARY] }).success).toBe(false);
+    expect(messageListResponseSchema.safeParse({ messages: 'not-an-array' }).success).toBe(false);
     expect(messageAttachmentSchema.safeParse({ ...ATTACHMENT, inline: 'false' }).success).toBe(false);
   });
 });

@@ -20,7 +20,6 @@ describe('SendMailEvent validation', () => {
       bcc: ['blind@example.com'],
       replyTo: ['reply@example.com'],
       html: '<p>body</p>',
-      mailbox: 'orders-2026',
       attachments: [{
         filename: 'invoice.pdf',
         contentType: 'application/pdf',
@@ -43,9 +42,6 @@ describe('SendMailEvent validation', () => {
     expect(() => validateEvent({ ...validEvent(), from: 'sender\r@example.com' })).toThrow('from must be a non-empty string');
     expect(() => validateEvent({ ...validEvent(), cc: 'copy@example.com' })).toThrow('cc must be a non-empty array');
     expect(() => validateEvent({ ...validEvent(), replyTo: [42] })).toThrow('replyTo[] must be a non-empty string');
-    expect(() => validateEvent({ ...validEvent(), mailbox: 'orders/2026' })).toThrow(
-      'mailbox may contain only letters, numbers, dot, underscore, and hyphen',
-    );
   });
 
   test('requires complete S3 attachment references and metadata objects', () => {

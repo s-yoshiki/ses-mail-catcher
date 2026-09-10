@@ -2,7 +2,7 @@ import {
   apiErrorSchema,
   messageDetailSchema,
   messageListResponseSchema,
-} from 'ses-mail-catcher-api-contract';
+} from '@ses-mail-catcher/api-contract';
 
 import type { MessageDetail, MessageListResponse } from './types.js';
 
@@ -23,7 +23,6 @@ export const resolveApiBase = (documentBaseUri: string, search = ''): string => 
 };
 
 export interface ListMessagesOptions {
-  mailbox?: string;
   limit?: number;
   signal?: AbortSignal;
 }
@@ -36,9 +35,6 @@ export class MailCatcherClient {
 
   public async listMessages(options: ListMessagesOptions = {}): Promise<MessageListResponse> {
     const query = new URLSearchParams();
-    if (options.mailbox) {
-      query.set('mailbox', options.mailbox);
-    }
     if (options.limit !== undefined) {
       query.set('limit', String(options.limit));
     }

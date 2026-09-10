@@ -28,7 +28,6 @@ describe('SqliteStore', () => {
       subject: 'Hello',
       rawMime: Buffer.from('Subject: Hello\r\n\r\nBody'),
       receivedAt: '2026-09-05T00:00:00.000Z',
-      mailbox: 'default',
     };
 
     store.save(message);
@@ -41,7 +40,6 @@ describe('SqliteStore', () => {
       subject: message.subject,
       receivedAt: message.receivedAt,
       size: message.rawMime.byteLength,
-      mailbox: message.mailbox,
     }]);
     expect(store.get(message.id)).toEqual(message);
     store.close();

@@ -16,7 +16,7 @@ Application
 
 `@s-yoshiki/cdk-ses-mail-catcher` provisions the existing serverless design:
 
-- The `cdk-lambda-mail-handler` and `cdk-lambda-viewer-handler` workspaces build
+- The `@ses-mail-catcher/cdk-mail-handler` and `@ses-mail-catcher/cdk-viewer-handler` workspaces build
   `mail-handler.handler` and `viewer-handler.handler`; the CDK package copies
   them into separate directories in its published asset.
 - S3 stores canonical raw MIME.
@@ -26,14 +26,14 @@ Application
   The statement is narrowed to `relay.fromEmailAddressIdentityArn` (plus the
   configuration set ARN when one is configured) and only falls back to `*` when
   no identity ARN is given.
-- The bucket the construct creates is emptied on stack deletion, so a mailbox
-  that still holds captured messages does not block `cdk destroy`.
+- The bucket the construct creates is emptied on stack deletion, so captured
+  messages do not block `cdk destroy`.
 
 The Lambda asset path is derived from `import.meta.url`, so handler source is not embedded in a hard-coded inline string and the installed package remains relocatable.
 
 ## Local
 
-`ses-mail-catcher-local` exposes a small SES v2-compatible JSON endpoint. It accepts `SendEmail` Simple/Raw content and `SendRawEmail`, then stores message metadata and raw MIME in SQLite.
+`@ses-mail-catcher/local` exposes a small SES v2-compatible JSON endpoint. It accepts `SendEmail` Simple/Raw content and `SendRawEmail`, then stores message metadata and raw MIME in SQLite.
 
 The default database is intentionally placed in the platform cache directory. Use `SES_MAIL_CATCHER_DB_PATH` or `--db-path` for a durable project-specific location.
 
@@ -54,7 +54,7 @@ The local server requires Node.js 22.5 or later for `node:sqlite` and has no nat
 
 ## Viewer
 
-`ses-mail-catcher-viewer` is a React single page app built with Vite. It is not
+`@ses-mail-catcher/viewer` is a React single page app built with Vite. It is not
 published on its own: `packages/local` copies the bundle into `lib/viewer` at
 build time and serves it from the same port as the API, so no CORS handling and
 no second process are involved.

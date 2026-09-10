@@ -41,7 +41,6 @@ export const MessageList = (props: MessageListProps): JSX.Element => {
               <span className="list-item-meta">
                 <time dateTime={message.receivedAt}>{formatTimestamp(message.receivedAt)}</time>
                 <span>{formatSize(message.size)}</span>
-                <span className="badge">{message.mailbox}</span>
               </span>
             </button>
           </li>

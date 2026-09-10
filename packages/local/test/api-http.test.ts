@@ -7,7 +7,7 @@ import {
   healthResponseSchema,
   messageDetailSchema,
   messageListResponseSchema,
-} from 'ses-mail-catcher-api-contract';
+} from '@ses-mail-catcher/api-contract';
 import { afterEach, expect, it } from 'vitest';
 
 import { startServer } from '../src/ses-server.js';
@@ -44,7 +44,7 @@ const seed = async (): Promise<{ url: string; id: string }> => {
   const response = await postSes(server.url, {
     FromEmailAddress: 'sender@example.com',
     Destination: { ToAddresses: ['recipient@example.com'] },
-    EmailTags: [{ Name: 'mailbox', Value: 'orders' }],
+    EmailTags: [{ Name: 'campaign', Value: 'spring' }],
     Content: {
       Simple: {
         Subject: { Data: 'Receipt' },
@@ -62,7 +62,7 @@ const seed = async (): Promise<{ url: string; id: string }> => {
   return { url: server.url, id: MessageId };
 };
 
-it('lists messages together with the known mailboxes', async () => {
+it('lists messages with the shared response contract', async () => {
   const { url } = await seed();
 
   const response = await fetch(`${url}/api/messages`);
@@ -70,17 +70,7 @@ it('lists messages together with the known mailboxes', async () => {
 
   const body = messageListResponseSchema.parse(await response.json());
   expect(body.messages).toHaveLength(1);
-  expect(body.mailboxes).toEqual(['orders']);
-});
-
-it('filters the list by mailbox', async () => {
-  const { url } = await seed();
-
-  const matching = await (await fetch(`${url}/api/messages?mailbox=orders`)).json() as { messages: unknown[] };
-  const other = await (await fetch(`${url}/api/messages?mailbox=default`)).json() as { messages: unknown[] };
-
-  expect(matching.messages).toHaveLength(1);
-  expect(other.messages).toHaveLength(0);
+  expect(body.messages[0]).not.toHaveProperty('mailbox');
 });
 
 it('honours the list limit while retaining the response contract', async () => {
@@ -88,7 +78,7 @@ it('honours the list limit while retaining the response contract', async () => {
   const secondResponse = await postSes(first.url, {
     FromEmailAddress: 'second@example.com',
     Destination: { ToAddresses: ['recipient@example.com'] },
-    EmailTags: [{ Name: 'mailbox', Value: 'orders' }],
+    EmailTags: [{ Name: 'campaign', Value: 'summer' }],
     Content: {
       Simple: {
         Subject: { Data: 'Second receipt' },
@@ -102,7 +92,6 @@ it('honours the list limit while retaining the response contract', async () => {
     await (await fetch(`${first.url}/api/messages?limit=1`)).json(),
   );
   expect(limited.messages).toHaveLength(1);
-  expect(limited.mailboxes).toEqual(['orders']);
 
   const zero = messageListResponseSchema.parse(
     await (await fetch(`${first.url}/api/messages?limit=0`)).json(),

@@ -18,5 +18,4 @@ export interface SendMailEvent {
   readonly html?: string;
   readonly attachments?: MailAttachment[];
   readonly metadata?: Record<string, string>;
-  readonly mailbox?: string;
 }

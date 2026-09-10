@@ -145,6 +145,9 @@ export class SesMailCatcher extends Construct {
   /** The function serving the viewer, when one is configured. */
   public readonly viewerFunction?: lambda.Function;
 
+  /** The Function URL serving the viewer, when one is configured. */
+  public readonly viewerFunctionUrl?: lambda.IFunctionUrl;
+
   /** The URL the viewer is served from, when one is configured. */
   public readonly viewerUrl?: string;
 
@@ -175,7 +178,7 @@ export class SesMailCatcher extends Construct {
 
     this.table = props.storage?.table ?? new dynamodb.Table(this, 'MailTable', {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      partitionKey: { name: 'mailbox', type: dynamodb.AttributeType.STRING },
+      partitionKey: { name: 'pk', type: dynamodb.AttributeType.STRING },
       sortKey: { name: 'sortKey', type: dynamodb.AttributeType.STRING },
       removalPolicy: RemovalPolicy.DESTROY,
       timeToLiveAttribute: 'expiresAt',
@@ -183,7 +186,7 @@ export class SesMailCatcher extends Construct {
 
     const relay = props.relay ?? {};
     this.function = new lambda.Function(this, 'MailHandler', {
-      // The handler is compiled from the cdk-lambda-mail-handler workspace and
+      // The handler is compiled from the @ses-mail-catcher/cdk-mail-handler workspace and
       // included in the published lib/ directory. Keeping the asset path
       // deterministic makes local synthesis and installed-package synthesis
       // behave identically.
@@ -220,11 +223,12 @@ export class SesMailCatcher extends Construct {
     if (props.viewer !== undefined) {
       const viewer = this.createViewer(props.viewer);
       this.viewerFunction = viewer.function;
+      this.viewerFunctionUrl = viewer.functionUrl;
       this.viewerUrl = viewer.url;
     }
   }
 
-  private createViewer(options: ViewerOptions): { function: lambda.Function; url: string } {
+  private createViewer(options: ViewerOptions): { function: lambda.Function; functionUrl: lambda.IFunctionUrl; url: string } {
     if (this.mode !== MailMode.CATCH) {
       throw new Error('the viewer only has messages to show in CATCH mode');
     }
@@ -271,7 +275,7 @@ export class SesMailCatcher extends Construct {
     options.basicAuth?.secret.grantRead(viewerFunction);
 
     const functionUrl = viewerFunction.addFunctionUrl({ authType });
-    return { function: viewerFunction, url: functionUrl.url };
+    return { function: viewerFunction, functionUrl, url: functionUrl.url };
   }
 
   /**

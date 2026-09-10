@@ -17,17 +17,17 @@ COPY packages/cdk/package.json packages/cdk/
 COPY packages/local/package.json packages/local/
 COPY packages/viewer/package.json packages/viewer/
 RUN pnpm install --frozen-lockfile \
-  --filter ses-mail-catcher-local \
-  --filter ses-mail-catcher-viewer
+  --filter @ses-mail-catcher/local \
+  --filter @ses-mail-catcher/viewer
 
 COPY packages/viewer packages/viewer
 COPY packages/local packages/local
 
 # `deploy` resolves the workspace into a self-contained tree, so the runtime
 # stage needs no package manager and no workspace layout.
-RUN pnpm --filter ses-mail-catcher-viewer build \
-  && pnpm --filter ses-mail-catcher-local build \
-  && pnpm --filter ses-mail-catcher-local deploy --prod --legacy /out
+RUN pnpm --filter @ses-mail-catcher/viewer build \
+  && pnpm --filter @ses-mail-catcher/local build \
+  && pnpm --filter @ses-mail-catcher/local deploy --prod --legacy /out
 
 FROM node:24-bookworm-slim
 

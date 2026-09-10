@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import {
   messageDetailSchema,
   messageListResponseSchema,
-} from 'ses-mail-catcher-api-contract';
+} from '@ses-mail-catcher/api-contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { HOST_ENV, PORT_ENV } from '../src/options.js';
@@ -67,14 +67,12 @@ it('accepts SES v2 SendEmail and exposes the stored message', async () => {
       bccAddresses: [],
       subject: 'テスト',
       size: expect.any(Number),
-      mailbox: 'default',
     }],
-    mailboxes: ['default'],
   });
 
   const listResponse = await fetch(`${server.url}/store`);
   const list = await listResponse.json() as { messages: Array<{ id: string; subject: string }> };
-  expect(list.messages).toEqual([{ id: result.MessageId, fromAddress: 'sender@example.com', toAddresses: ['recipient@example.com'], ccAddresses: [], bccAddresses: [], subject: 'テスト', receivedAt: expect.any(String), size: expect.any(Number), mailbox: 'default' }]);
+  expect(list.messages).toEqual([{ id: result.MessageId, fromAddress: 'sender@example.com', toAddresses: ['recipient@example.com'], ccAddresses: [], bccAddresses: [], subject: 'テスト', receivedAt: expect.any(String), size: expect.any(Number) }]);
 
   const rawResponse = await fetch(`${server.url}/store/${result.MessageId}/raw`);
   expect(rawResponse.headers.get('content-type')).toBe('message/rfc822');

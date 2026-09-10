@@ -1,9 +1,9 @@
 {
-  "name": "ses-mail-catcher-local",
+  "name": "@ses-mail-catcher/local",
   "version": "0.1.0",
   "type": "module",
   "description": "Local Amazon SES v2-compatible mail catcher backed by SQLite",
-  "private": false,
+  "private": true,
   "license": "Apache-2.0",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -31,8 +31,8 @@
   "devDependencies": {
     "@types/node": "^26.4.1",
     "oxlint": "^1.81.0",
-    "ses-mail-catcher-api-contract": "workspace:*",
-    "ses-mail-catcher-viewer": "workspace:*",
+    "@ses-mail-catcher/api-contract": "workspace:*",
+    "@ses-mail-catcher/viewer": "workspace:*",
     "tsx": "^4.23.13",
     "typescript": "~7.0.2",
     "vitest": "^5.0.0"

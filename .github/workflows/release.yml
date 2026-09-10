@@ -38,6 +38,12 @@ jobs:
         run: |-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Verify release branch
+        run: |-
+          test "${GITHUB_REF}" = "refs/heads/main" || {
+            echo "The release workflow must run from main; selected ref was ${GITHUB_REF}."
+            exit 1
+          }
       - name: Setup pnpm
         id: setup_pnpm
         uses: pnpm/action-setup@v6.0.10

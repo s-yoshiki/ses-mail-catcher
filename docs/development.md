@@ -1,5 +1,9 @@
 # Development guide
 
+The branch workflow is documented in
+[Branching strategy](./branching-strategy.md). Normal feature and bug-fix pull
+requests target `develop`; `main` is reserved for releases and hotfixes.
+
 ## Prerequisites
 
 - Node.js 24 (see `.node-version`).
@@ -20,8 +24,8 @@ pnpm build
 For the CDK package, `compile` additionally runs jsii:
 
 ```sh
-pnpm --filter cdk-lambda-mail-handler build
-pnpm --filter cdk-lambda-viewer-handler build
+pnpm --filter @ses-mail-catcher/cdk-mail-handler build
+pnpm --filter @ses-mail-catcher/cdk-viewer-handler build
 pnpm --filter @s-yoshiki/cdk-ses-mail-catcher compile
 ```
 
@@ -30,15 +34,15 @@ so build the repository from the root when changing either workspace:
 
 ```sh
 pnpm build
-pnpm --filter cdk-lambda-mail-handler test
-pnpm --filter cdk-lambda-viewer-handler test
+pnpm --filter @ses-mail-catcher/cdk-mail-handler test
+pnpm --filter @ses-mail-catcher/cdk-viewer-handler test
 ```
 
 For the local package:
 
 ```sh
-pnpm --filter ses-mail-catcher-local build
-pnpm --filter ses-mail-catcher-local test
+pnpm --filter @ses-mail-catcher/local build
+pnpm --filter @ses-mail-catcher/local test
 ```
 
 The local server serves the viewer bundle from `lib/viewer`. Build from the
@@ -50,7 +54,7 @@ by side. Vite proxies `/api` to the server:
 
 ```sh
 node packages/local/lib/cli.js
-pnpm --filter ses-mail-catcher-viewer dev
+pnpm --filter @ses-mail-catcher/viewer dev
 ```
 
 ## Local SES endpoint

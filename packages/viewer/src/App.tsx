@@ -8,7 +8,6 @@ import { Toolbar } from './components/Toolbar.js';
 import type { MessageDetail, MessageSummary } from './types.js';
 
 const REFRESH_INTERVAL_MS = 5000;
-const ALL_MAILBOXES = '';
 
 export interface AppProps {
   readonly client: MailCatcherClient;
@@ -21,8 +20,6 @@ interface DetailError {
 
 export const App = ({ client }: AppProps): JSX.Element => {
   const [messages, setMessages] = useState<MessageSummary[]>([]);
-  const [mailboxes, setMailboxes] = useState<string[]>([]);
-  const [mailbox, setMailbox] = useState(ALL_MAILBOXES);
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const [detail, setDetail] = useState<MessageDetail | undefined>(undefined);
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -33,13 +30,9 @@ export const App = ({ client }: AppProps): JSX.Element => {
   const [initialLoad, setInitialLoad] = useState(true);
 
   const refresh = useCallback((signal?: AbortSignal) => {
-    return client.listMessages({
-      ...(mailbox === ALL_MAILBOXES ? {} : { mailbox }),
-      ...(signal ? { signal } : {}),
-    })
+    return client.listMessages(signal ? { signal } : {})
       .then((response) => {
         setMessages(response.messages);
-        setMailboxes(response.mailboxes);
         setListError(undefined);
       })
       .catch((error: unknown) => {
@@ -48,7 +41,7 @@ export const App = ({ client }: AppProps): JSX.Element => {
         }
       })
       .finally(() => setInitialLoad(false));
-  }, [client, mailbox]);
+  }, [client]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -65,8 +58,7 @@ export const App = ({ client }: AppProps): JSX.Element => {
   }, [autoRefresh, refresh]);
 
   // A selection only stays active while the message is still listed, so a
-  // mailbox filter change or a store pointed elsewhere cannot leave the detail
-  // pane showing something that is no longer there.
+  // refreshed list cannot leave the detail pane showing a missing message.
   const activeId = selectedId !== undefined && messages.some((message) => message.id === selectedId)
     ? selectedId
     : undefined;
@@ -90,11 +82,8 @@ export const App = ({ client }: AppProps): JSX.Element => {
   return (
     <div className="app">
       <Toolbar
-        mailbox={mailbox}
-        mailboxes={mailboxes}
         messageCount={messages.length}
         autoRefresh={autoRefresh}
-        onMailboxChange={setMailbox}
         onAutoRefreshChange={setAutoRefresh}
         onRefresh={() => void refresh()}
       />

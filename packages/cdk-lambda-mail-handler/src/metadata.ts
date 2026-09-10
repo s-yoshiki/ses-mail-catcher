@@ -13,13 +13,12 @@ export const createMetadataItem = (
   event: SendMailEvent,
   messageId: string,
   createdAt: string,
-  mailbox: string,
   key: string,
   size: number,
   expiresAt: number,
 ): Record<string, AttributeValue> => {
   const item: Record<string, AttributeValue> = {
-    mailbox: { S: mailbox },
+    pk: { S: 'messages' },
     sortKey: { S: `${createdAt}#${messageId}` },
     messageId: { S: messageId },
     createdAt: { S: createdAt },

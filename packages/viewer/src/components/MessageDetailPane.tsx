@@ -77,8 +77,8 @@ const MessageBody = ({ client, detail }: MessageBodyProps): JSX.Element => {
         {detail.replyToAddresses.length === 0 ? undefined : <><dt>Reply-To</dt><dd>{formatAddressList(detail.replyToAddresses)}</dd></>}
         <dt>Received</dt>
         <dd><time dateTime={detail.receivedAt}>{formatTimestamp(detail.receivedAt)}</time></dd>
-        <dt>Mailbox</dt>
-        <dd><span className="badge">{detail.mailbox}</span> · {formatSize(detail.size)}</dd>
+        <dt>Size</dt>
+        <dd>{formatSize(detail.size)}</dd>
       </dl>
 
       <div className="tabs" role="tablist">

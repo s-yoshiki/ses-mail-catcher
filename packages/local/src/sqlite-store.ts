@@ -14,7 +14,6 @@ interface MessageRow {
   subject: string;
   raw_mime: Uint8Array;
   received_at: string;
-  mailbox: string;
   size?: number;
 }
 
@@ -31,26 +30,9 @@ export class SqliteStore {
       enableForeignKeyConstraints: true,
       timeout: 5000,
     });
-    db.exec(`
-      PRAGMA journal_mode = WAL;
-      PRAGMA synchronous = NORMAL;
-      CREATE TABLE IF NOT EXISTS messages (
-        id TEXT PRIMARY KEY,
-        from_address TEXT,
-        to_addresses TEXT NOT NULL,
-        cc_addresses TEXT NOT NULL,
-        bcc_addresses TEXT NOT NULL,
-        reply_to_addresses TEXT NOT NULL,
-        subject TEXT NOT NULL,
-        raw_mime BLOB NOT NULL,
-        received_at TEXT NOT NULL,
-        mailbox TEXT NOT NULL
-      ) STRICT;
-      CREATE INDEX IF NOT EXISTS idx_messages_received_at
-        ON messages(received_at DESC);
-      CREATE INDEX IF NOT EXISTS idx_messages_mailbox_received_at
-        ON messages(mailbox, received_at DESC);
-    `);
+    db.exec('PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;');
+    migrateSchema(db);
+    db.exec('CREATE INDEX IF NOT EXISTS idx_messages_received_at ON messages(received_at DESC);');
 
     return new SqliteStore(dbPath, db);
   }
@@ -59,8 +41,8 @@ export class SqliteStore {
     const statement = this.db.prepare(`
       INSERT INTO messages (
         id, from_address, to_addresses, cc_addresses, bcc_addresses,
-        reply_to_addresses, subject, raw_mime, received_at, mailbox
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        reply_to_addresses, subject, raw_mime, received_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     statement.run(
@@ -73,26 +55,22 @@ export class SqliteStore {
       message.subject,
       Buffer.from(message.rawMime),
       message.receivedAt,
-      message.mailbox,
     );
 
     return message;
   }
 
-  public list(limit = 100, mailbox?: string): MessageSummary[] {
+  public list(limit = 100): MessageSummary[] {
     const boundedLimit = Math.max(1, Math.min(Math.floor(limit), 1000));
     const statement = this.db.prepare(`
       SELECT id, from_address, to_addresses, cc_addresses, bcc_addresses,
-        subject, received_at, mailbox, length(raw_mime) AS size
+        subject, received_at, length(raw_mime) AS size
       FROM messages
-      ${mailbox === undefined ? '' : 'WHERE mailbox = ?'}
       ORDER BY received_at DESC
       LIMIT ?
     `);
 
-    const rows = (mailbox === undefined
-      ? statement.all(boundedLimit)
-      : statement.all(mailbox, boundedLimit)) as unknown as MessageRow[];
+    const rows = statement.all(boundedLimit) as unknown as MessageRow[];
     return rows.map((row) => ({
       id: row.id,
       ...(row.from_address === null ? {} : { fromAddress: row.from_address }),
@@ -102,21 +80,13 @@ export class SqliteStore {
       subject: row.subject,
       receivedAt: row.received_at,
       size: row.size ?? 0,
-      mailbox: row.mailbox,
     }));
-  }
-
-  public mailboxes(): string[] {
-    const rows = this.db
-      .prepare('SELECT DISTINCT mailbox FROM messages ORDER BY mailbox')
-      .all() as unknown as Array<{ mailbox: string }>;
-    return rows.map((row) => row.mailbox);
   }
 
   public get(id: string): StoredMessage | undefined {
     const statement = this.db.prepare(`
       SELECT id, from_address, to_addresses, cc_addresses, bcc_addresses,
-        reply_to_addresses, subject, raw_mime, received_at, mailbox
+        reply_to_addresses, subject, raw_mime, received_at
       FROM messages
       WHERE id = ?
     `);
@@ -136,7 +106,6 @@ export class SqliteStore {
       subject: row.subject,
       rawMime: Buffer.from(row.raw_mime),
       receivedAt: row.received_at,
-      mailbox: row.mailbox,
     };
   }
 
@@ -151,4 +120,49 @@ const parseStringArray = (value: string): string[] => {
     throw new Error('Invalid message address data in SQLite');
   }
   return parsed;
+};
+
+const migrateSchema = (db: DatabaseSync): void => {
+  const columns = db.prepare('PRAGMA table_info(messages)').all() as unknown as Array<{ name: string }>;
+  if (columns.length === 0) {
+    db.exec(`
+      CREATE TABLE messages (
+        id TEXT PRIMARY KEY,
+        from_address TEXT,
+        to_addresses TEXT NOT NULL,
+        cc_addresses TEXT NOT NULL,
+        bcc_addresses TEXT NOT NULL,
+        reply_to_addresses TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        raw_mime BLOB NOT NULL,
+        received_at TEXT NOT NULL
+      ) STRICT;
+    `);
+    return;
+  }
+
+  if (columns.some((column) => column.name === 'mailbox')) {
+    db.exec(`
+      ALTER TABLE messages RENAME TO messages_legacy;
+      CREATE TABLE messages (
+        id TEXT PRIMARY KEY,
+        from_address TEXT,
+        to_addresses TEXT NOT NULL,
+        cc_addresses TEXT NOT NULL,
+        bcc_addresses TEXT NOT NULL,
+        reply_to_addresses TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        raw_mime BLOB NOT NULL,
+        received_at TEXT NOT NULL
+      ) STRICT;
+      INSERT INTO messages (
+        id, from_address, to_addresses, cc_addresses, bcc_addresses,
+        reply_to_addresses, subject, raw_mime, received_at
+      )
+      SELECT id, from_address, to_addresses, cc_addresses, bcc_addresses,
+        reply_to_addresses, subject, raw_mime, received_at
+      FROM messages_legacy;
+      DROP TABLE messages_legacy;
+    `);
+  }
 };

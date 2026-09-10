@@ -9,11 +9,11 @@ ESM-first の Node.js / TypeScript monorepo として管理しています。リ
 | パッケージ | 用途 | 保存先・実行環境 |
 | --- | --- | --- |
 | [`@s-yoshiki/cdk-ses-mail-catcher`](./packages/cdk) | メールを捕捉またはリレーする AWS Serverless 版の CDK Construct | Lambda + S3 + DynamoDB |
-| [`ses-mail-catcher-local`](./packages/local) | 開発・統合テスト用のローカル SES v2 互換サーバー | SQLite |
-| [`ses-mail-catcher-viewer`](./packages/viewer) | 捕捉したメールを読む React ビューア | ローカルサーバーと AWS viewer に同梱 |
-| [`ses-mail-catcher-api-contract`](./packages/api-contract) | viewer API の共有 TypeScript 型と Zod スキーマ | ワークスペース内専用パッケージ |
-| [`cdk-lambda-mail-handler`](./packages/cdk-lambda-mail-handler) | CDK Construct が利用するメール Lambda ハンドラー | ワークスペース内専用パッケージ |
-| [`cdk-lambda-viewer-handler`](./packages/cdk-lambda-viewer-handler) | CDK Construct が利用する viewer Lambda ハンドラー | ワークスペース内専用パッケージ |
+| [`@ses-mail-catcher/local`](./packages/local) | 開発・統合テスト用のローカル SES v2 互換サーバー | 非公開 workspace、Docker で配布 |
+| [`@ses-mail-catcher/viewer`](./packages/viewer) | 捕捉したメールを読む React ビューア | 非公開 workspace、ローカルサーバーと AWS viewer に同梱 |
+| [`@ses-mail-catcher/api-contract`](./packages/api-contract) | viewer API の共有 TypeScript 型と Zod スキーマ | 非公開 workspace |
+| [`@ses-mail-catcher/cdk-mail-handler`](./packages/cdk-lambda-mail-handler) | CDK Construct が利用するメール Lambda ハンドラー | 非公開 workspace |
+| [`@ses-mail-catcher/cdk-viewer-handler`](./packages/cdk-lambda-viewer-handler) | CDK Construct が利用する viewer Lambda ハンドラー | 非公開 workspace |
 
 ## 開発
 
@@ -32,11 +32,11 @@ pnpm build
 ```sh
 pnpm --filter @s-yoshiki/cdk-ses-mail-catcher compile
 pnpm --filter @s-yoshiki/cdk-ses-mail-catcher test
-pnpm --filter cdk-lambda-mail-handler test
-pnpm --filter cdk-lambda-viewer-handler test
-pnpm --filter ses-mail-catcher-local build
-pnpm --filter ses-mail-catcher-local test
-pnpm --filter ses-mail-catcher-viewer dev
+pnpm --filter @ses-mail-catcher/cdk-mail-handler test
+pnpm --filter @ses-mail-catcher/cdk-viewer-handler test
+pnpm --filter @ses-mail-catcher/local build
+pnpm --filter @ses-mail-catcher/local test
+pnpm --filter @ses-mail-catcher/viewer dev
 ```
 
 ローカルサーバーとビューアを扱う場合は、リポジトリのルートからビルドしてください。Turborepo がビューアを先にビルドし、その成果物をローカルサーバーが `packages/local/lib/viewer` にコピーします。ローカルパッケージだけをビルドした場合も、サーバーは API 専用サービスとして動作します。
@@ -97,7 +97,7 @@ const mailCatcher = new SesMailCatcher(stack, 'MailCatcher', {
 - `CATCH` は標準化した raw MIME メッセージを作成し、S3 に保存するとともに、検索用メタデータを DynamoDB に保存します。SES の送信権限は付与しません。
 - `RELAY` は同じ raw MIME 形式を Amazon SES 経由で送信し、そのリレーに必要な SES 権限だけを付与します。
 
-アプリケーションは、送信元・宛先・件名・テキストまたは HTML 本文、必要に応じてメールボックスを含む小さなメールイベントで `mailCatcher.function` を呼び出します。アプリケーションの Lambda からハンドラーを呼び出せるようにするには `mailCatcher.grantSend()` を使用します。
+アプリケーションは、送信元・宛先・件名・テキストまたは HTML 本文を含む小さなメールイベントで `mailCatcher.function` を呼び出します。アプリケーションの Lambda からハンドラーを呼び出せるようにするには `mailCatcher.grantSend()` を使用します。
 
 捕捉したメール用の AWS ビューアも作成できます。ビューアは `CATCH` モードでのみ利用でき、アクセス制御なしでは作成できません。Basic 認証の認証情報は AWS Secrets Manager から実行時に読み込み、IPv4 または IPv6 の CIDR 範囲を追加の制限として設定できます。認証情報が CDK の合成テンプレートに含まれることはありません。捕捉した HTML はサンドボックス化された iframe 内で表示されます。
 
@@ -107,6 +107,7 @@ Construct API、viewer の設定、IAM 権限、公開方法の詳細は [`packa
 
 - [アーキテクチャ](./docs/architecture.md)
 - [開発ガイド](./docs/development.md)
+- [ブランチ運用戦略](./docs/branching-strategy.md)
 - [リリースガイド](./docs/release.md)
 - [デプロイ可能な CDK サンプル](./examples/cdk/README.md)
 - [AWS SDK でメールを送信するサンプル](./examples/sdk/README.md)

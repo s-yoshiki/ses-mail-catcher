@@ -1,9 +1,19 @@
 # Release guide
 
+## Branch flow
+
+Normal changes are merged into `develop` first. A release pull request from
+`develop` to `main` is the release decision point. Hotfixes branch from `main`,
+are merged back to `main`, and must then be synchronized into `develop`.
+See the [branching strategy](./branching-strategy.md) for the complete flow.
+
 ## CDK package
 
 The CDK package is published as `@s-yoshiki/cdk-ses-mail-catcher` from `packages/cdk`.
-The Projen release workflow produces the jsii artifacts and publishes the JavaScript package to npm.
+The Projen release workflow runs after a `main` push. It calculates the next
+version from conventional commits, creates the version tag and changelog,
+publishes the GitHub Release, and publishes the JavaScript package to npm.
+Pushes to `develop` run CI but do not publish a package.
 
 Before a release:
 
@@ -29,7 +39,7 @@ The image stores its SQLite database at `/data/mailbox.sqlite3` through `SES_MAI
 ## Native binary
 
 ```sh
-pnpm --filter ses-mail-catcher-local build:binary
+pnpm --filter @ses-mail-catcher/local build:binary
 ```
 
 Native output is host-specific. Keep the Docker image and Node.js CLI as the primary distribution options until scriptc support is validated across the target platforms.

@@ -5,7 +5,7 @@ import {
   healthResponseSchema,
   messageDetailSchema,
   messageListResponseSchema,
-} from 'ses-mail-catcher-api-contract';
+} from '@ses-mail-catcher/api-contract';
 import { serveViewer, type ViewerHandlerConfig, type ViewerHandlerDependencies, type ViewerRequest } from '../src/viewer-handler.js';
 import type { ViewerContent } from '../src/viewer-content.js';
 import type { ViewerMessageRecord, ViewerMessageSummary, ViewerStore } from '../src/viewer-store.js';
@@ -22,10 +22,9 @@ const SUMMARY: ViewerMessageSummary = {
   subject: 'Receipt',
   receivedAt: '2026-09-06T00:00:00.000Z',
   size: RAW_MIME.byteLength,
-  mailbox: 'orders',
 };
 
-const RECORD: ViewerMessageRecord = { ...SUMMARY, replyToAddresses: [], s3Key: 'mail/orders/message-1.eml' };
+const RECORD: ViewerMessageRecord = { ...SUMMARY, replyToAddresses: [], s3Key: 'messages/message-1.eml' };
 
 const CONTENT: ViewerContent = {
   text: 'body',
@@ -54,7 +53,6 @@ const baseConfig = (overrides: Partial<ViewerHandlerConfig> = {}): ViewerHandler
 const baseDependencies = (overrides: Partial<ViewerHandlerDependencies> = {}): ViewerHandlerDependencies => {
   const store = {
     list: async () => [SUMMARY],
-    mailboxes: async () => ['orders'],
     find: async (id: string) => id === SUMMARY.id ? RECORD : undefined,
     readRaw: async () => RAW_MIME,
   } as unknown as ViewerStore;
@@ -130,33 +128,29 @@ describe('access control', () => {
 });
 
 describe('routing', () => {
-  test('lists messages with the known mailboxes', async () => {
+  test('lists captured messages without synthetic metadata', async () => {
     const response = await serveViewer(request('/api/messages'), baseConfig(), baseDependencies());
 
     expect(response.statusCode).toBe(200);
-    expect(messageListResponseSchema.parse(JSON.parse(response.body))).toEqual({ messages: [SUMMARY], mailboxes: ['orders'] });
+    expect(messageListResponseSchema.parse(JSON.parse(response.body))).toEqual({ messages: [SUMMARY] });
   });
 
-  test('passes the mailbox and bounded limit to the store', async () => {
-    let receivedMailbox: string | undefined;
+  test('passes a bounded limit to the store', async () => {
     let receivedLimit: number | undefined;
     const response = await serveViewer(
-      request('/api/messages', { queryStringParameters: { mailbox: 'orders', limit: '9999' } }),
+      request('/api/messages', { queryStringParameters: { limit: '9999' } }),
       baseConfig(),
       baseDependencies({
         store: {
-          list: (mailbox: string | undefined, limit: number) => {
-            receivedMailbox = mailbox;
+          list: (limit: number) => {
             receivedLimit = limit;
             return Promise.resolve([]);
           },
-          mailboxes: () => Promise.resolve([]),
         } as unknown as ViewerStore,
       }),
     );
 
     expect(response.statusCode).toBe(200);
-    expect(receivedMailbox).toBe('orders');
     expect(receivedLimit).toBe(1000);
   });
 
@@ -234,7 +228,7 @@ describe('routing', () => {
       request('/api/messages'),
       baseConfig(),
       baseDependencies({
-        store: { list: async () => { throw new Error('table missing'); }, mailboxes: async () => [] } as unknown as ViewerStore,
+        store: { list: async () => { throw new Error('table missing'); } } as unknown as ViewerStore,
       }),
     );
 
