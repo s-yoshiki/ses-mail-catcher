@@ -105,13 +105,19 @@ export const processMail = async (
   return { messageId, mode: 'CATCH', createdAt, s3Key: key };
 };
 
-interface SesApiResponse {
+/** @internal */
+export interface SesApiResponse {
   readonly statusCode: number;
   readonly headers: Record<string, string>;
   readonly body: string;
 }
 
-const serveSesApi = async (request: SesApiRequest, config: MailHandlerConfig): Promise<SesApiResponse> => {
+/** @internal */
+export const serveSesApi = async (
+  request: SesApiRequest,
+  config: MailHandlerConfig,
+  dependencies: MailHandlerDependencies = createDefaultDependencies(),
+): Promise<SesApiResponse> => {
   if (request.requestContext?.http?.method !== 'POST') {
     return sesError(405, 'MethodNotAllowed', 'Only POST is supported');
   }
@@ -129,7 +135,7 @@ const serveSesApi = async (request: SesApiRequest, config: MailHandlerConfig): P
       throw new Error('request body must be a JSON object');
     }
     const mailEvent = toSesApiMailEvent(input, header(request, 'x-amz-target'));
-    const result = await processMail(mailEvent, config);
+    const result = await processMail(mailEvent, config, dependencies);
     return sesJson(200, { MessageId: result.messageId });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Invalid request';
