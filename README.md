@@ -120,9 +120,10 @@ restrictions use an API Gateway resource policy.
 
 `api-viewer` is a separate read-only API Gateway + Lambda + Hono backend, and
 `web-viewer` is a private S3-hosted React app. CloudFront serves both origins
-under one browser origin. `viewer.allowedIpCidrs` is required and is enforced
-by a CloudFront Function for the web and `/api/*` behavior. Captured HTML is
-rendered in a sandboxed iframe.
+under one browser origin. The viewer is created by default; when
+`viewer.allowedIpCidrs` is omitted, its built-in CloudFront Function allows all
+IPv4 and IPv6 ranges for development use. Captured HTML is rendered in a
+sandboxed iframe.
 
 Applications that need to own the edge logic can pass a user-managed
 `cloudfront.IFunction` as `viewer.edgeFunction`. This replaces the built-in IP

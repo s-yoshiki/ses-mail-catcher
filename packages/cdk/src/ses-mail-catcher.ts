@@ -15,6 +15,7 @@ import { Construct } from 'constructs';
 // and the source tree used by the construct tests.
 const packageDirectory = dirname(fileURLToPath(import.meta.url));
 const lambdaAssetDirectory = join(packageDirectory, '..', 'lib');
+const DEFAULT_VIEWER_ALLOWED_IP_CIDRS = ['0.0.0.0/0', '::/0'];
 
 /** Authorization used by an API Gateway API. */
 export enum ApiAuthorization {
@@ -50,10 +51,11 @@ export interface ViewerOptions {
   /**
    * IPv4 and IPv6 CIDR ranges allowed at the CloudFront edge.
    *
-   * This is required when the built-in edge function is used. The same
-   * restriction applies to the viewer web application and its `/api/*`
-   * behavior. When `edgeFunction` is supplied, access control is owned by that
-   * function instead.
+   * When omitted, the built-in edge function allows all IPv4 and IPv6 ranges
+   * (`0.0.0.0/0` and `::/0`). The same restriction applies to the viewer web
+   * application and its `/api/*` behavior. When `edgeFunction` is supplied,
+   * access control is owned by that function instead. An explicit empty array
+   * is invalid when the built-in edge function is used.
    */
   readonly allowedIpCidrs?: string[];
 
@@ -82,7 +84,10 @@ export interface SesMailCatcherProps {
   /** Settings for the SES-compatible mail API. */
   readonly mailApi?: MailApiOptions;
 
-  /** If supplied, creates the viewer web application and API. */
+  /**
+   * Viewer settings. The viewer is created even when this property is omitted;
+   * in that case, its built-in edge function allows all IPv4 and IPv6 ranges.
+   */
   readonly viewer?: ViewerOptions;
 }
 
@@ -93,7 +98,8 @@ export interface SesMailCatcherProps {
  * The construct creates an API Gateway endpoint that accepts SES v1
  * `SendEmail`/`SendRawEmail` requests and SES v2 `SendEmail` requests. It
  * stores canonical raw MIME in S3 and searchable metadata in DynamoDB. An
- * optional CloudFront-hosted viewer uses a separate read-only API.
+ * CloudFront-hosted viewer uses a separate read-only API and is created by
+ * default.
  */
 export class SesMailCatcher extends Construct {
   /** The Lambda function behind the SES-compatible mail API. */
@@ -111,20 +117,20 @@ export class SesMailCatcher extends Construct {
   /** The message metadata table. */
   public readonly table: dynamodb.ITable;
 
-  /** The read-only viewer API, when a viewer is configured. */
-  public readonly viewerApi?: apigateway.RestApi;
+  /** The read-only viewer API. */
+  public readonly viewerApi: apigateway.RestApi;
 
-  /** The Lambda function behind the viewer API, when configured. */
-  public readonly viewerFunction?: lambda.Function;
+  /** The Lambda function behind the viewer API. */
+  public readonly viewerFunction: lambda.Function;
 
-  /** The S3 bucket containing the viewer web application, when configured. */
-  public readonly webBucket?: s3.IBucket;
+  /** The S3 bucket containing the viewer web application. */
+  public readonly webBucket: s3.IBucket;
 
-  /** The CloudFront distribution serving the viewer, when configured. */
-  public readonly viewerDistribution?: cloudfront.IDistribution;
+  /** The CloudFront distribution serving the viewer. */
+  public readonly viewerDistribution: cloudfront.IDistribution;
 
-  /** The CloudFront URL serving the viewer, when configured. */
-  public readonly viewerUrl?: string;
+  /** The CloudFront URL serving the viewer. */
+  public readonly viewerUrl: string;
 
   public constructor(scope: Construct, id: string, props: SesMailCatcherProps = {}) {
     super(scope, id);
@@ -174,14 +180,12 @@ export class SesMailCatcher extends Construct {
     this.mailApi = this.createMailApi(mailOptions);
     this.mailApiEndpoint = this.mailApi.url;
 
-    if (props.viewer !== undefined) {
-      const viewer = this.createViewer(props.viewer);
-      this.viewerApi = viewer.api;
-      this.viewerFunction = viewer.function;
-      this.webBucket = viewer.bucket;
-      this.viewerDistribution = viewer.distribution;
-      this.viewerUrl = viewer.url;
-    }
+    const viewer = this.createViewer(props.viewer ?? {});
+    this.viewerApi = viewer.api;
+    this.viewerFunction = viewer.function;
+    this.webBucket = viewer.bucket;
+    this.viewerDistribution = viewer.distribution;
+    this.viewerUrl = viewer.url;
   }
 
   /**
@@ -231,7 +235,8 @@ export class SesMailCatcher extends Construct {
     readonly distribution: cloudfront.Distribution;
     readonly url: string;
   } {
-    if (options.edgeFunction === undefined && (options.allowedIpCidrs === undefined || options.allowedIpCidrs.length === 0)) {
+    const allowedIpCidrs = options.allowedIpCidrs ?? DEFAULT_VIEWER_ALLOWED_IP_CIDRS;
+    if (options.edgeFunction === undefined && allowedIpCidrs.length === 0) {
       throw new Error('viewer.allowedIpCidrs must contain at least one CIDR range');
     }
 
@@ -279,7 +284,7 @@ export class SesMailCatcher extends Construct {
     const edgeFunction = options.edgeFunction ?? new cloudfront.Function(this, 'ViewerAccessFunction', {
       comment: 'Restricts the viewer to the configured IP ranges',
       runtime: cloudfront.FunctionRuntime.JS_2_0,
-      code: cloudfront.FunctionCode.fromInline(createViewerFunctionCode(options.allowedIpCidrs ?? [])),
+      code: cloudfront.FunctionCode.fromInline(createViewerFunctionCode(allowedIpCidrs)),
     });
     const edgeAssociation = [{
       eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,

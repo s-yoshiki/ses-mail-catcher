@@ -9,7 +9,8 @@ A serverless SES-compatible mail catcher for development and test environments.
 The construct creates an API Gateway endpoint that accepts SES v1
 `SendEmail`/`SendRawEmail` requests and SES v2 `SendEmail` requests. It
 stores canonical raw MIME in S3 and searchable metadata in DynamoDB. An
-optional CloudFront-hosted viewer uses a separate read-only API.
+CloudFront-hosted viewer uses a separate read-only API and is created by
+default.
 
 #### Initializers <a name="Initializers" id="@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.Initializer"></a>
 
@@ -150,11 +151,11 @@ Any object.
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.mailApiEndpoint">mailApiEndpoint</a></code> | <code>string</code> | The endpoint to use as an AWS SDK SES client endpoint. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.mailFunction">mailFunction</a></code> | <code>aws-cdk-lib.aws_lambda.Function</code> | The Lambda function behind the SES-compatible mail API. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.table">table</a></code> | <code>aws-cdk-lib.aws_dynamodb.ITable</code> | The message metadata table. |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerApi">viewerApi</a></code> | <code>aws-cdk-lib.aws_apigateway.RestApi</code> | The read-only viewer API, when a viewer is configured. |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerDistribution">viewerDistribution</a></code> | <code>aws-cdk-lib.aws_cloudfront.IDistribution</code> | The CloudFront distribution serving the viewer, when configured. |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerFunction">viewerFunction</a></code> | <code>aws-cdk-lib.aws_lambda.Function</code> | The Lambda function behind the viewer API, when configured. |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerUrl">viewerUrl</a></code> | <code>string</code> | The CloudFront URL serving the viewer, when configured. |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.webBucket">webBucket</a></code> | <code>aws-cdk-lib.aws_s3.IBucket</code> | The S3 bucket containing the viewer web application, when configured. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerApi">viewerApi</a></code> | <code>aws-cdk-lib.aws_apigateway.RestApi</code> | The read-only viewer API. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerDistribution">viewerDistribution</a></code> | <code>aws-cdk-lib.aws_cloudfront.IDistribution</code> | The CloudFront distribution serving the viewer. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerFunction">viewerFunction</a></code> | <code>aws-cdk-lib.aws_lambda.Function</code> | The Lambda function behind the viewer API. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerUrl">viewerUrl</a></code> | <code>string</code> | The CloudFront URL serving the viewer. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.webBucket">webBucket</a></code> | <code>aws-cdk-lib.aws_s3.IBucket</code> | The S3 bucket containing the viewer web application. |
 
 ---
 
@@ -230,7 +231,7 @@ The message metadata table.
 
 ---
 
-##### `viewerApi`<sup>Optional</sup> <a name="viewerApi" id="@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerApi"></a>
+##### `viewerApi`<sup>Required</sup> <a name="viewerApi" id="@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerApi"></a>
 
 ```typescript
 public readonly viewerApi: RestApi;
@@ -238,11 +239,11 @@ public readonly viewerApi: RestApi;
 
 - *Type:* aws-cdk-lib.aws_apigateway.RestApi
 
-The read-only viewer API, when a viewer is configured.
+The read-only viewer API.
 
 ---
 
-##### `viewerDistribution`<sup>Optional</sup> <a name="viewerDistribution" id="@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerDistribution"></a>
+##### `viewerDistribution`<sup>Required</sup> <a name="viewerDistribution" id="@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerDistribution"></a>
 
 ```typescript
 public readonly viewerDistribution: IDistribution;
@@ -250,11 +251,11 @@ public readonly viewerDistribution: IDistribution;
 
 - *Type:* aws-cdk-lib.aws_cloudfront.IDistribution
 
-The CloudFront distribution serving the viewer, when configured.
+The CloudFront distribution serving the viewer.
 
 ---
 
-##### `viewerFunction`<sup>Optional</sup> <a name="viewerFunction" id="@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerFunction"></a>
+##### `viewerFunction`<sup>Required</sup> <a name="viewerFunction" id="@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerFunction"></a>
 
 ```typescript
 public readonly viewerFunction: Function;
@@ -262,11 +263,11 @@ public readonly viewerFunction: Function;
 
 - *Type:* aws-cdk-lib.aws_lambda.Function
 
-The Lambda function behind the viewer API, when configured.
+The Lambda function behind the viewer API.
 
 ---
 
-##### `viewerUrl`<sup>Optional</sup> <a name="viewerUrl" id="@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerUrl"></a>
+##### `viewerUrl`<sup>Required</sup> <a name="viewerUrl" id="@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerUrl"></a>
 
 ```typescript
 public readonly viewerUrl: string;
@@ -274,11 +275,11 @@ public readonly viewerUrl: string;
 
 - *Type:* string
 
-The CloudFront URL serving the viewer, when configured.
+The CloudFront URL serving the viewer.
 
 ---
 
-##### `webBucket`<sup>Optional</sup> <a name="webBucket" id="@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.webBucket"></a>
+##### `webBucket`<sup>Required</sup> <a name="webBucket" id="@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.webBucket"></a>
 
 ```typescript
 public readonly webBucket: IBucket;
@@ -286,7 +287,7 @@ public readonly webBucket: IBucket;
 
 - *Type:* aws-cdk-lib.aws_s3.IBucket
 
-The S3 bucket containing the viewer web application, when configured.
+The S3 bucket containing the viewer web application.
 
 ---
 
@@ -417,7 +418,7 @@ const sesMailCatcherProps: SesMailCatcherProps = { ... }
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcherProps.property.mailApi">mailApi</a></code> | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailApiOptions">MailApiOptions</a></code> | Settings for the SES-compatible mail API. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcherProps.property.retention">retention</a></code> | <code>aws-cdk-lib.Duration</code> | How long captured messages remain available. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcherProps.property.storage">storage</a></code> | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailStorage">MailStorage</a></code> | Existing or custom storage resources. |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcherProps.property.viewer">viewer</a></code> | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions">ViewerOptions</a></code> | If supplied, creates the viewer web application and API. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcherProps.property.viewer">viewer</a></code> | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions">ViewerOptions</a></code> | Viewer settings. |
 
 ---
 
@@ -466,7 +467,10 @@ public readonly viewer: ViewerOptions;
 
 - *Type:* <a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions">ViewerOptions</a>
 
-If supplied, creates the viewer web application and API.
+Viewer settings.
+
+The viewer is created even when this property is omitted;
+in that case, its built-in edge function allows all IPv4 and IPv6 ranges.
 
 ---
 
@@ -502,10 +506,11 @@ public readonly allowedIpCidrs: string[];
 
 IPv4 and IPv6 CIDR ranges allowed at the CloudFront edge.
 
-This is required when the built-in edge function is used. The same
-restriction applies to the viewer web application and its `/api/*`
-behavior. When `edgeFunction` is supplied, access control is owned by that
-function instead.
+When omitted, the built-in edge function allows all IPv4 and IPv6 ranges
+(`0.0.0.0/0` and `::/0`). The same restriction applies to the viewer web
+application and its `/api/*` behavior. When `edgeFunction` is supplied,
+access control is owned by that function instead. An explicit empty array
+is invalid when the built-in edge function is used.
 
 ---
 

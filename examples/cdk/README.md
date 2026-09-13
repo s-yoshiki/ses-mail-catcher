@@ -15,9 +15,9 @@ The stack creates:
   `api-viewer` for `/api/*`.
 
 The example does not apply an IP restriction so it can be used for development
-smoke tests from any network. The published construct still requires the
-viewer allowlist to be configured; this example explicitly allows all IPv4
-and IPv6 ranges.
+smoke tests from any network. Omitting `viewer` uses the construct default,
+which configures the built-in CloudFront Function with all IPv4 and IPv6
+ranges (`0.0.0.0/0` and `::/0`).
 
 ## Prerequisites
 
@@ -40,8 +40,7 @@ AWS_PROFILE=s-yoshiki pnpm --filter ses-mail-catcher-cdk-example synth
 AWS_PROFILE=s-yoshiki pnpm --filter ses-mail-catcher-cdk-example run deploy
 ```
 
-Replace the documentation-range address with the actual address used to open
-the viewer. After deployment, inspect the stack outputs:
+After deployment, inspect the stack outputs:
 
 ```sh
 aws cloudformation describe-stacks \

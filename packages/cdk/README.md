@@ -20,7 +20,7 @@ const mailCatcher = new SesMailCatcher(stack, 'MailCatcher', {
     allowedIpCidrs: ['203.0.113.0/24'],
   },
   viewer: {
-    // Required when the viewer is enabled.
+    // Optional: restrict the viewer at the CloudFront edge.
     allowedIpCidrs: ['203.0.113.0/24'],
   },
 });
@@ -67,7 +67,7 @@ TTL.
 
 ## Viewer
 
-The optional viewer consists of three parts:
+The viewer is created by default and consists of three parts:
 
 - `api-viewer`: API Gateway + Lambda + Hono, exposing the shared `/api`
   contract and read-only access to DynamoDB/S3;
@@ -78,8 +78,10 @@ The optional viewer consists of three parts:
 Both are therefore served from the same browser origin. The viewer Lambda does
 not serve static files. It has only DynamoDB read and S3 read permissions.
 
-The viewer uses the built-in CloudFront Function when `allowedIpCidrs` is
-provided:
+The viewer uses a built-in CloudFront Function for IP filtering and SPA route
+rewriting. If `allowedIpCidrs` is omitted, the function defaults to allowing
+all IPv4 and IPv6 ranges (`0.0.0.0/0` and `::/0`), which is intended for
+development environments:
 
 ```ts
 const mailCatcher = new SesMailCatcher(stack, 'MailCatcher', {
@@ -111,8 +113,9 @@ const mailCatcher = new SesMailCatcher(stack, 'MailCatcher', {
 
 The supplied function replaces the built-in IP allowlist and SPA rewrite and
 is attached to both the web and `/api/*` behaviors. It must implement any
-access control and request rewriting required by the application. When no
-custom function is supplied, `allowedIpCidrs` is required.
+access control and request rewriting required by the application. When
+`allowedIpCidrs` is explicitly set to an empty array, the construct rejects
+the configuration because the built-in function would deny every request.
 
 The viewer API is read-only and implements the same contract as the local
 server: health, message listing, message details, raw MIME, and attachments.

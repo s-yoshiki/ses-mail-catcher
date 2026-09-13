@@ -32,7 +32,7 @@ test('creates the SES-compatible mail API and disposable storage', () => {
   expect(catcher.bucket).toBeDefined();
   expect(catcher.table).toBeDefined();
 
-  template.resourceCountIs('AWS::ApiGateway::RestApi', 1);
+  template.resourceCountIs('AWS::ApiGateway::RestApi', 2);
   template.hasResourceProperties('AWS::ApiGateway::Resource', {
     PathPart: 'outbound-emails',
   });
@@ -88,19 +88,24 @@ test('supports optional API Gateway source IP restrictions', () => {
       ]),
     }),
   });
-  expect(Object.keys(template.findResources('AWS::ApiGateway::RestApi'))).toHaveLength(1);
+  expect(Object.keys(template.findResources('AWS::ApiGateway::RestApi'))).toHaveLength(2);
 });
 
-test('does not create the viewer unless it is requested', () => {
+test('creates an open viewer when viewer settings are omitted', () => {
   const { stack, catcher } = createStack();
   const template = Template.fromStack(stack);
 
-  expect(catcher.viewerApi).toBeUndefined();
-  expect(catcher.viewerFunction).toBeUndefined();
-  expect(catcher.webBucket).toBeUndefined();
-  expect(catcher.viewerDistribution).toBeUndefined();
-  expect(catcher.viewerUrl).toBeUndefined();
-  template.resourceCountIs('AWS::CloudFront::Distribution', 0);
+  expect(catcher.viewerApi).toBeDefined();
+  expect(catcher.viewerFunction).toBeDefined();
+  expect(catcher.webBucket).toBeDefined();
+  expect(catcher.viewerDistribution).toBeDefined();
+  expect(catcher.viewerUrl).toMatch(/^https:\/\//);
+  template.resourceCountIs('AWS::CloudFront::Distribution', 1);
+  template.resourceCountIs('AWS::CloudFront::Function', 1);
+  expect(JSON.stringify(template.findResources('AWS::CloudFront::Function')))
+    .toContain('0.0.0.0/0');
+  expect(JSON.stringify(template.findResources('AWS::CloudFront::Function')))
+    .toContain('::/0');
 });
 
 test('creates a CloudFront viewer with separate S3 and API Gateway origins', () => {
