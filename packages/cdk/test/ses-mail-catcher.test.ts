@@ -133,6 +133,27 @@ test('requires an IP allowlist for the AWS viewer', () => {
   expect(() => createStack(undefined, { allowedIpCidrs: [] })).toThrow('viewer.allowedIpCidrs');
 });
 
+test('supports viewer Basic authentication with a CloudFront KeyValueStore', () => {
+  const app = new App();
+  const stack = new Stack(app, 'TestStack', { env: { account: '123456789012', region: 'us-east-1' } });
+  const keyValueStore = new cloudfront.KeyValueStore(stack, 'ViewerAuthStore');
+  const catcher = new SesMailCatcher(stack, 'Catcher', {
+    viewer: { basicAuth: { keyValueStore } },
+  });
+  const template = Template.fromStack(stack);
+
+  expect(catcher.viewerDistribution).toBeDefined();
+  template.resourceCountIs('AWS::CloudFront::KeyValueStore', 1);
+  template.resourceCountIs('AWS::CloudFront::Function', 1);
+  const functions = JSON.stringify(template.findResources('AWS::CloudFront::Function'));
+  expect(functions).toContain("import cf from 'cloudfront';");
+  expect(functions).toContain('BASIC_AUTH_KEY');
+  expect(functions).toContain('cf.kvs()');
+  expect(functions).toContain('statusCode: 401');
+  expect(functions).toContain('www-authenticate');
+  expect(functions).toContain('KeyValueStoreAssociations');
+});
+
 test('accepts a user-managed CloudFront Function for the viewer', () => {
   const app = new App();
   const stack = new Stack(app, 'TestStack', { env: { account: '123456789012', region: 'us-east-1' } });
@@ -147,6 +168,19 @@ test('accepts a user-managed CloudFront Function for the viewer', () => {
   template.hasResourceProperties('AWS::CloudFront::Function', {
     FunctionCode: 'function handler(event) { return event.request; }',
   });
+});
+
+test('does not combine built-in Basic authentication with a custom edge function', () => {
+  const app = new App();
+  const stack = new Stack(app, 'TestStack', { env: { account: '123456789012', region: 'us-east-1' } });
+  const edgeFunction = new cloudfront.Function(stack, 'CustomViewerFunction', {
+    code: cloudfront.FunctionCode.fromInline('function handler(event) { return event.request; }'),
+  });
+  const keyValueStore = new cloudfront.KeyValueStore(stack, 'ViewerAuthStore');
+
+  expect(() => new SesMailCatcher(stack, 'Catcher', {
+    viewer: { edgeFunction, basicAuth: { keyValueStore } },
+  })).toThrow('viewer.basicAuth cannot be used with viewer.edgeFunction');
 });
 
 test('empties disposable buckets on stack deletion', () => {

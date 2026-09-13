@@ -48,10 +48,12 @@ web-viewer: CloudFront ── /api/* ──> api-viewer: API Gateway
 
 The construct does not grant `ses:SendEmail` or `ses:SendRawEmail`. The mail
 API is unauthenticated by default for development use. An application can opt
-into API Gateway IAM authorization, and either API can be restricted by IP:
-`api-mail` uses an API Gateway resource policy, while the CloudFront-hosted
-viewer uses a CloudFront Function attached to both the web and `/api/*`
-behaviors. A viewer configuration must contain at least one allowed CIDR.
+into API Gateway IAM authorization, and `api-mail` can be restricted by IP
+with an API Gateway resource policy. The CloudFront-hosted viewer uses a
+CloudFront Function attached to both the web and `/api/*` behaviors. Its IP
+allowlist defaults to `0.0.0.0/0` and `::/0`; Basic authentication can be
+added by associating a CloudFront KeyValueStore whose expected Authorization
+header is managed outside the synthesized template.
 
 This is deliberately a sandbox/mock capture service, not a replacement for
 Amazon SES. SES template operations are not implemented, and captured
@@ -61,7 +63,8 @@ messages are untrusted data.
 
 CloudFront is the intended entry point for the viewer. The viewer request
 function checks the source IPv4/IPv6 address before static or API origin
-processing and rewrites extensionless client-side routes to `index.html`.
+processing, optionally checks a Basic Authorization value in a CloudFront
+KeyValueStore, and rewrites extensionless client-side routes to `index.html`.
 The API Lambda grants read access only to the existing message table and
 bucket. Captured HTML is rendered only in a sandboxed iframe in the React app.
 
@@ -74,8 +77,10 @@ bundle and the `/api` contract from one local HTTP server. Set
 required.
 
 The local backend intentionally does not share the AWS Lambda implementation:
-it uses SQLite and the local server's native HTTP adapter, while the AWS
-backend uses API Gateway, Hono, S3, and DynamoDB.
+it uses SQLite and a Node.js HTTP adapter around a Hono application, while the
+AWS backend uses API Gateway, Hono, S3, and DynamoDB. Both implementations
+keep the route boundary and viewer API contract aligned. Basic authentication
+is an AWS CloudFront feature and is not added to the local server.
 
 ## Distribution
 

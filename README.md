@@ -125,6 +125,11 @@ under one browser origin. The viewer is created by default; when
 IPv4 and IPv6 ranges for development use. Captured HTML is rendered in a
 sandboxed iframe.
 
+The viewer can also use Basic authentication backed by a CloudFront
+KeyValueStore. The store contains the expected `Authorization` header value,
+including the `Basic ` prefix; credentials are managed outside the CDK
+template. IP restrictions and Basic authentication can be combined.
+
 Applications that need to own the edge logic can pass a user-managed
 `cloudfront.IFunction` as `viewer.edgeFunction`. This replaces the built-in IP
 allowlist and SPA rewrite, so the supplied function is responsible for access

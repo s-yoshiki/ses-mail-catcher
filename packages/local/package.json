@@ -26,6 +26,7 @@
     "build:binary": "pnpm dlx scriptc build src/cli.ts --dynamic -o dist/ses-mail-catcher"
   },
   "dependencies": {
+    "hono": "^4.9.7",
     "postal-mime": "^3.0.0"
   },
   "devDependencies": {

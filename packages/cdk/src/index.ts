@@ -3,6 +3,7 @@ export {
   SesMailCatcher,
 } from './ses-mail-catcher.js';
 export type {
+  BasicAuthOptions,
   MailApiOptions,
   MailStorage,
   SesMailCatcherProps,

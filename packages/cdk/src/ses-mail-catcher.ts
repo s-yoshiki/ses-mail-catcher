@@ -46,6 +46,22 @@ export interface MailApiOptions {
   readonly timeout?: Duration;
 }
 
+/** Settings for viewer Basic authentication backed by a CloudFront KeyValueStore. */
+export interface BasicAuthOptions {
+  /**
+   * A CloudFront KeyValueStore containing the expected Authorization header.
+   * The value must be managed outside this construct and include the `Basic `
+   * prefix.
+   */
+  readonly keyValueStore: cloudfront.IKeyValueStore;
+
+  /** Key containing the expected Authorization header. @default authorization */
+  readonly key?: string;
+
+  /** Realm returned in the `WWW-Authenticate` challenge. @default ses-mail-catcher */
+  readonly realm?: string;
+}
+
 /** Settings for the CloudFront-hosted viewer. */
 export interface ViewerOptions {
   /**
@@ -58,6 +74,9 @@ export interface ViewerOptions {
    * is invalid when the built-in edge function is used.
    */
   readonly allowedIpCidrs?: string[];
+
+  /** Optional Basic authentication checked by the built-in CloudFront Function. */
+  readonly basicAuth?: BasicAuthOptions;
 
   /**
    * An optional user-managed CloudFront Function for viewer requests.
@@ -235,9 +254,16 @@ export class SesMailCatcher extends Construct {
     readonly distribution: cloudfront.Distribution;
     readonly url: string;
   } {
+    if (options.edgeFunction !== undefined && options.basicAuth !== undefined) {
+      throw new Error('viewer.basicAuth cannot be used with viewer.edgeFunction');
+    }
+
     const allowedIpCidrs = options.allowedIpCidrs ?? DEFAULT_VIEWER_ALLOWED_IP_CIDRS;
     if (options.edgeFunction === undefined && allowedIpCidrs.length === 0) {
       throw new Error('viewer.allowedIpCidrs must contain at least one CIDR range');
+    }
+    if (options.basicAuth !== undefined) {
+      validateBasicAuth(options.basicAuth);
     }
 
     const viewerFunction = new lambda.Function(this, 'ViewerHandler', {
@@ -282,9 +308,10 @@ export class SesMailCatcher extends Construct {
       autoDeleteObjects: true,
     });
     const edgeFunction = options.edgeFunction ?? new cloudfront.Function(this, 'ViewerAccessFunction', {
-      comment: 'Restricts the viewer to the configured IP ranges',
+      comment: 'Restricts the viewer to the configured access policy',
       runtime: cloudfront.FunctionRuntime.JS_2_0,
-      code: cloudfront.FunctionCode.fromInline(createViewerFunctionCode(allowedIpCidrs)),
+      code: cloudfront.FunctionCode.fromInline(createViewerFunctionCode(allowedIpCidrs, options.basicAuth)),
+      ...(options.basicAuth === undefined ? {} : { keyValueStore: options.basicAuth.keyValueStore }),
     });
     const edgeAssociation = [{
       eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
@@ -360,10 +387,25 @@ const createIpPolicy = (allowedIpCidrs: readonly string[] | undefined): iam.Poli
   });
 };
 
-const createViewerFunctionCode = (allowedIpCidrs: readonly string[]): string => `
-var ALLOWED_CIDRS = ${JSON.stringify(allowedIpCidrs)};
+const validateBasicAuth = (options: BasicAuthOptions): void => {
+  if (options.key !== undefined && options.key.length === 0) {
+    throw new Error('viewer.basicAuth.key must not be empty');
+  }
+  if (options.realm !== undefined && (options.realm.length === 0 || /[\r\n"]/u.test(options.realm))) {
+    throw new Error('viewer.basicAuth.realm must be a non-empty value without CR, LF, or quotes');
+  }
+};
 
-function handler(event) {
+const createViewerFunctionCode = (
+  allowedIpCidrs: readonly string[],
+  basicAuth?: BasicAuthOptions,
+): string => `
+${basicAuth === undefined ? '' : "import cf from 'cloudfront';"}
+var ALLOWED_CIDRS = ${JSON.stringify(allowedIpCidrs)};
+${basicAuth === undefined ? '' : `var BASIC_AUTH_KEY = ${JSON.stringify(basicAuth.key ?? 'authorization')};
+var BASIC_AUTH_REALM = ${JSON.stringify(basicAuth.realm ?? 'ses-mail-catcher')};`}
+
+${basicAuth === undefined ? '' : 'async '}function handler(event) {
   var request = event.request;
   var ip = event.viewer.ip;
   var allowed = false;
@@ -384,6 +426,18 @@ function handler(event) {
       body: { encoding: 'text', data: 'Forbidden' }
     };
   }
+${basicAuth === undefined ? '' : `
+  var authorization = request.headers.authorization;
+  var expected;
+  try {
+    expected = await cf.kvs().get(BASIC_AUTH_KEY);
+  } catch (error) {
+    return unauthorized();
+  }
+  if (authorization === undefined || authorization.value !== expected) {
+    return unauthorized();
+  }
+`}
 
   // API requests must keep their original path. Other extensionless paths
   // are SPA routes and are served by index.html from the S3 origin.
@@ -393,6 +447,19 @@ function handler(event) {
   }
   return request;
 }
+
+${basicAuth === undefined ? '' : `function unauthorized() {
+  return {
+    statusCode: 401,
+    statusDescription: 'Unauthorized',
+    headers: {
+      'www-authenticate': { value: 'Basic realm="' + BASIC_AUTH_REALM + '"' },
+      'cache-control': { value: 'no-store' }
+    },
+    body: { encoding: 'text', data: 'Unauthorized' }
+  };
+}
+`}
 
 function contains(ip, cidr) {
   var parts = cidr.split('/');

@@ -294,6 +294,69 @@ The S3 bucket containing the viewer web application.
 
 ## Structs <a name="Structs" id="Structs"></a>
 
+### BasicAuthOptions <a name="BasicAuthOptions" id="@s-yoshiki/cdk-ses-mail-catcher.BasicAuthOptions"></a>
+
+Settings for viewer Basic authentication backed by a CloudFront KeyValueStore.
+
+#### Initializer <a name="Initializer" id="@s-yoshiki/cdk-ses-mail-catcher.BasicAuthOptions.Initializer"></a>
+
+```typescript
+import { BasicAuthOptions } from '@s-yoshiki/cdk-ses-mail-catcher'
+
+const basicAuthOptions: BasicAuthOptions = { ... }
+```
+
+#### Properties <a name="Properties" id="Properties"></a>
+
+| **Name** | **Type** | **Description** |
+| --- | --- | --- |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.BasicAuthOptions.property.keyValueStore">keyValueStore</a></code> | <code>aws-cdk-lib.aws_cloudfront.IKeyValueStore</code> | A CloudFront KeyValueStore containing the expected Authorization header. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.BasicAuthOptions.property.key">key</a></code> | <code>string</code> | Key containing the expected Authorization header. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.BasicAuthOptions.property.realm">realm</a></code> | <code>string</code> | Realm returned in the `WWW-Authenticate` challenge. |
+
+---
+
+##### `keyValueStore`<sup>Required</sup> <a name="keyValueStore" id="@s-yoshiki/cdk-ses-mail-catcher.BasicAuthOptions.property.keyValueStore"></a>
+
+```typescript
+public readonly keyValueStore: IKeyValueStore;
+```
+
+- *Type:* aws-cdk-lib.aws_cloudfront.IKeyValueStore
+
+A CloudFront KeyValueStore containing the expected Authorization header.
+
+The value must be managed outside this construct and include the `Basic `
+prefix.
+
+---
+
+##### `key`<sup>Optional</sup> <a name="key" id="@s-yoshiki/cdk-ses-mail-catcher.BasicAuthOptions.property.key"></a>
+
+```typescript
+public readonly key: string;
+```
+
+- *Type:* string
+- *Default:* authorization
+
+Key containing the expected Authorization header.
+
+---
+
+##### `realm`<sup>Optional</sup> <a name="realm" id="@s-yoshiki/cdk-ses-mail-catcher.BasicAuthOptions.property.realm"></a>
+
+```typescript
+public readonly realm: string;
+```
+
+- *Type:* string
+- *Default:* ses-mail-catcher
+
+Realm returned in the `WWW-Authenticate` challenge.
+
+---
+
 ### MailApiOptions <a name="MailApiOptions" id="@s-yoshiki/cdk-ses-mail-catcher.MailApiOptions"></a>
 
 Settings for the SES-compatible mail API.
@@ -491,6 +554,7 @@ const viewerOptions: ViewerOptions = { ... }
 | **Name** | **Type** | **Description** |
 | --- | --- | --- |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.allowedIpCidrs">allowedIpCidrs</a></code> | <code>string[]</code> | IPv4 and IPv6 CIDR ranges allowed at the CloudFront edge. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.basicAuth">basicAuth</a></code> | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.BasicAuthOptions">BasicAuthOptions</a></code> | Optional Basic authentication checked by the built-in CloudFront Function. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.edgeFunction">edgeFunction</a></code> | <code>aws-cdk-lib.aws_cloudfront.IFunction</code> | An optional user-managed CloudFront Function for viewer requests. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.timeout">timeout</a></code> | <code>aws-cdk-lib.Duration</code> | Lambda timeout for viewer API requests. |
 
@@ -511,6 +575,18 @@ When omitted, the built-in edge function allows all IPv4 and IPv6 ranges
 application and its `/api/*` behavior. When `edgeFunction` is supplied,
 access control is owned by that function instead. An explicit empty array
 is invalid when the built-in edge function is used.
+
+---
+
+##### `basicAuth`<sup>Optional</sup> <a name="basicAuth" id="@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.basicAuth"></a>
+
+```typescript
+public readonly basicAuth: BasicAuthOptions;
+```
+
+- *Type:* <a href="#@s-yoshiki/cdk-ses-mail-catcher.BasicAuthOptions">BasicAuthOptions</a>
+
+Optional Basic authentication checked by the built-in CloudFront Function.
 
 ---
 

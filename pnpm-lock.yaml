@@ -181,6 +181,9 @@ importers:
 
   packages/local:
     dependencies:
+      hono:
+        specifier: ^4.9.7
+        version: 4.13.7
       postal-mime:
         specifier: ^3.0.0
         version: 3.0.0

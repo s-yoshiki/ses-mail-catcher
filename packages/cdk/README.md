@@ -96,6 +96,31 @@ rewrites extensionless SPA routes to `index.html`. The same function is
 attached to the `/api/*` behavior, so the browser and viewer API receive the
 same edge IP restriction. `mailCatcher.viewerUrl` is the URL to open.
 
+Basic authentication is also available through a CloudFront KeyValueStore:
+
+```ts
+import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
+
+const authStore = cloudfront.KeyValueStore.fromKeyValueStoreArn(
+  stack,
+  'ViewerAuthStore',
+  'arn:aws:cloudfront::123456789012:key-value-store/KEY_VALUE_STORE_ID',
+);
+
+const mailCatcher = new SesMailCatcher(stack, 'MailCatcher', {
+  viewer: {
+    basicAuth: { keyValueStore: authStore },
+  },
+});
+```
+
+The KeyValueStore must contain the expected `Authorization` header value,
+including the `Basic ` prefix, under the `authorization` key by default. The
+construct does not receive or store the username/password; populate the store
+through an operational process outside the synthesized template. A custom
+`key` and `realm` can be supplied. `allowedIpCidrs` and `basicAuth` may be used
+together, in which case both checks must pass.
+
 To manage the CloudFront Function in the application instead, pass an existing
 `cloudfront.IFunction` as `edgeFunction`:
 
@@ -116,6 +141,8 @@ is attached to both the web and `/api/*` behaviors. It must implement any
 access control and request rewriting required by the application. When
 `allowedIpCidrs` is explicitly set to an empty array, the construct rejects
 the configuration because the built-in function would deny every request.
+`basicAuth` cannot be combined with `edgeFunction`; a custom function owns the
+complete viewer access policy.
 
 The viewer API is read-only and implements the same contract as the local
 server: health, message listing, message details, raw MIME, and attachments.
