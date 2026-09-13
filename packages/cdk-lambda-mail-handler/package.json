@@ -5,8 +5,8 @@
   "type": "module",
   "license": "Apache-2.0",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "compile": "tsc -p tsconfig.build.json",
+    "build": "node scripts/clean-build.mjs && tsc -p tsconfig.build.json && node scripts/bundle-handler.mjs",
+    "compile": "node scripts/clean-build.mjs && tsc -p tsconfig.build.json && node scripts/bundle-handler.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
@@ -14,8 +14,12 @@
   },
   "devDependencies": {
     "@types/node": "^26.4.1",
+    "esbuild": "^0.28.2",
     "oxlint": "^1.81.0",
     "typescript": "~7.0.2",
     "vitest": "^5.0.0"
+  },
+  "dependencies": {
+    "hono": "^4.9.7"
   }
 }

@@ -10,9 +10,9 @@ development baseline is Node.js 24 and pnpm 11.25.0.
 
 | Package | Purpose | Storage or runtime |
 | --- | --- | --- |
-| [`@s-yoshiki/cdk-ses-mail-catcher`](./packages/cdk) | AWS Serverless CDK construct for capturing or relaying mail | Lambda + S3 + DynamoDB |
+| [`@s-yoshiki/cdk-ses-mail-catcher`](./packages/cdk) | AWS Serverless CDK construct for capturing SES SDK requests | API Gateway + Lambda + S3 + DynamoDB |
 | [`@ses-mail-catcher/local`](./packages/local) | Local SES v2-compatible server for development and integration tests | Private workspace, distributed through Docker |
-| [`@ses-mail-catcher/viewer`](./packages/viewer) | React viewer for captured messages | Private workspace, bundled into the local server and the AWS viewer |
+| [`@ses-mail-catcher/viewer`](./packages/viewer) | React viewer for captured messages | Private workspace, bundled into the local server and AWS `web-viewer` |
 | [`@ses-mail-catcher/api-contract`](./packages/api-contract) | Shared TypeScript types and Zod schemas for the viewer API | Private workspace |
 | [`@ses-mail-catcher/cdk-mail-handler`](./packages/cdk-lambda-mail-handler) | Mail Lambda handler used by the CDK construct | Private workspace |
 | [`@ses-mail-catcher/cdk-viewer-handler`](./packages/cdk-lambda-viewer-handler) | Viewer Lambda handler used by the CDK construct | Private workspace |
@@ -96,34 +96,32 @@ the API routes, database locations, and the experimental native binary.
 
 ## AWS Serverless construct
 
-The CDK package provides a Lambda-based mail handler with two explicit modes:
+The CDK package creates a capture-only backend. `api-mail` is API Gateway +
+Lambda and accepts the SES SDK request formats: SES v1 Query requests at `/`
+and SES v2 JSON `SendEmail` requests at `/v2/email/outbound-emails`. The
+handler converts Simple messages to MIME, preserves Raw messages, and stores
+them in S3 with searchable metadata in DynamoDB. It has no SES permissions.
 
 ```ts
-import { Duration, Stack } from 'aws-cdk-lib';
-import { MailMode, SesMailCatcher } from '@s-yoshiki/cdk-ses-mail-catcher';
+import { Duration } from 'aws-cdk-lib';
+import { SesMailCatcher } from '@s-yoshiki/cdk-ses-mail-catcher';
 
-const stack = new Stack();
 const mailCatcher = new SesMailCatcher(stack, 'MailCatcher', {
   retention: Duration.days(7),
-  mode: MailMode.CATCH,
+  mailApi: { allowedIpCidrs: ['203.0.113.0/24'] },
+  viewer: { allowedIpCidrs: ['203.0.113.0/24'] },
 });
 ```
 
-- `CATCH` creates a canonical raw MIME message, stores it in S3, and stores
-  searchable metadata in DynamoDB. It does not grant SES send permissions.
-- `RELAY` sends the same raw MIME representation through Amazon SES and grants
-  only the SES permissions needed for that relay.
+Use `mailCatcher.mailApiEndpoint` as the endpoint of an AWS SDK SES client.
+`mailApi.authorization` can optionally be set to `AWS_IAM`, followed by
+`mailCatcher.grantMailApiInvoke()` for the sending principal. `mailApi` IP
+restrictions use an API Gateway resource policy.
 
-Applications invoke `mailCatcher.function` with a small mail event containing
-the sender, recipients, subject, text or HTML body.
-Call `mailCatcher.grantSend()` to allow an application Lambda to invoke the
-handler.
-
-The package can also create an AWS viewer for captured mail. It is available
-only in `CATCH` mode and cannot be created without access control. Basic
-authentication reads credentials from AWS Secrets Manager at runtime, and
-allowed IPv4 or IPv6 CIDR ranges can be configured as an additional check.
-Credentials are never included in the synthesized template. Captured HTML is
+`api-viewer` is a separate read-only API Gateway + Lambda + Hono backend, and
+`web-viewer` is a private S3-hosted React app. CloudFront serves both origins
+under one browser origin. `viewer.allowedIpCidrs` is required and is enforced
+by a CloudFront Function for the web and `/api/*` behavior. Captured HTML is
 rendered in a sandboxed iframe.
 
 See [`packages/cdk/README.md`](./packages/cdk/README.md) for the full construct

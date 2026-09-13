@@ -1,39 +1,35 @@
 import { randomUUID } from 'node:crypto';
+import { Hono } from 'hono';
+import { handle, type LambdaEvent } from 'hono/aws-lambda';
 
 import { loadAwsSdk, type AwsSdkModules, type CommandClient } from './aws-sdk.js';
 import { createMetadataItem } from './metadata.js';
-import { createMimeMessage } from './mime.js';
-import { validateEvent } from './mail-validation.js';
-import { toSesApiMailEvent, type SesApiMailEvent, type SesApiRequest } from './ses-api.js';
-
-type MailHandlerMode = 'CATCH' | 'RELAY';
+import {
+  toSesApiMailEvent,
+  toSesQueryMailEvent,
+  type SesApiMailEvent,
+  type SesApiProtocol,
+  type SesApiRequest,
+} from './ses-api.js';
 
 /** @internal */
 export interface MailHandlerConfig {
-  readonly mode: MailHandlerMode;
   readonly bucketName: string;
   readonly tableName: string;
   readonly retentionSeconds: number;
-  readonly relay?: {
-    readonly configurationSetName?: string;
-    readonly fromEmailAddressIdentityArn?: string;
-    readonly feedbackForwardingEmailAddress?: string;
-  };
 }
 
 /** @internal */
 export interface MailHandlerResult {
   readonly messageId: string;
-  readonly mode: MailHandlerMode;
   readonly createdAt: string;
-  readonly s3Key?: string;
+  readonly s3Key: string;
 }
 
 /** @internal */
 export interface MailHandlerDependencies {
   readonly ddb: CommandClient;
   readonly s3: CommandClient;
-  readonly ses: CommandClient;
   readonly sdk: AwsSdkModules;
 }
 
@@ -42,52 +38,48 @@ const createDefaultDependencies = (): MailHandlerDependencies => {
   return {
     ddb: new sdk.DynamoDBClient({}) as CommandClient,
     s3: new sdk.S3Client({}) as CommandClient,
-    ses: new sdk.SESv2Client({}) as CommandClient,
     sdk,
   };
 };
 
-/** Lambda entry point for the generated CDK function. */
-export const handler = async (event: unknown): Promise<MailHandlerResult | SesApiResponse> => {
-  if (isSesApiRequest(event)) {
-    return serveSesApi(event, loadConfig());
-  }
-  return processMail(event, loadConfig());
-};
+type LambdaBindings = { event: LambdaEvent };
+const app = new Hono<{ Bindings: LambdaBindings }>();
+let cachedDependencies: MailHandlerDependencies | undefined;
+
+// Hono owns the Lambda/API Gateway HTTP adapter. SES v1/v2 protocol parsing
+// and response compatibility remain in serveSesApi so they can be tested
+// without a deployed API Gateway.
+app.all('*', async (context) => {
+  cachedDependencies ??= createDefaultDependencies();
+  const response = await serveSesApi(context.env.event as SesApiRequest, loadConfig(), cachedDependencies);
+  return new Response(response.body, {
+    status: response.statusCode,
+    headers: response.headers,
+  });
+});
+
+/** Lambda entry point for the API Gateway SES-compatible mail API. */
+export const handler = handle(app);
+
+/** @internal */
+export interface SesApiResponse {
+  readonly statusCode: number;
+  readonly headers: Record<string, string>;
+  readonly body: string;
+}
 
 /** @internal */
 export const processMail = async (
-  event: unknown,
+  event: SesApiMailEvent,
   config: MailHandlerConfig,
   dependencies: MailHandlerDependencies = createDefaultDependencies(),
 ): Promise<MailHandlerResult> => {
-  validateEvent(event);
-  const mailEvent = event as SesApiMailEvent;
-
   const messageId = randomUUID();
   const createdAt = new Date().toISOString();
-  const rawMime = mailEvent.rawMimeBase64 === undefined
-    ? Buffer.from(await createMimeMessage(
-      event,
-      messageId,
-      createdAt,
-      (attachment) => readAttachment(dependencies.s3, dependencies.sdk, attachment.bucket, attachment.key),
-    ), 'utf8')
-    : Buffer.from(mailEvent.rawMimeBase64, 'base64');
-
-  if (config.mode === 'RELAY') {
-    const relayParameters = {
-      Content: { Raw: { Data: rawMime } },
-      ...(config.relay?.configurationSetName ? { ConfigurationSetName: config.relay.configurationSetName } : {}),
-      ...(config.relay?.fromEmailAddressIdentityArn ? { FromEmailAddressIdentityArn: config.relay.fromEmailAddressIdentityArn } : {}),
-      ...(config.relay?.feedbackForwardingEmailAddress ? { FeedbackForwardingEmailAddress: config.relay.feedbackForwardingEmailAddress } : {}),
-    };
-    await dependencies.ses.send(new dependencies.sdk.SendEmailCommand(relayParameters));
-    return { messageId, mode: 'RELAY', createdAt };
-  }
-
+  const rawMime = Buffer.from(event.rawMimeBase64, 'base64');
   const date = createdAt.slice(0, 10).split('-');
   const key = `messages/${date[0]}/${date[1]}/${date[2]}/${messageId}.eml`;
+
   await dependencies.s3.send(new dependencies.sdk.PutObjectCommand({
     Bucket: config.bucketName,
     Key: key,
@@ -102,15 +94,8 @@ export const processMail = async (
     Item: createMetadataItem(event, messageId, createdAt, key, rawMime.byteLength, expiresAt),
   }));
 
-  return { messageId, mode: 'CATCH', createdAt, s3Key: key };
+  return { messageId, createdAt, s3Key: key };
 };
-
-/** @internal */
-export interface SesApiResponse {
-  readonly statusCode: number;
-  readonly headers: Record<string, string>;
-  readonly body: string;
-}
 
 /** @internal */
 export const serveSesApi = async (
@@ -118,34 +103,58 @@ export const serveSesApi = async (
   config: MailHandlerConfig,
   dependencies: MailHandlerDependencies = createDefaultDependencies(),
 ): Promise<SesApiResponse> => {
-  if (request.requestContext?.http?.method !== 'POST') {
-    return sesError(405, 'MethodNotAllowed', 'Only POST is supported');
+  const path = request.path ?? request.rawPath ?? '/';
+  const protocol: SesApiProtocol = path === '/' ? 'v1' : 'v2';
+  const method = request.httpMethod ?? request.requestContext?.http?.method;
+  if (method !== 'POST') {
+    return sesError(protocol, 405, 'MethodNotAllowed', 'Only POST is supported');
   }
-  if (request.rawPath !== '/' && request.rawPath !== '/v2/email/outbound-emails') {
-    return sesError(404, 'NotFound', 'Not found');
+  if (path !== '/' && path !== '/v2/email/outbound-emails') {
+    return sesError(protocol, 404, 'NotFound', 'Not found');
+  }
+
+  const body = request.body === undefined || request.body === null
+    ? ''
+    : Buffer.from(request.body, request.isBase64Encoded === true ? 'base64' : 'utf8').toString('utf8');
+  let mailEvent: SesApiMailEvent;
+  let operation: string | undefined;
+  try {
+    operation = protocol === 'v1' ? new URLSearchParams(body).get('Action')?.toLowerCase() : undefined;
+    mailEvent = protocol === 'v1'
+      ? toSesQueryMailEvent(new URLSearchParams(body))
+      : toSesApiMailEvent(parseJsonObject(body), header(request, 'x-amz-target'));
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Invalid request';
+    return sesError(protocol, 400, 'InvalidParameterValue', message);
   }
 
   try {
-    const body = request.body === undefined
-      ? ''
-      : Buffer.from(request.body, request.isBase64Encoded === true ? 'base64' : 'utf8').toString('utf8');
-    const parsed: unknown = JSON.parse(body);
-    const input = asRecord(parsed);
-    if (input === undefined) {
-      throw new Error('request body must be a JSON object');
-    }
-    const mailEvent = toSesApiMailEvent(input, header(request, 'x-amz-target'));
     const result = await processMail(mailEvent, config, dependencies);
-    return sesJson(200, { MessageId: result.messageId });
+    return sesSuccess(protocol, result.messageId, operation);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Invalid request';
-    return sesError(400, 'InvalidParameterValue', message);
+    const message = error instanceof Error ? error.message : 'Storage failure';
+    return sesError(protocol, 500, 'InternalFailure', message);
   }
 };
 
-const isSesApiRequest = (event: unknown): event is SesApiRequest => {
-  const value = asRecord(event);
-  return value?.requestContext !== undefined && ('rawPath' in value || 'body' in value);
+const loadConfig = (): MailHandlerConfig => {
+  const retentionSeconds = Number(process.env.RETENTION_SECONDS);
+  if (!Number.isFinite(retentionSeconds) || retentionSeconds <= 0) {
+    throw new Error('RETENTION_SECONDS must be greater than zero');
+  }
+  return {
+    bucketName: requiredEnvironment('STORAGE_BUCKET_NAME'),
+    tableName: requiredEnvironment('METADATA_TABLE_NAME'),
+    retentionSeconds,
+  };
+};
+
+const parseJsonObject = (body: string): Record<string, unknown> => {
+  const parsed: unknown = JSON.parse(body);
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    throw new Error('request body must be a JSON object');
+  }
+  return parsed as Record<string, unknown>;
 };
 
 const header = (request: SesApiRequest, name: string): string | undefined => {
@@ -154,72 +163,70 @@ const header = (request: SesApiRequest, name: string): string | undefined => {
   return entry?.[1];
 };
 
-const sesError = (statusCode: number, type: string, message: string): SesApiResponse => {
-  return sesJson(statusCode, { __type: type, message });
-};
-
-const sesJson = (statusCode: number, body: unknown): SesApiResponse => {
-  return {
-    statusCode,
-    headers: {
-      'Content-Type': 'application/x-amz-json-1.1',
-      'Cache-Control': 'no-store',
-    },
-    body: JSON.stringify(body),
-  };
-};
-
-const loadConfig = (): MailHandlerConfig => {
-  const mode = process.env.MAIL_MODE;
-  if (mode !== 'CATCH' && mode !== 'RELAY') {
-    throw new Error('MAIL_MODE must be CATCH or RELAY');
+const sesSuccess = (protocol: SesApiProtocol, messageId: string, operation?: string): SesApiResponse => {
+  if (protocol === 'v1') {
+    const responseName = operation === 'sendrawemail' ? 'SendRawEmail' : 'SendEmail';
+    return {
+      statusCode: 200,
+      headers: { 'Content-Type': 'text/xml; charset=utf-8', 'Cache-Control': 'no-store' },
+      body: [
+        '<?xml version="1.0"?>',
+        `<${responseName}Response xmlns="http://ses.amazonaws.com/doc/2010-12-01/">`,
+        `<${responseName}Result>`,
+        `<MessageId>${escapeXml(messageId)}</MessageId>`,
+        `</${responseName}Result>`,
+        '<ResponseMetadata/>',
+        `</${responseName}Response>`,
+      ].join(''),
+    };
   }
-
-  const retentionSeconds = Number(process.env.RETENTION_SECONDS);
-  if (!Number.isFinite(retentionSeconds) || retentionSeconds <= 0) {
-    throw new Error('RETENTION_SECONDS must be greater than zero');
-  }
-
-  return {
-    mode,
-    bucketName: requiredEnvironment('STORAGE_BUCKET_NAME'),
-    tableName: requiredEnvironment('METADATA_TABLE_NAME'),
-    retentionSeconds,
-    relay: {
-      configurationSetName: process.env.SES_CONFIGURATION_SET_NAME,
-      fromEmailAddressIdentityArn: process.env.SES_FROM_EMAIL_ADDRESS_IDENTITY_ARN,
-      feedbackForwardingEmailAddress: process.env.SES_FEEDBACK_FORWARDING_EMAIL_ADDRESS,
-    },
-  };
+  return sesJson(200, { MessageId: messageId });
 };
+
+const sesError = (
+  protocol: SesApiProtocol,
+  statusCode: number,
+  code: string,
+  message: string,
+): SesApiResponse => {
+  if (protocol === 'v1') {
+    return {
+      statusCode,
+      headers: { 'Content-Type': 'text/xml; charset=utf-8', 'Cache-Control': 'no-store' },
+      body: [
+        '<?xml version="1.0"?>',
+        '<ErrorResponse xmlns="http://ses.amazonaws.com/doc/2010-12-01/">',
+        '<Error>',
+        '<Type>Sender</Type>',
+        `<Code>${escapeXml(code)}</Code>`,
+        `<Message>${escapeXml(message)}</Message>`,
+        '</Error>',
+        '<RequestId>mail-catcher</RequestId>',
+        '</ErrorResponse>',
+      ].join(''),
+    };
+  }
+  return sesJson(statusCode, { __type: code, message });
+};
+
+const sesJson = (statusCode: number, body: unknown): SesApiResponse => ({
+  statusCode,
+  headers: {
+    'Content-Type': 'application/x-amz-json-1.1',
+    'Cache-Control': 'no-store',
+  },
+  body: JSON.stringify(body),
+});
+
+const escapeXml = (value: string): string => value
+  .replaceAll('&', '&amp;')
+  .replaceAll('<', '&lt;')
+  .replaceAll('>', '&gt;')
+  .replaceAll('"', '&quot;')
+  .replaceAll("'", '&apos;');
 
 const requiredEnvironment = (name: string): string => {
   const value = process.env[name];
   if (!value) throw new Error(`${name} is required`);
   return value;
-};
-
-const asRecord = (value: unknown): Record<string, unknown> | undefined => {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-    ? value as Record<string, unknown>
-    : undefined;
-};
-
-const readAttachment = async (client: CommandClient, sdk: AwsSdkModules, bucket: string, key: string): Promise<Uint8Array> => {
-  const response = await client.send(new sdk.GetObjectCommand({ Bucket: bucket, Key: key }));
-  const body = (response as { Body?: unknown }).Body;
-  if (!body) throw new Error('attachment S3 object has no body');
-  const transformable = body as { transformToByteArray?: () => Promise<Uint8Array> };
-  if (transformable.transformToByteArray) return transformable.transformToByteArray();
-
-  const chunks: Uint8Array[] = [];
-  for await (const chunk of body as AsyncIterable<Uint8Array>) chunks.push(chunk);
-  const length = chunks.reduce((total, chunk) => total + chunk.byteLength, 0);
-  const result = new Uint8Array(length);
-  let offset = 0;
-  for (const chunk of chunks) {
-    result.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return result;
 };

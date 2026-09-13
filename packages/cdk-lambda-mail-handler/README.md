@@ -1,19 +1,20 @@
 # @ses-mail-catcher/cdk-mail-handler
 
-Private workspace for the mail-processing Lambda handler used by the CDK
-construct.
+Private workspace for the mail-processing Lambda used by the CDK construct.
 
-The `mail-handler.handler` entry point validates `SendMailEvent` objects,
-creates raw MIME messages, and either stores them in S3 and DynamoDB (`CATCH`)
-or relays them through Amazon SES (`RELAY`).
+The `mail-handler.handler` entry point is an API Gateway proxy handler built
+with Hono. It receives the request shapes emitted by the AWS SES SDK:
 
-The same handler accepts a Lambda Function URL request at
-`/v2/email/outbound-emails` and translates SES v2 `SendEmail` requests with
-`Content.Simple` or `Content.Raw` into the same storage or relay path.
+- SES API v1 Query protocol (`SendEmail` and `SendRawEmail`) at `/`;
+- SES API v2 JSON protocol (`SendEmail`) at `/v2/email/outbound-emails`.
 
-The build emits JavaScript only. The CDK package copies this workspace's
-compiled `lib/` directory into the `mail-handler/` directory of its published
-Lambda asset.
+Simple messages are converted to raw MIME, Raw messages are preserved, and
+the result is written to S3 and DynamoDB. SES permissions and relay behavior
+are intentionally not part of this workspace.
+
+The build bundles Hono into the JavaScript entry point. The CDK package copies
+the compiled `lib/` directory into its published Lambda asset, so the
+deployed handler has no workspace `node_modules` dependency.
 
 Run its tests with:
 

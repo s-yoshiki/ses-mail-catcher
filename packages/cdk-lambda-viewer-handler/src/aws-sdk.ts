@@ -19,8 +19,6 @@ export interface ViewerAwsSdkModules {
   readonly ScanCommand: CommandConstructor;
   readonly GetObjectCommand: CommandConstructor;
   readonly S3Client: new (config: Record<string, unknown>) => unknown;
-  readonly GetSecretValueCommand: CommandConstructor;
-  readonly SecretsManagerClient: new (config: Record<string, unknown>) => unknown;
 }
 
 // Lambda's supported Node.js runtimes provide these AWS SDK v3 modules. The
@@ -30,6 +28,5 @@ export const loadViewerAwsSdk = (): ViewerAwsSdkModules => {
   return {
     ...require('@aws-sdk/client-dynamodb'),
     ...require('@aws-sdk/client-s3'),
-    ...require('@aws-sdk/client-secrets-manager'),
   };
 };

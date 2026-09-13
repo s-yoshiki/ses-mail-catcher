@@ -1,15 +1,10 @@
 export {
-  MailMode,
+  ApiAuthorization,
   SesMailCatcher,
 } from './ses-mail-catcher.js';
 export type {
-  MailAttachment,
-  SendMailEvent,
-} from './types.js';
-export type {
+  MailApiOptions,
   MailStorage,
-  RelayOptions,
   SesMailCatcherProps,
-  ViewerBasicAuth,
   ViewerOptions,
 } from './ses-mail-catcher.js';

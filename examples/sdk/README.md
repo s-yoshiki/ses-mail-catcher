@@ -2,7 +2,7 @@
 
 This workspace sends an email to an SES v2-compatible endpoint using the AWS
 SDK for JavaScript v3 and `SESv2Client`. It works with the local server and
-with the CDK example's CloudFront URL.
+with the CDK example's SES API endpoint.
 
 The endpoint is configurable, so the same client shape can be used with any
 SES-compatible endpoint. The default points to the local server at
@@ -115,20 +115,19 @@ server and the CDK example support `SendEmail` with `Content.Simple` and
 also supports `CreateEmailTemplate`; it is not implemented by the local or
 CDK mail-catcher endpoint.
 
-## Send through the CDK CloudFront URL
+## Send through the CDK API
 
-The CDK example exposes the SES API at the same CloudFront domain as the
-viewer, under `/v2/email/outbound-emails`. The SES API route does not require
-the viewer's Basic Auth, so the SDK can use the standard AWS SDK request
-without custom authentication middleware:
+The CDK example exposes the SES-compatible API as the `SesApiUrl` stack
+output. The SDK appends `/v2/email/outbound-emails` to that endpoint and sends
+the normal AWS SDK request:
 
 ```sh
-SES_MAIL_CATCHER_URL=https://dxxxxxxxxxxxx.cloudfront.net \
+SES_MAIL_CATCHER_URL=https://xxxxxxxxxxxx.execute-api.ap-northeast-1.amazonaws.com/prod/ \
 MAIL_PATTERN=multipart \
 MAIL_HTML='<h1>Captured in AWS</h1>' \
 pnpm --filter ses-mail-catcher-sdk-example run send
 ```
 
 Use the `SesApiUrl` stack output as the endpoint. The direct Lambda origin URL
-is IAM-protected and is not intended to be used as the SDK endpoint. The
-viewer root remains protected by Basic Auth.
+is not intended to be used as the SDK endpoint. If API Gateway IAM
+authorization is enabled, the SDK's normal SigV4 credentials are used.
