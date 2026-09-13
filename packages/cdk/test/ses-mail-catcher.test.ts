@@ -1,5 +1,6 @@
 import { App, Duration, Stack } from 'aws-cdk-lib';
 import { Match, Template } from 'aws-cdk-lib/assertions';
+import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { expect, test } from 'vitest';
 
@@ -46,7 +47,7 @@ test('creates the SES-compatible mail API and disposable storage', () => {
     LifecycleConfiguration: { Rules: [{ ExpirationInDays: 3, Status: 'Enabled' }] },
   });
   template.hasResourceProperties('AWS::Lambda::Function', {
-    Handler: 'mail-handler.handler',
+    Handler: 'handler.handler',
     Environment: Match.objectLike({ Variables: Match.objectLike({ RETENTION_SECONDS: '259200' }) }),
   });
 });
@@ -115,7 +116,7 @@ test('creates a CloudFront viewer with separate S3 and API Gateway origins', () 
   template.resourceCountIs('AWS::CloudFront::Distribution', 1);
   template.resourceCountIs('AWS::CloudFront::Function', 1);
   template.hasResourceProperties('AWS::Lambda::Function', {
-    Handler: 'viewer-handler.handler',
+    Handler: 'handler.handler',
   });
   template.hasResourceProperties('AWS::ApiGateway::RestApi', {
     BinaryMediaTypes: ['*/*'],
@@ -125,6 +126,22 @@ test('creates a CloudFront viewer with separate S3 and API Gateway origins', () 
 
 test('requires an IP allowlist for the AWS viewer', () => {
   expect(() => createStack(undefined, { allowedIpCidrs: [] })).toThrow('viewer.allowedIpCidrs');
+});
+
+test('accepts a user-managed CloudFront Function for the viewer', () => {
+  const app = new App();
+  const stack = new Stack(app, 'TestStack', { env: { account: '123456789012', region: 'us-east-1' } });
+  const edgeFunction = new cloudfront.Function(stack, 'CustomViewerFunction', {
+    code: cloudfront.FunctionCode.fromInline('function handler(event) { return event.request; }'),
+  });
+  const catcher = new SesMailCatcher(stack, 'Catcher', { viewer: { edgeFunction } });
+  const template = Template.fromStack(stack);
+
+  expect(catcher.viewerDistribution).toBeDefined();
+  template.resourceCountIs('AWS::CloudFront::Function', 1);
+  template.hasResourceProperties('AWS::CloudFront::Function', {
+    FunctionCode: 'function handler(event) { return event.request; }',
+  });
 });
 
 test('empties disposable buckets on stack deletion', () => {

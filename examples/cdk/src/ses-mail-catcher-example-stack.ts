@@ -3,6 +3,8 @@ import { Construct } from 'constructs';
 
 import { SesMailCatcher } from '@s-yoshiki/cdk-ses-mail-catcher';
 
+const DEFAULT_VIEWER_ALLOWED_IP_CIDRS = ['0.0.0.0/0', '::/0'];
+
 export class SesMailCatcherExampleStack extends Stack {
   public constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
@@ -10,7 +12,7 @@ export class SesMailCatcherExampleStack extends Stack {
     const mailCatcher = new SesMailCatcher(this, 'MailCatcher', {
       retention: Duration.days(7),
       // The example is intentionally open for development smoke tests.
-      viewer: { allowedIpCidrs: ['0.0.0.0/0', '::/0'] },
+      viewer: { allowedIpCidrs: DEFAULT_VIEWER_ALLOWED_IP_CIDRS },
     });
 
     // eslint-disable-next-line no-new

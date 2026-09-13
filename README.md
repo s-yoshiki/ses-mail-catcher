@@ -124,6 +124,11 @@ under one browser origin. `viewer.allowedIpCidrs` is required and is enforced
 by a CloudFront Function for the web and `/api/*` behavior. Captured HTML is
 rendered in a sandboxed iframe.
 
+Applications that need to own the edge logic can pass a user-managed
+`cloudfront.IFunction` as `viewer.edgeFunction`. This replaces the built-in IP
+allowlist and SPA rewrite, so the supplied function is responsible for access
+control and request rewriting.
+
 See [`packages/cdk/README.md`](./packages/cdk/README.md) for the full construct
 API, viewer configuration, IAM permissions, and publishing details.
 

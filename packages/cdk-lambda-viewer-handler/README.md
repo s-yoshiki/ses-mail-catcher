@@ -3,7 +3,7 @@
 Private workspace containing the read-only viewer API Lambda used by the CDK
 construct.
 
-The `viewer-handler.handler` entry point is an API Gateway proxy handler built
+The `handler.handler` entry point is an API Gateway proxy handler built
 with Hono. It implements the shared `/api` contract used by the React viewer:
 health, message listing, message details, raw MIME, and attachments.
 

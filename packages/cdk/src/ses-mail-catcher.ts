@@ -50,10 +50,22 @@ export interface ViewerOptions {
   /**
    * IPv4 and IPv6 CIDR ranges allowed at the CloudFront edge.
    *
-   * This is required when the viewer is enabled. The same restriction applies
-   * to the viewer web application and its `/api/*` behavior.
+   * This is required when the built-in edge function is used. The same
+   * restriction applies to the viewer web application and its `/api/*`
+   * behavior. When `edgeFunction` is supplied, access control is owned by that
+   * function instead.
    */
-  readonly allowedIpCidrs: string[];
+  readonly allowedIpCidrs?: string[];
+
+  /**
+   * An optional user-managed CloudFront Function for viewer requests.
+   *
+   * The function replaces the built-in IP allowlist and SPA route rewrite and
+   * is attached to both the web and `/api/*` behaviors. The supplied function
+   * must implement any access control and request rewriting required by the
+   * application.
+   */
+  readonly edgeFunction?: cloudfront.IFunction;
 
   /** Lambda timeout for viewer API requests. @default Duration.seconds(29) */
   readonly timeout?: Duration;
@@ -151,7 +163,7 @@ export class SesMailCatcher extends Construct {
         STORAGE_BUCKET_NAME: this.bucket.bucketName,
         RETENTION_SECONDS: String(retentionSeconds),
       },
-      handler: 'mail-handler.handler',
+      handler: 'handler.handler',
       memorySize: 512,
       runtime: lambda.Runtime.NODEJS_22_X,
       timeout: mailOptions.timeout ?? Duration.seconds(29),
@@ -219,7 +231,7 @@ export class SesMailCatcher extends Construct {
     readonly distribution: cloudfront.Distribution;
     readonly url: string;
   } {
-    if (options.allowedIpCidrs.length === 0) {
+    if (options.edgeFunction === undefined && (options.allowedIpCidrs === undefined || options.allowedIpCidrs.length === 0)) {
       throw new Error('viewer.allowedIpCidrs must contain at least one CIDR range');
     }
 
@@ -230,7 +242,7 @@ export class SesMailCatcher extends Construct {
         METADATA_TABLE_NAME: this.table.tableName,
         STORAGE_BUCKET_NAME: this.bucket.bucketName,
       },
-      handler: 'viewer-handler.handler',
+      handler: 'handler.handler',
       memorySize: 512,
       runtime: lambda.Runtime.NODEJS_22_X,
       timeout: options.timeout ?? Duration.seconds(29),
@@ -264,10 +276,10 @@ export class SesMailCatcher extends Construct {
       removalPolicy: RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
     });
-    const edgeFunction = new cloudfront.Function(this, 'ViewerAccessFunction', {
+    const edgeFunction = options.edgeFunction ?? new cloudfront.Function(this, 'ViewerAccessFunction', {
       comment: 'Restricts the viewer to the configured IP ranges',
       runtime: cloudfront.FunctionRuntime.JS_2_0,
-      code: cloudfront.FunctionCode.fromInline(createViewerFunctionCode(options.allowedIpCidrs)),
+      code: cloudfront.FunctionCode.fromInline(createViewerFunctionCode(options.allowedIpCidrs ?? [])),
     });
     const edgeAssociation = [{
       eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,

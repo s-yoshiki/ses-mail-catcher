@@ -6,7 +6,7 @@ import {
 } from '@ses-mail-catcher/api-contract';
 import { describe, expect, test } from 'vitest';
 
-import { serveViewer, type ViewerHandlerConfig, type ViewerHandlerDependencies, type ViewerRequest } from '../src/viewer-handler.js';
+import { serveViewer, type ViewerHandlerConfig, type ViewerHandlerDependencies, type ViewerRequest } from '../src/handler.js';
 import type { ViewerContent } from '../src/viewer-content.js';
 import type { ViewerMessageRecord, ViewerMessageSummary, ViewerStore } from '../src/viewer-store.js';
 

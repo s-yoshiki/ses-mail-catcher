@@ -2,7 +2,7 @@
 
 Private workspace for the mail-processing Lambda used by the CDK construct.
 
-The `mail-handler.handler` entry point is an API Gateway proxy handler built
+The `handler.handler` entry point is an API Gateway proxy handler built
 with Hono. It receives the request shapes emitted by the AWS SES SDK:
 
 - SES API v1 Query protocol (`SendEmail` and `SendRawEmail`) at `/`;

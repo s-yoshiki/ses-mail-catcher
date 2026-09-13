@@ -487,11 +487,12 @@ const viewerOptions: ViewerOptions = { ... }
 | **Name** | **Type** | **Description** |
 | --- | --- | --- |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.allowedIpCidrs">allowedIpCidrs</a></code> | <code>string[]</code> | IPv4 and IPv6 CIDR ranges allowed at the CloudFront edge. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.edgeFunction">edgeFunction</a></code> | <code>aws-cdk-lib.aws_cloudfront.IFunction</code> | An optional user-managed CloudFront Function for viewer requests. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.timeout">timeout</a></code> | <code>aws-cdk-lib.Duration</code> | Lambda timeout for viewer API requests. |
 
 ---
 
-##### `allowedIpCidrs`<sup>Required</sup> <a name="allowedIpCidrs" id="@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.allowedIpCidrs"></a>
+##### `allowedIpCidrs`<sup>Optional</sup> <a name="allowedIpCidrs" id="@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.allowedIpCidrs"></a>
 
 ```typescript
 public readonly allowedIpCidrs: string[];
@@ -501,8 +502,27 @@ public readonly allowedIpCidrs: string[];
 
 IPv4 and IPv6 CIDR ranges allowed at the CloudFront edge.
 
-This is required when the viewer is enabled. The same restriction applies
-to the viewer web application and its `/api/*` behavior.
+This is required when the built-in edge function is used. The same
+restriction applies to the viewer web application and its `/api/*`
+behavior. When `edgeFunction` is supplied, access control is owned by that
+function instead.
+
+---
+
+##### `edgeFunction`<sup>Optional</sup> <a name="edgeFunction" id="@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.edgeFunction"></a>
+
+```typescript
+public readonly edgeFunction: IFunction;
+```
+
+- *Type:* aws-cdk-lib.aws_cloudfront.IFunction
+
+An optional user-managed CloudFront Function for viewer requests.
+
+The function replaces the built-in IP allowlist and SPA route rewrite and
+is attached to both the web and `/api/*` behaviors. The supplied function
+must implement any access control and request rewriting required by the
+application.
 
 ---
 

@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const entryPoint = join(packageRoot, 'lib', 'mail-handler.js');
+const entryPoint = join(packageRoot, 'lib', 'handler.js');
 
 await build({
   bundle: true,

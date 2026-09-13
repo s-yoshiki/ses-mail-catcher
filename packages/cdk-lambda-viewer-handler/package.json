@@ -5,8 +5,8 @@
   "type": "module",
   "license": "Apache-2.0",
   "scripts": {
-    "build": "node scripts/clean-build.mjs && tsc -p tsconfig.build.json && node scripts/copy-viewer-assets.mjs && node scripts/bundle-handler.mjs",
-    "compile": "node scripts/clean-build.mjs && tsc -p tsconfig.build.json && node scripts/copy-viewer-assets.mjs && node scripts/bundle-handler.mjs",
+    "build": "node scripts/clean-build.mjs && tsc -p tsconfig.build.json && node scripts/copy-viewer-assets.mjs && node scripts/bundle.mjs",
+    "compile": "node scripts/clean-build.mjs && tsc -p tsconfig.build.json && node scripts/copy-viewer-assets.mjs && node scripts/bundle.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",

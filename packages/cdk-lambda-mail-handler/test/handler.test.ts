@@ -7,7 +7,7 @@ import {
   type MailHandlerConfig,
   type MailHandlerDependencies,
   type SesApiResponse,
-} from '../src/mail-handler.js';
+} from '../src/handler.js';
 import type { SesApiRequest } from '../src/ses-api.js';
 import { toSesApiMailEvent, toSesQueryMailEvent } from '../src/ses-api.js';
 
