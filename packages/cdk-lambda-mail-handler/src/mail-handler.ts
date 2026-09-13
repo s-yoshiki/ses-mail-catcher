@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Hono } from 'hono';
-import { handle, type LambdaEvent } from 'hono/aws-lambda';
+import { defaultIsContentTypeBinary, handle, type LambdaEvent } from 'hono/aws-lambda';
 
 import { loadAwsSdk, type AwsSdkModules, type CommandClient } from './aws-sdk.js';
 import { createMetadataItem } from './metadata.js';
@@ -59,7 +59,18 @@ app.all('*', async (context) => {
 });
 
 /** Lambda entry point for the API Gateway SES-compatible mail API. */
-export const handler = handle(app);
+// Hono's default classifier treats `application/x-amz-json-1.1` as binary
+// because the media type contains a vendor prefix. SES v2 responses must stay
+// plain JSON so API Gateway does not return a Base64-encoded response to the
+// AWS SDK.
+export const isSesResponseBinary = (contentType: string): boolean => {
+  if (/^application\/x-amz-json(?:-[^;\s]+)?\s*(?:;|$)/i.test(contentType)) {
+    return false;
+  }
+  return defaultIsContentTypeBinary(contentType);
+};
+
+export const handler = handle(app, { isContentTypeBinary: isSesResponseBinary });
 
 /** @internal */
 export interface SesApiResponse {

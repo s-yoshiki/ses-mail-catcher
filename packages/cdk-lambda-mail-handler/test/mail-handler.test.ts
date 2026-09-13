@@ -3,6 +3,7 @@ import { describe, expect, test, vi } from 'vitest';
 import {
   processMail,
   serveSesApi,
+  isSesResponseBinary,
   type MailHandlerConfig,
   type MailHandlerDependencies,
   type SesApiResponse,
@@ -131,6 +132,12 @@ describe('SES request conversion', () => {
 });
 
 describe('mail API', () => {
+  test('keeps SES v2 JSON responses plain for the Hono Lambda adapter', () => {
+    expect(isSesResponseBinary('application/x-amz-json-1.1')).toBe(false);
+    expect(isSesResponseBinary('application/json')).toBe(false);
+    expect(isSesResponseBinary('application/octet-stream')).toBe(true);
+  });
+
   test('stores a SES v2 request and returns a JSON MessageId', async () => {
     const s3 = { send: vi.fn<Send>().mockResolvedValue({}) };
     const ddb = { send: vi.fn<Send>().mockResolvedValue({}) };

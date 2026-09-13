@@ -117,6 +117,9 @@ test('creates a CloudFront viewer with separate S3 and API Gateway origins', () 
   template.hasResourceProperties('AWS::Lambda::Function', {
     Handler: 'viewer-handler.handler',
   });
+  template.hasResourceProperties('AWS::ApiGateway::RestApi', {
+    BinaryMediaTypes: ['*/*'],
+  });
   expect(JSON.stringify(template.findResources('AWS::CloudFront::Distribution'))).toContain('/api/*');
 });
 

@@ -14,10 +14,10 @@ The stack creates:
 - one CloudFront distribution using S3 as the default origin and
   `api-viewer` for `/api/*`.
 
-The viewer is protected by a CloudFront Function IP allowlist. Set
-`VIEWER_ALLOWED_IP_CIDR` to the public IPv4 or IPv6 CIDR of the development
-machine before synthesizing or deploying. The sample intentionally fails if
-the value is missing.
+The example does not apply an IP restriction so it can be used for development
+smoke tests from any network. The published construct still requires the
+viewer allowlist to be configured; this example explicitly allows all IPv4
+and IPv6 ranges.
 
 ## Prerequisites
 
@@ -35,12 +35,9 @@ Run these commands from the repository root:
 
 ```sh
 pnpm install
-VIEWER_ALLOWED_IP_CIDR=198.51.100.10/32 \
-  pnpm --filter ses-mail-catcher-cdk-example bootstrap
-VIEWER_ALLOWED_IP_CIDR=198.51.100.10/32 \
-  pnpm --filter ses-mail-catcher-cdk-example synth
-VIEWER_ALLOWED_IP_CIDR=198.51.100.10/32 AWS_PROFILE=s-yoshiki \
-  pnpm --filter ses-mail-catcher-cdk-example run deploy
+AWS_PROFILE=s-yoshiki pnpm --filter ses-mail-catcher-cdk-example bootstrap
+AWS_PROFILE=s-yoshiki pnpm --filter ses-mail-catcher-cdk-example synth
+AWS_PROFILE=s-yoshiki pnpm --filter ses-mail-catcher-cdk-example run deploy
 ```
 
 Replace the documentation-range address with the actual address used to open
@@ -87,6 +84,5 @@ The construct uses disposable storage with a seven-day retention period and
 enables automatic deletion of captured objects when the stack is destroyed:
 
 ```sh
-VIEWER_ALLOWED_IP_CIDR=198.51.100.10/32 \
-  pnpm --filter ses-mail-catcher-cdk-example destroy
+AWS_PROFILE=s-yoshiki pnpm --filter ses-mail-catcher-cdk-example destroy
 ```

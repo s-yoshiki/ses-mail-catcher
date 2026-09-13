@@ -239,6 +239,11 @@ export class SesMailCatcher extends Construct {
     this.table.grantReadData(viewerFunction);
 
     const viewerApi = new apigateway.RestApi(this, 'ViewerApi', {
+      // The viewer Lambda returns raw MIME as a base64-encoded proxy response.
+      // API Gateway uses the first Accept value when selecting a binary media
+      // type, and browsers commonly send `*/*`; register the wildcard so it
+      // decodes the Lambda response before sending it to the browser.
+      binaryMediaTypes: ['*/*'],
       description: 'Read-only API for the ses-mail-catcher viewer',
       endpointTypes: [apigateway.EndpointType.REGIONAL],
       deployOptions: {

@@ -7,14 +7,10 @@ export class SesMailCatcherExampleStack extends Stack {
   public constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    const viewerAllowedIpCidr = process.env.VIEWER_ALLOWED_IP_CIDR;
-    if (viewerAllowedIpCidr === undefined) {
-      throw new Error('VIEWER_ALLOWED_IP_CIDR is required; set it to the CIDR of the development machine');
-    }
-
     const mailCatcher = new SesMailCatcher(this, 'MailCatcher', {
       retention: Duration.days(7),
-      viewer: { allowedIpCidrs: [viewerAllowedIpCidr] },
+      // The example is intentionally open for development smoke tests.
+      viewer: { allowedIpCidrs: ['0.0.0.0/0', '::/0'] },
     });
 
     // eslint-disable-next-line no-new
