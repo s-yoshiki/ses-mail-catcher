@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import {
   apiErrorSchema,
+  deleteMessagesResponseSchema,
   healthResponseSchema,
   messageAttachmentSchema,
   messageContentSchema,
@@ -76,5 +77,36 @@ describe('message schemas', () => {
     expect(messageListResponseSchema.safeParse({ messages: [{}] }).success).toBe(false);
     expect(healthResponseSchema.safeParse({ status: 'healthy' }).success).toBe(false);
     expect(apiErrorSchema.safeParse({ error: 'failed' }).success).toBe(false);
+  });
+});
+
+describe('delete and health feature schemas', () => {
+  test('accepts a health response with the delete feature flag', () => {
+    expect(healthResponseSchema.parse({ status: 'ok', features: { delete: true } })).toEqual({
+      status: 'ok',
+      features: { delete: true },
+    });
+    expect(healthResponseSchema.parse({ status: 'ok', features: { delete: false } })).toEqual({
+      status: 'ok',
+      features: { delete: false },
+    });
+  });
+
+  test('accepts the delete messages response shape', () => {
+    expect(deleteMessagesResponseSchema.parse({ deletedCount: 3, hasMore: false })).toEqual({
+      deletedCount: 3,
+      hasMore: false,
+    });
+    expect(deleteMessagesResponseSchema.parse({ deletedCount: 0, hasMore: true })).toEqual({
+      deletedCount: 0,
+      hasMore: true,
+    });
+  });
+
+  test('rejects malformed health features and delete response fields', () => {
+    expect(healthResponseSchema.safeParse({ status: 'ok', features: { delete: 'yes' } }).success).toBe(false);
+    expect(deleteMessagesResponseSchema.safeParse({ deletedCount: -1, hasMore: false }).success).toBe(false);
+    expect(deleteMessagesResponseSchema.safeParse({ deletedCount: 1.5, hasMore: false }).success).toBe(false);
+    expect(deleteMessagesResponseSchema.safeParse({ deletedCount: 1 }).success).toBe(false);
   });
 });

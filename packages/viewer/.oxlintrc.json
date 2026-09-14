@@ -6,7 +6,8 @@
     "unicorn",
     "import",
     "vitest",
-    "react"
+    "react",
+    "jsx-a11y"
   ],
   "env": {
     "browser": true,

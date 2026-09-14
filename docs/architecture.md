@@ -34,9 +34,11 @@ web-viewer: CloudFront ── /api/* ──> api-viewer: API Gateway
 - Simple messages are converted to canonical raw MIME. Raw messages are
   preserved and stored in S3. DynamoDB stores searchable metadata, the S3 key,
   size, and a TTL timestamp.
-- `api-viewer` is a separate regional API Gateway REST API and read-only Lambda.
-  It implements the shared `/api` contract for health, lists, details, raw
-  MIME, and attachments.
+- `api-viewer` is a separate regional API Gateway REST API and Lambda. It
+  implements the shared `/api` contract for health, lists, details, raw MIME,
+  attachments, and message deletion. By default the Lambda can delete one or
+  all captured messages; setting `viewer.allowDelete` to `false` on the
+  construct keeps this API read-only.
 - `web-viewer` is a private S3 bucket containing the compiled React viewer.
   CloudFront uses S3 as its default origin and `api-viewer` for `/api/*`, so
   the browser sees one origin and does not need CORS configuration.
@@ -65,8 +67,13 @@ CloudFront is the intended entry point for the viewer. The viewer request
 function checks the source IPv4/IPv6 address before static or API origin
 processing, optionally checks a Basic Authorization value in a CloudFront
 KeyValueStore, and rewrites extensionless client-side routes to `index.html`.
-The API Lambda grants read access only to the existing message table and
-bucket. Captured HTML is rendered only in a sandboxed iframe in the React app.
+The API Lambda grants read access to the existing message table and bucket,
+plus delete access to both unless `viewer.allowDelete` is set to `false`. The
+Lambda also guards DELETE requests against cross-origin calls: it rejects a
+request whose `Sec-Fetch-Site` header is not `same-origin` or `none`, and,
+only when that header is absent, rejects a request whose `Origin` host
+differs from the `Host` header; a request with neither header is allowed.
+Captured HTML is rendered only in a sandboxed iframe in the React app.
 
 ## Local
 

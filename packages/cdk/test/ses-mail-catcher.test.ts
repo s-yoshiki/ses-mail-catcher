@@ -129,6 +129,63 @@ test('creates a CloudFront viewer with separate S3 and API Gateway origins', () 
   expect(JSON.stringify(template.findResources('AWS::CloudFront::Distribution'))).toContain('/api/*');
 });
 
+// The mail handler's own write grant already includes dynamodb:DeleteItem and
+// dynamodb:BatchWriteItem (part of DynamoDB "write data" actions), so delete
+// assertions must be scoped to the viewer's own IAM policy to actually prove
+// something about the viewer grant rather than an unrelated Lambda's.
+const findViewerPolicy = (template: Template): string => {
+  const policies = template.findResources('AWS::IAM::Policy');
+  const viewerPolicy = Object.entries(policies).find(([logicalId]) => logicalId.includes('ViewerHandler'));
+  expect(viewerPolicy).toBeDefined();
+  return JSON.stringify(viewerPolicy?.[1]);
+};
+
+const findApiBehavior = (template: Template): { AllowedMethods: string[] } | undefined => {
+  const distributions = template.findResources('AWS::CloudFront::Distribution');
+  const cacheBehaviors = Object.values(distributions).flatMap((resource) =>
+    (resource as { Properties: { DistributionConfig: { CacheBehaviors?: unknown[] } } })
+      .Properties.DistributionConfig.CacheBehaviors ?? []);
+  return cacheBehaviors.find((behavior) => (behavior as { PathPattern: string }).PathPattern === '/api/*') as
+    | { AllowedMethods: string[] }
+    | undefined;
+};
+
+test('grants the viewer delete permissions and allows all methods by default', () => {
+  const { stack } = createStack(undefined, { allowedIpCidrs: ['203.0.113.0/24'] });
+  const template = Template.fromStack(stack);
+  const viewerPolicy = findViewerPolicy(template);
+
+  expect(viewerPolicy).toContain('dynamodb:DeleteItem');
+  expect(viewerPolicy).toContain('dynamodb:BatchWriteItem');
+  expect(viewerPolicy).toMatch(/s3:DeleteObject/);
+
+  template.hasResourceProperties('AWS::Lambda::Function', {
+    Handler: 'handler.handler',
+    Environment: Match.objectLike({ Variables: Match.objectLike({ ALLOW_DELETE: 'true' }) }),
+  });
+
+  expect(findApiBehavior(template)?.AllowedMethods).toEqual(
+    expect.arrayContaining(['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT']),
+  );
+});
+
+test('keeps the viewer read-only when allowDelete is false', () => {
+  const { stack } = createStack(undefined, { allowedIpCidrs: ['203.0.113.0/24'], allowDelete: false });
+  const template = Template.fromStack(stack);
+  const viewerPolicy = findViewerPolicy(template);
+
+  expect(viewerPolicy).not.toContain('dynamodb:DeleteItem');
+  expect(viewerPolicy).not.toContain('dynamodb:BatchWriteItem');
+  expect(viewerPolicy).not.toMatch(/s3:DeleteObject/);
+
+  template.hasResourceProperties('AWS::Lambda::Function', {
+    Handler: 'handler.handler',
+    Environment: Match.objectLike({ Variables: Match.objectLike({ ALLOW_DELETE: 'false' }) }),
+  });
+
+  expect(findApiBehavior(template)?.AllowedMethods).toEqual(['GET', 'HEAD']);
+});
+
 test('requires an IP allowlist for the AWS viewer', () => {
   expect(() => createStack(undefined, { allowedIpCidrs: [] })).toThrow('viewer.allowedIpCidrs');
 });

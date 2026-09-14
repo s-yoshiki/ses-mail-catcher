@@ -35,6 +35,14 @@ afterEach(async () => {
   await Promise.all(temporaryDirectories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })));
 });
 
+const startTestServer = async (): Promise<{ url: string }> => {
+  const directory = await mkdtemp(join(tmpdir(), 'ses-mail-catcher-api-'));
+  temporaryDirectories.push(directory);
+  const server = await startServer({ dbPath: join(directory, 'mailbox.sqlite3'), port: 0 });
+  servers.push(server);
+  return server;
+};
+
 const seed = async (): Promise<{ url: string; id: string }> => {
   const directory = await mkdtemp(join(tmpdir(), 'ses-mail-catcher-api-'));
   temporaryDirectories.push(directory);
@@ -125,6 +133,65 @@ it('downloads an attachment with its own content type', async () => {
   expect(new Uint8Array(await response.arrayBuffer())).toEqual(new TextEncoder().encode('%PDF-1.4'));
 });
 
+it('decodes a text-only Simple body instead of leaking raw base64 into content.text', async () => {
+  const server = await startTestServer();
+  const text = '日本語の本文です';
+
+  const response = await postSes(server.url, {
+    FromEmailAddress: 'sender@example.com',
+    Destination: { ToAddresses: ['recipient@example.com'] },
+    Content: { Simple: { Subject: { Data: 'Text only' }, Body: { Text: { Data: text } } } },
+  });
+  const { MessageId } = await response.json() as { MessageId: string };
+
+  const detail = messageDetailSchema.parse(await (await fetch(`${server.url}/api/messages/${MessageId}`)).json());
+  expect(detail.content.text?.trim()).toBe(text);
+  expect(detail.content.html).toBeUndefined();
+});
+
+it('decodes an html-only Simple body instead of leaking raw base64 into content.html', async () => {
+  const server = await startTestServer();
+  const html = '<p>確認してください</p>';
+
+  const response = await postSes(server.url, {
+    FromEmailAddress: 'sender@example.com',
+    Destination: { ToAddresses: ['recipient@example.com'] },
+    Content: { Simple: { Subject: { Data: 'HTML only' }, Body: { Html: { Data: html } } } },
+  });
+  const { MessageId } = await response.json() as { MessageId: string };
+
+  const detail = messageDetailSchema.parse(await (await fetch(`${server.url}/api/messages/${MessageId}`)).json());
+  expect(detail.content.html).toContain(html);
+  expect(detail.content.text).toBeUndefined();
+});
+
+it('decodes a single-part Simple body alongside an attachment (regression for a missing base64 CTE)', async () => {
+  const server = await startTestServer();
+  const html = '<p>Please confirm 確認してください</p>';
+
+  const response = await postSes(server.url, {
+    FromEmailAddress: 'sender@example.com',
+    Destination: { ToAddresses: ['recipient@example.com'] },
+    Content: {
+      Simple: {
+        Subject: { Data: 'HTML with attachment' },
+        Body: { Html: { Data: html } },
+        Attachments: [{
+          FileName: 'invoice.pdf',
+          ContentType: 'application/pdf',
+          RawContent: Buffer.from('%PDF-1.4').toString('base64'),
+        }],
+      },
+    },
+  });
+  const { MessageId } = await response.json() as { MessageId: string };
+
+  const detail = messageDetailSchema.parse(await (await fetch(`${server.url}/api/messages/${MessageId}`)).json());
+  expect(detail.content.html).toContain(html);
+  expect(detail.content.text).toBeUndefined();
+  expect(detail.content.attachments).toHaveLength(1);
+});
+
 it('reports missing messages and attachments', async () => {
   const { url, id } = await seed();
 
@@ -144,7 +211,7 @@ it('keeps serving the original store routes', async () => {
   expect(health.status).toBe(200);
   expect(apiHealth.status).toBe(200);
   expect(healthResponseSchema.parse(await health.json())).toEqual({ status: 'ok' });
-  expect(healthResponseSchema.parse(await apiHealth.json())).toEqual({ status: 'ok' });
+  expect(healthResponseSchema.parse(await apiHealth.json())).toEqual({ status: 'ok', features: { delete: true } });
 
   const legacy = await (await fetch(`${url}/store/${id}`)).json() as { rawMime: string };
   expect(Buffer.from(legacy.rawMime, 'base64').toString('utf8')).toContain('Subject: Receipt');
@@ -167,3 +234,4 @@ it('returns JSON 404s for unknown routes and methods', async () => {
   expect(method.status).toBe(404);
   expect(apiErrorSchema.parse(await method.json())).toEqual({ message: 'Not found' });
 });
+

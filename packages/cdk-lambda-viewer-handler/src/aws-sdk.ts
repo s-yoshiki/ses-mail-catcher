@@ -17,7 +17,11 @@ export interface ViewerAwsSdkModules {
   readonly DynamoDBClient: new (config: Record<string, unknown>) => unknown;
   readonly QueryCommand: CommandConstructor;
   readonly ScanCommand: CommandConstructor;
+  readonly DeleteItemCommand: CommandConstructor;
+  readonly BatchWriteItemCommand: CommandConstructor;
   readonly GetObjectCommand: CommandConstructor;
+  readonly DeleteObjectCommand: CommandConstructor;
+  readonly DeleteObjectsCommand: CommandConstructor;
   readonly S3Client: new (config: Record<string, unknown>) => unknown;
 }
 

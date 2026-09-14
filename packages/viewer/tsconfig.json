@@ -16,6 +16,6 @@
     "types": ["node", "vite/client"],
     "noEmit": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts", "vite.config.mts", "vitest.config.mts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts", "test/**/*.tsx", "vite.config.mts", "vitest.config.mts"],
   "exclude": ["node_modules", "dist"]
 }

@@ -41,6 +41,10 @@ export const createSimpleMime = (
     `Message-ID: <${randomBytes(12).toString('hex')}@ses-mail-catcher.local>`,
     'MIME-Version: 1.0',
     `Content-Type: ${contentType}`,
+    // The top-level body is only a bare base64 payload when it is not wrapped
+    // in a multipart/mixed or multipart/alternative container of its own, so
+    // the Content-Transfer-Encoding declaration belongs here in that case.
+    ...(!hasAttachments && body.encoding === 'base64' ? ['Content-Transfer-Encoding: base64'] : []),
   ];
 
   return Buffer.from(`${headers.join('\r\n')}\r\n\r\n${mimeBody}`, 'utf8');
@@ -77,10 +81,22 @@ export const toApiMessage = (message: StoredMessage): Record<string, unknown> =>
   };
 };
 
+interface SimpleBody {
+  contentType: string;
+  content: string;
+  /**
+   * Whether `content` is a bare base64 payload that still needs its own
+   * Content-Transfer-Encoding header wherever it ends up (top-level, or as a
+   * multipart/mixed part). A multipart/alternative body already carries its
+   * own per-part headers and needs neither.
+   */
+  encoding: 'base64' | 'none';
+}
+
 const createBody = (
   simple: SesV2SimpleEmail,
   alternativeBoundary: string,
-): { contentType: string; content: string } => {
+): SimpleBody => {
   const text = simple.Body?.Text;
   const html = simple.Body?.Html;
 
@@ -99,24 +115,27 @@ const createBody = (
     return {
       contentType: `multipart/alternative; boundary="${alternativeBoundary}"`,
       content,
+      encoding: 'none',
     };
   }
 
   const only = text ?? html!;
   return {
     contentType: `${text ? 'text/plain' : 'text/html'}; charset=UTF-8`,
-    content: renderTextPart(text ? 'text/plain' : 'text/html', only, false),
+    content: wrapBase64(Buffer.from(only.Data, 'utf8').toString('base64')),
+    encoding: 'base64',
   };
 };
 
 const createMultipartMixed = (
-  body: { contentType: string; content: string },
+  body: SimpleBody,
   attachments: SesV2Attachment[],
   boundary: string,
 ): string => {
   const parts = [
     `--${boundary}`,
     `Content-Type: ${body.contentType}`,
+    ...(body.encoding === 'base64' ? ['Content-Transfer-Encoding: base64'] : []),
     '',
     body.content,
   ];
@@ -140,11 +159,8 @@ const createMultipartMixed = (
 const renderTextPart = (
   mediaType: string,
   value: SesV2ContentValue,
-  includeHeaders = true,
 ): string => {
-  const headers = includeHeaders
-    ? [`Content-Type: ${mediaType}; charset=${value.Charset ?? 'UTF-8'}`, 'Content-Transfer-Encoding: base64', '']
-    : [];
+  const headers = [`Content-Type: ${mediaType}; charset=${value.Charset ?? 'UTF-8'}`, 'Content-Transfer-Encoding: base64', ''];
   return [...headers, wrapBase64(Buffer.from(value.Data, 'utf8').toString('base64'))].join('\r\n');
 };
 

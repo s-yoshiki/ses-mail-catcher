@@ -118,12 +118,19 @@ Use `mailCatcher.mailApiEndpoint` as the endpoint of an AWS SDK SES client.
 `mailCatcher.grantMailApiInvoke()` for the sending principal. `mailApi` IP
 restrictions use an API Gateway resource policy.
 
-`api-viewer` is a separate read-only API Gateway + Lambda + Hono backend, and
+`api-viewer` is a separate API Gateway + Lambda + Hono backend, and
 `web-viewer` is a private S3-hosted React app. CloudFront serves both origins
 under one browser origin. The viewer is created by default; when
 `viewer.allowedIpCidrs` is omitted, its built-in CloudFront Function allows all
 IPv4 and IPv6 ranges for development use. Captured HTML is rendered in a
 sandboxed iframe.
+
+By default the viewer can delete one or all captured messages: the Lambda is
+granted `dynamodb:DeleteItem`/`dynamodb:BatchWriteItem` on the message table
+and S3 delete permissions on the storage bucket, and DELETE requests are
+guarded against cross-origin calls. Set `viewer.allowDelete: false` to keep
+the viewer API read-only, which withholds those permissions and restricts the
+`/api/*` CloudFront behavior to GET and HEAD.
 
 The viewer can also use Basic authentication backed by a CloudFront
 KeyValueStore. The store contains the expected `Authorization` header value,

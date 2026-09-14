@@ -26,7 +26,17 @@ describe('MailCatcherClient', () => {
     const list = await client.listMessages();
     const detail = await client.getMessage('mock-welcome');
 
-    expect(list.messages.map((message) => message.id)).toEqual(['mock-welcome', 'mock-orders']);
+    expect(list.messages.map((message) => message.id)).toEqual([
+      'mock-welcome',
+      'mock-orders',
+      'mock-newsletter',
+      'mock-blank-subject',
+      'mock-text-only',
+      'mock-html-only',
+      'mock-inline-image',
+      'mock-japanese',
+      'mock-long-subject',
+    ]);
     expect(list.messages[0]).not.toHaveProperty('content');
     expect(detail.content.html).toContain('This message is served by MSW.');
   });
@@ -71,5 +81,46 @@ describe('MailCatcherClient', () => {
     const client = new MailCatcherClient('http://localhost/api/');
 
     await expect(client.getMessage('any')).rejects.toThrow('Request failed with status 500');
+  });
+
+  it('reads the health payload, including delete support', async () => {
+    const client = new MailCatcherClient('http://localhost/api/');
+
+    await expect(client.getHealth()).resolves.toEqual({ status: 'ok', features: { delete: true } });
+  });
+
+  it('reads the raw MIME body as text', async () => {
+    const client = new MailCatcherClient('http://localhost/api/');
+
+    await expect(client.getRaw('mock-welcome')).resolves.toContain('This is a sample message from the MSW browser mock.');
+  });
+
+  it('surfaces the server error message when the raw body is missing', async () => {
+    const client = new MailCatcherClient('http://localhost/api/');
+
+    await expect(client.getRaw('missing')).rejects.toThrow('Message not found');
+  });
+
+  it('deletes a message, after which it is gone from the list and detail routes', async () => {
+    const client = new MailCatcherClient('http://localhost/api/');
+
+    await expect(client.deleteMessage('mock-welcome')).resolves.toBeUndefined();
+    await expect(client.getMessage('mock-welcome')).rejects.toThrow('Message not found');
+
+    const list = await client.listMessages();
+    expect(list.messages.map((message) => message.id)).not.toContain('mock-welcome');
+  });
+
+  it('surfaces a 404 when deleting a message that does not exist', async () => {
+    const client = new MailCatcherClient('http://localhost/api/');
+
+    await expect(client.deleteMessage('missing')).rejects.toThrow('Message not found');
+  });
+
+  it('parses the deleted count and hasMore flag from a bulk delete', async () => {
+    const client = new MailCatcherClient('http://localhost/api/');
+
+    await expect(client.deleteAllMessages()).resolves.toEqual({ deletedCount: 9, hasMore: false });
+    await expect(client.listMessages()).resolves.toEqual({ messages: [] });
   });
 });

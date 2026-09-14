@@ -48,7 +48,7 @@ export const createApp = (dependencies: LocalHandlerDependencies): Hono => {
   });
 
   app.get('/health-check', () => json(200, { status: 'ok' }));
-  app.get('/api/health', () => json(200, { status: 'ok' }));
+  app.get('/api/health', () => json(200, { status: 'ok', features: { delete: true } }));
 
   app.get('/store', (context) => listMessages(context, dependencies.store));
   app.get('/api/messages', (context) => listMessages(context, dependencies.store));
@@ -57,6 +57,8 @@ export const createApp = (dependencies: LocalHandlerDependencies): Hono => {
   app.get('/api/messages/:id', (context) => detailMessage(context, dependencies.store));
   app.get('/api/messages/:id/raw', (context) => rawMessage(context, dependencies.store));
   app.get('/api/messages/:id/attachments/:index', (context) => attachment(context, dependencies.store));
+  app.delete('/api/messages/:id', (context) => deleteMessage(context, dependencies.store));
+  app.delete('/api/messages', (context) => deleteAllMessages(context, dependencies.store));
 
   // Static files are served by the local adapter here, while the AWS viewer
   // serves the same bundle from S3 and sends /api/* to a separate Lambda.
@@ -74,6 +76,8 @@ export const createApp = (dependencies: LocalHandlerDependencies): Hono => {
           'GET /api/messages/:id',
           'GET /api/messages/:id/raw',
           'GET /api/messages/:id/attachments/:index',
+          'DELETE /api/messages/:id',
+          'DELETE /api/messages',
           'GET /api/health',
         ],
       });
@@ -153,6 +157,78 @@ const attachment = async (
     : binary(200, Buffer.from(item.content), item.contentType, contentDisposition(item.filename));
 };
 
+const deleteMessage = (
+  context: { req: { param(name: string): string; header(name: string): string | undefined } },
+  store: SqliteStore,
+): Response => {
+  const blocked = crossOriginResponse(context);
+  if (blocked) {
+    return blocked;
+  }
+
+  return store.delete(context.req.param('id'))
+    ? noContent()
+    : json(404, { message: 'Message not found' });
+};
+
+const deleteAllMessages = (
+  context: { req: { header(name: string): string | undefined } },
+  store: SqliteStore,
+): Response => {
+  const blocked = crossOriginResponse(context);
+  if (blocked) {
+    return blocked;
+  }
+
+  return json(200, { deletedCount: store.clear(), hasMore: false });
+};
+
+/**
+ * Rejects cross-origin DELETE requests. When Sec-Fetch-Site is present, it
+ * alone decides: only `same-origin` or `none` are allowed. That header is
+ * set by the browser itself and cannot be spoofed by page script, so it
+ * takes priority over Origin — a dev proxy (e.g. Vite's `changeOrigin`) can
+ * legitimately rewrite the Host header while the browser still reports
+ * Sec-Fetch-Site: same-origin for the original page origin, and Origin vs
+ * Host would then disagree without meaning anything is actually cross-site.
+ * Only when Sec-Fetch-Site is absent (older browsers, or non-browser clients
+ * that do set Origin) do we fall back to comparing the Origin host with the
+ * request Host. Neither header present means the request did not come from
+ * a browser page at all (a curl call, an SDK, or a test), so that is
+ * allowed too. No CORS headers are sent, so a cross-origin browser request
+ * would fail regardless — this guard exists to produce a clear 403 instead
+ * of a same-origin policy error.
+ */
+const crossOriginResponse = (
+  context: { req: { header(name: string): string | undefined } },
+): Response | undefined => {
+  return isCrossOrigin(context)
+    ? json(403, { message: 'Cross-origin requests are not allowed' })
+    : undefined;
+};
+
+const isCrossOrigin = (context: { req: { header(name: string): string | undefined } }): boolean => {
+  const secFetchSite = context.req.header('sec-fetch-site');
+  if (secFetchSite !== undefined) {
+    return secFetchSite !== 'same-origin' && secFetchSite !== 'none';
+  }
+
+  const origin = context.req.header('origin');
+  if (origin === undefined) {
+    return false;
+  }
+
+  return originHost(origin) !== context.req.header('host');
+};
+
+const originHost = (origin: string): string | undefined => {
+  try {
+    return new URL(origin).host;
+  } catch {
+    return undefined;
+  }
+};
+
 const isSesSendPath = (path: string): boolean => {
   return path === '/' || path === '/v2/email/outbound-emails';
 };
@@ -170,6 +246,16 @@ const json = (status: number, body: unknown): Response => {
       ...SECURITY_HEADERS,
       'Cache-Control': 'no-store',
       'Content-Type': 'application/json; charset=utf-8',
+    },
+  });
+};
+
+const noContent = (): Response => {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      ...SECURITY_HEADERS,
+      'Cache-Control': 'no-store',
     },
   });
 };

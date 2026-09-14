@@ -70,13 +70,15 @@ TTL.
 The viewer is created by default and consists of three parts:
 
 - `api-viewer`: API Gateway + Lambda + Hono, exposing the shared `/api`
-  contract and read-only access to DynamoDB/S3;
+  contract with read and, by default, delete access to DynamoDB/S3;
 - `web-viewer`: a private S3 bucket containing the React application;
 - one CloudFront distribution with the S3 bucket as its default origin and
   `api-viewer` as the `/api/*` origin.
 
 Both are therefore served from the same browser origin. The viewer Lambda does
-not serve static files. It has only DynamoDB read and S3 read permissions.
+not serve static files. By default it has DynamoDB read/delete and S3
+read/delete permissions; set `viewer.allowDelete: false` to keep it read-only
+(see [Deleting captured messages](#deleting-captured-messages) below).
 
 The viewer uses a built-in CloudFront Function for IP filtering and SPA route
 rewriting. If `allowedIpCidrs` is omitted, the function defaults to allowing
@@ -144,10 +146,40 @@ the configuration because the built-in function would deny every request.
 `basicAuth` cannot be combined with `edgeFunction`; a custom function owns the
 complete viewer access policy.
 
-The viewer API is read-only and implements the same contract as the local
-server: health, message listing, message details, raw MIME, and attachments.
-Captured HTML is rendered only in the viewer's sandboxed iframe because it is
-untrusted input.
+The viewer API implements the same contract as the local server: health,
+message listing, message details, raw MIME, attachments, and, by default,
+deleting one or all captured messages. Captured HTML is rendered only in the
+viewer's sandboxed iframe because it is untrusted input.
+
+### Deleting captured messages
+
+`viewer.allowDelete` defaults to `true`, so the viewer can delete a single
+message (`DELETE /api/messages/:id`) or every captured message (`DELETE
+/api/messages`). When enabled, the construct grants the viewer function
+`dynamodb:DeleteItem` and `dynamodb:BatchWriteItem` on the message table and
+S3 delete permissions on the storage bucket (`bucket.grantDelete`), and the
+`/api/*` CloudFront behavior allows all HTTP methods instead of only GET and
+HEAD. Set `viewer.allowDelete: false` to keep the viewer read-only:
+
+```ts
+const mailCatcher = new SesMailCatcher(stack, 'MailCatcher', {
+  viewer: {
+    allowDelete: false,
+  },
+});
+```
+
+With `allowDelete: false`, none of the delete permissions above are granted,
+`GET /api/health` reports `features.delete: false`, and the Lambda answers
+DELETE requests with `405`. Deleting every message is time-budgeted: the
+Lambda stops after roughly 20 seconds and returns `hasMore: true` so the
+viewer can repeat the call until every message is gone. The Lambda also
+rejects cross-origin DELETE requests: it checks the `Sec-Fetch-Site` header
+first (only `same-origin` or `none` are accepted) and, only when that header
+is absent, falls back to comparing the `Origin` header's host against `Host`;
+a request with neither header is allowed through. No CORS headers are sent,
+so a genuinely cross-origin browser request fails regardless — this guard
+exists to return a clear `403` instead of relying on that failure.
 
 The Lambda implementations live in two private workspaces:
 [`@ses-mail-catcher/cdk-mail-handler`](../cdk-lambda-mail-handler) owns SES

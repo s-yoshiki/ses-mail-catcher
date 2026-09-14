@@ -33,6 +33,8 @@ jobs:
           package-manager-cache: true
       - name: Install dependencies
         run: pnpm i --no-frozen-lockfile
+      - name: Install Playwright Chromium
+        run: pnpm --filter @ses-mail-catcher/viewer exec playwright install --with-deps chromium
       - name: lint
         run: pnpm lint
       - name: typecheck

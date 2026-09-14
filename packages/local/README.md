@@ -78,7 +78,23 @@ The shared TypeScript types and Zod schemas are maintained in
 | `GET /api/messages/:id` | message with `content.text`, `content.html`, `content.attachments` |
 | `GET /api/messages/:id/raw` | `message/rfc822` |
 | `GET /api/messages/:id/attachments/:index` | the attachment bytes |
-| `GET /api/health` | `{ status: 'ok' }` |
+| `DELETE /api/messages/:id` | `204` with an empty body, or `404 { message: 'Message not found' }` |
+| `DELETE /api/messages` | `200 { deletedCount, hasMore }` |
+| `GET /api/health` | `{ status: 'ok', features: { delete: true } }` |
+
+`DELETE` requests are rejected with `403 { message: 'Cross-origin requests are not allowed' }`
+based on the following, checked in order:
+
+1. If a `Sec-Fetch-Site` header is present, it alone decides: the request is
+   allowed only when its value is `same-origin` or `none`, and rejected
+   otherwise. `Origin` is not consulted in this case, so a dev proxy that
+   rewrites the `Host` header (for example Vite's `changeOrigin: true`)
+   still passes as long as the browser itself reports `same-origin`.
+2. Otherwise, if an `Origin` header is present, it is rejected when its host
+   does not match the request's `Host` header.
+3. Requests with neither header (curl, SDKs, the test suite) are allowed.
+
+The server does not send CORS headers.
 
 The original routes are kept as aliases:
 

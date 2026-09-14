@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import {
   apiErrorSchema,
+  deleteMessagesResponseSchema,
   healthResponseSchema,
   messageAttachmentSchema,
   messageContentSchema,
@@ -89,5 +90,23 @@ describe('simple response schemas', () => {
   test('rejects other health statuses and non-string errors', () => {
     expect(healthResponseSchema.safeParse({ status: 'healthy' }).success).toBe(false);
     expect(apiErrorSchema.safeParse({ message: 404 }).success).toBe(false);
+  });
+
+  test('keeps the health response backward compatible with an optional delete feature flag', () => {
+    expect(healthResponseSchema.parse({ status: 'ok' })).toEqual({ status: 'ok' });
+    expect(healthResponseSchema.parse({ status: 'ok', features: { delete: true } })).toEqual({
+      status: 'ok',
+      features: { delete: true },
+    });
+    expect(healthResponseSchema.safeParse({ status: 'ok', features: {} }).success).toBe(false);
+    expect(healthResponseSchema.safeParse({ status: 'ok', features: { delete: 1 } }).success).toBe(false);
+  });
+
+  test('locks the delete messages response contract', () => {
+    const response = { deletedCount: 2, hasMore: true };
+    expect(deleteMessagesResponseSchema.parse(response)).toEqual(response);
+    expect(deleteMessagesResponseSchema.safeParse({ deletedCount: -1, hasMore: false }).success).toBe(false);
+    expect(deleteMessagesResponseSchema.safeParse({ deletedCount: 1, hasMore: 'false' }).success).toBe(false);
+    expect(deleteMessagesResponseSchema.safeParse({ hasMore: false }).success).toBe(false);
   });
 });
