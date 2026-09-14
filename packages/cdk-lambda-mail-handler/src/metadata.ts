@@ -1,4 +1,4 @@
-import type { SendMailEvent } from './event-types.js';
+import type { SesApiMailEvent } from './ses-api.js';
 
 /** @internal */
 export interface AttributeValue {
@@ -10,7 +10,7 @@ export interface AttributeValue {
 
 /** @internal */
 export const createMetadataItem = (
-  event: SendMailEvent,
+  event: SesApiMailEvent,
   messageId: string,
   createdAt: string,
   key: string,

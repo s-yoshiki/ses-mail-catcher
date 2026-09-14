@@ -8,7 +8,7 @@ ESM-first の Node.js / TypeScript monorepo として管理しています。リ
 
 | パッケージ | 用途 | 保存先・実行環境 |
 | --- | --- | --- |
-| [`@s-yoshiki/cdk-ses-mail-catcher`](./packages/cdk) | メールを捕捉またはリレーする AWS Serverless 版の CDK Construct | Lambda + S3 + DynamoDB |
+| [`@s-yoshiki/cdk-ses-mail-catcher`](./packages/cdk) | SES SDK のリクエストを捕捉する AWS Serverless 版の CDK Construct | API Gateway + Lambda + S3 + DynamoDB |
 | [`@ses-mail-catcher/local`](./packages/local) | 開発・統合テスト用のローカル SES v2 互換サーバー | 非公開 workspace、Docker で配布 |
 | [`@ses-mail-catcher/viewer`](./packages/viewer) | 捕捉したメールを読む React ビューア | 非公開 workspace、ローカルサーバーと AWS viewer に同梱 |
 | [`@ses-mail-catcher/api-contract`](./packages/api-contract) | viewer API の共有 TypeScript 型と Zod スキーマ | 非公開 workspace |
@@ -81,25 +81,23 @@ docker run --rm -p 8005:8005 \
 
 ## AWS Serverless 版
 
-CDK パッケージは、2 つの明示的なモードを持つ Lambda ベースのメールハンドラーを提供します。
+CDK パッケージは capture 専用のバックエンドを作成します。`api-mail` は API Gateway + Lambda で、SES v1 Query 形式を `/` で、SES v2 JSON の `SendEmail` を `/v2/email/outbound-emails` で受け取ります。Simple メッセージは MIME に変換し、Raw メッセージは保持したまま、S3 と DynamoDB に保存します。Lambda に SES 権限は付与しません。
 
 ```ts
-import { Duration, Stack } from 'aws-cdk-lib';
-import { MailMode, SesMailCatcher } from '@s-yoshiki/cdk-ses-mail-catcher';
+import { Duration } from 'aws-cdk-lib';
+import { SesMailCatcher } from '@s-yoshiki/cdk-ses-mail-catcher';
 
-const stack = new Stack();
 const mailCatcher = new SesMailCatcher(stack, 'MailCatcher', {
   retention: Duration.days(7),
-  mode: MailMode.CATCH,
+  mailApi: { allowedIpCidrs: ['203.0.113.0/24'] },
+  viewer: { allowedIpCidrs: ['203.0.113.0/24'] },
 });
 ```
 
-- `CATCH` は標準化した raw MIME メッセージを作成し、S3 に保存するとともに、検索用メタデータを DynamoDB に保存します。SES の送信権限は付与しません。
-- `RELAY` は同じ raw MIME 形式を Amazon SES 経由で送信し、そのリレーに必要な SES 権限だけを付与します。
+AWS SDK SES クライアントの endpoint には `mailCatcher.mailApiEndpoint` を指定します。必要な場合は `mailApi.authorization` に `AWS_IAM` を指定し、送信元 Principal に `mailCatcher.grantMailApiInvoke()` で API 呼び出し権限を付与できます。`mailApi` の IP 制限には API Gateway の resource policy を使用します。
 
-アプリケーションは、送信元・宛先・件名・テキストまたは HTML 本文を含む小さなメールイベントで `mailCatcher.function` を呼び出します。アプリケーションの Lambda からハンドラーを呼び出せるようにするには `mailCatcher.grantSend()` を使用します。
-
-捕捉したメール用の AWS ビューアも作成できます。ビューアは `CATCH` モードでのみ利用でき、アクセス制御なしでは作成できません。Basic 認証の認証情報は AWS Secrets Manager から実行時に読み込み、IPv4 または IPv6 の CIDR 範囲を追加の制限として設定できます。認証情報が CDK の合成テンプレートに含まれることはありません。捕捉した HTML はサンドボックス化された iframe 内で表示されます。
+`api-viewer` は読み取り専用の API Gateway + Lambda + Hono、`web-viewer` は非公開 S3 から配信する React アプリです。CloudFront で両方を同一オリジンとして配信します。viewer はデフォルトで作成され、`viewer.allowedIpCidrs` を省略した場合は、開発用途として組み込み CloudFront Function が IPv4/IPv6 のすべての範囲（`0.0.0.0/0` と `::/0`）を許可します。捕捉した HTML はサンドボックス化された iframe 内で表示します。独自の `cloudfront.IFunction` を `viewer.edgeFunction` に渡して、CloudFront のエッジ処理をアプリケーション側で管理することもできます。この場合、アクセス制御と SPA の rewrite は渡した Function 側で実装します。
+Basic 認証を利用する場合は CloudFront KeyValueStore を指定できます。KeyValueStore には `Basic ` prefix を含む期待する `Authorization` ヘッダー値を保存し、認証情報自体は CDK の template の外で管理します。IP 制限と Basic 認証は組み合わせて利用できます。
 
 Construct API、viewer の設定、IAM 権限、公開方法の詳細は [`packages/cdk/README.md`](./packages/cdk/README.md) を参照してください。
 

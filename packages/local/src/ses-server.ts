@@ -1,9 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 
+import type { Hono } from 'hono';
+
 import { resolveDbPath } from './db-path.js';
-import { parseMessageContent, toDetailResponse } from './message-content.js';
-import { createSimpleMime, parseMimeHeaders, toApiMessage } from './mime.js';
+import { createApp, toArrayBuffer } from './handler.js';
+import { createSimpleMime, parseMimeHeaders } from './mime.js';
 import { resolveHost, resolvePort } from './options.js';
 import { SqliteStore } from './sqlite-store.js';
 import type { StoredMessage } from './types.js';
@@ -17,11 +19,6 @@ export interface LocalServerOptions {
   dbPath?: string;
   /** Overrides where the built viewer bundle is read from. */
   viewerDir?: string;
-}
-
-interface RequestContext {
-  readonly store: SqliteStore;
-  readonly viewer: ViewerAssets | undefined;
 }
 
 export interface RunningLocalServer {
@@ -42,9 +39,13 @@ export const startServer = async (options: LocalServerOptions = {}): Promise<Run
   const dbPath = options.dbPath ?? resolveDbPath();
   const store = await SqliteStore.open(dbPath);
   const viewer = await ViewerAssets.open(options.viewerDir ?? ViewerAssets.defaultRoot());
-  const context: RequestContext = { store, viewer };
+  const app = createApp({
+    saveMessage: (input, targetHeader) => saveSesMessage(input, targetHeader, store),
+    store,
+    viewer,
+  });
   const server = createServer((request, response) => {
-    void handleRequest(request, response, context);
+    void handleRequest(request, response, app);
   });
 
   try {
@@ -74,182 +75,40 @@ export const startServer = async (options: LocalServerOptions = {}): Promise<Run
 const handleRequest = async (
   request: IncomingMessage,
   response: ServerResponse,
-  context: RequestContext,
+  app: Hono,
 ): Promise<void> => {
-  const url = new URL(request.url ?? '/', 'http://localhost');
+  const url = new URL(request.url ?? '/', `http://${request.headers.host ?? 'localhost'}`);
 
   try {
-    if (request.method === 'POST' && isSesSendPath(url.pathname)) {
-      const body = await readJson(request);
-      const message = saveSesMessage(body, request.headers['x-amz-target'], context.store);
-      writeSesJson(response, 200, { MessageId: message.id });
-      return;
-    }
-
-    if (request.method === 'GET') {
-      if (await handleApiRequest(url, response, context.store)) {
-        return;
-      }
-      if (await handleViewerRequest(url, response, context.viewer)) {
-        return;
+    const headers = new Headers();
+    for (const [name, value] of Object.entries(request.headers)) {
+      if (value !== undefined) {
+        headers.set(name, Array.isArray(value) ? value.join(',') : value);
       }
     }
 
-    writeJson(response, 404, { message: 'Not found' });
+    const body = request.method === 'POST' ? await readBody(request) : undefined;
+    const result = await app.fetch(new Request(url, {
+      body: body === undefined || body.byteLength === 0 ? undefined : toArrayBuffer(body),
+      headers,
+      method: request.method,
+    }));
+    const resultBody = Buffer.from(await result.arrayBuffer());
+    response.writeHead(result.status, Object.fromEntries(result.headers.entries()));
+    response.end(resultBody);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Invalid request';
-    if (request.method === 'POST') {
-      writeSesJson(response, 400, { __type: 'InvalidParameterValue', message });
-      return;
-    }
-    writeJson(response, 400, { message });
-  }
-};
-
-/**
- * Answers the inspection API.
- *
- * `/api` is the contract the bundled viewer is built against. The original
- * `/store` routes stay as aliases so existing scripts keep working.
- */
-const handleApiRequest = async (
-  url: URL,
-  response: ServerResponse,
-  store: SqliteStore,
-): Promise<boolean> => {
-  if (url.pathname === '/health-check' || url.pathname === '/api/health') {
-    writeJson(response, 200, { status: 'ok' });
-    return true;
-  }
-
-  if (url.pathname === '/store' || url.pathname === '/api/messages') {
-    const messages = store.list(parseLimit(url.searchParams.get('limit')));
-    writeJson(response, 200, { messages });
-    return true;
-  }
-
-  const route = matchMessageRoute(url.pathname);
-  if (route === undefined) {
-    return false;
-  }
-
-  const message = store.get(route.id);
-  if (!message) {
-    writeJson(response, 404, { message: 'Message not found' });
-    return true;
-  }
-
-  if (route.kind === 'raw') {
-    writeBinary(response, 200, Buffer.from(message.rawMime), 'message/rfc822');
-    return true;
-  }
-
-  if (route.kind === 'legacy') {
-    writeJson(response, 200, toApiMessage(message));
-    return true;
-  }
-
-  if (route.kind === 'detail') {
-    writeJson(response, 200, await toDetailResponse(message));
-    return true;
-  }
-
-  const parsed = await parseMessageContent(message.rawMime);
-  const attachment = parsed.attachments[route.index];
-  if (!attachment) {
-    writeJson(response, 404, { message: 'Attachment not found' });
-    return true;
-  }
-
-  writeBinary(
-    response,
-    200,
-    Buffer.from(attachment.content),
-    attachment.contentType,
-    contentDisposition(attachment.filename),
-  );
-  return true;
-};
-
-const handleViewerRequest = async (
-  url: URL,
-  response: ServerResponse,
-  viewer: ViewerAssets | undefined,
-): Promise<boolean> => {
-  if (viewer === undefined) {
-    if (url.pathname !== '/') {
-      return false;
-    }
-    // Without a built bundle the server is still a usable API, so point at it.
-    writeJson(response, 200, {
-      name: 'ses-mail-catcher-local',
-      viewer: 'not built',
-      endpoints: [
-        'POST /v2/email/outbound-emails',
-        'GET /api/messages',
-        'GET /api/messages/:id',
-        'GET /api/messages/:id/raw',
-        'GET /api/messages/:id/attachments/:index',
-        'GET /api/health',
-      ],
+    const payload = JSON.stringify(request.method === 'POST'
+      ? { __type: 'InvalidParameterValue', message }
+      : { message });
+    response.writeHead(400, {
+      'Content-Length': Buffer.byteLength(payload),
+      'Content-Type': request.method === 'POST'
+        ? 'application/x-amz-json-1.1; charset=utf-8'
+        : 'application/json; charset=utf-8',
     });
-    return true;
+    response.end(payload);
   }
-
-  const asset = await viewer.read(url.pathname);
-  if (asset === undefined) {
-    return false;
-  }
-
-  response.writeHead(200, {
-    'Content-Length': asset.body.byteLength,
-    'Content-Type': asset.contentType,
-    'Cache-Control': asset.cacheControl,
-  });
-  response.end(asset.body);
-  return true;
-};
-
-type MessageRoute =
-  | { kind: 'legacy'; id: string }
-  | { kind: 'detail'; id: string }
-  | { kind: 'raw'; id: string }
-  | { kind: 'attachment'; id: string; index: number };
-
-const matchMessageRoute = (pathname: string): MessageRoute | undefined => {
-  const parts = pathname.split('/').filter(Boolean).map((part) => decodeURIComponent(part));
-
-  if (parts[0] === 'store' && parts.length === 2) {
-    return { kind: 'legacy', id: parts[1] };
-  }
-  if (parts[0] === 'store' && parts.length === 3 && parts[2] === 'raw') {
-    return { kind: 'raw', id: parts[1] };
-  }
-  if (parts[0] !== 'api' || parts[1] !== 'messages' || parts[2] === undefined) {
-    return undefined;
-  }
-  if (parts.length === 3) {
-    return { kind: 'detail', id: parts[2] };
-  }
-  if (parts.length === 4 && parts[3] === 'raw') {
-    return { kind: 'raw', id: parts[2] };
-  }
-  if (parts.length === 5 && parts[3] === 'attachments') {
-    const index = Number.parseInt(parts[4], 10);
-    return Number.isInteger(index) && index >= 0 ? { kind: 'attachment', id: parts[2], index } : undefined;
-  }
-  return undefined;
-};
-
-const parseLimit = (value: string | null): number => {
-  const limit = Number.parseInt(value ?? '100', 10);
-  return Number.isNaN(limit) ? 100 : limit;
-};
-
-const contentDisposition = (filename: string): string => {
-  // Keep the header itself ASCII and carry the real name in the RFC 5987 form.
-  const ascii = filename.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_');
-  return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(filename)}`;
 };
 
 const saveSesMessage = (
@@ -373,11 +232,7 @@ const asString = (value: unknown): string | undefined => {
   return typeof value === 'string' ? value : undefined;
 };
 
-const isSesSendPath = (path: string): boolean => {
-  return path === '/' || path === '/v2/email/outbound-emails';
-};
-
-const readJson = async (request: IncomingMessage): Promise<Record<string, unknown>> => {
+const readBody = async (request: IncomingMessage): Promise<Buffer> => {
   const chunks: Buffer[] = [];
   let total = 0;
   for await (const chunk of request) {
@@ -388,49 +243,7 @@ const readJson = async (request: IncomingMessage): Promise<Record<string, unknow
     }
     chunks.push(buffer);
   }
-  const parsed: unknown = JSON.parse(Buffer.concat(chunks).toString('utf8'));
-  const record = asRecord(parsed);
-  if (!record) {
-    throw new Error('Request body must be a JSON object');
-  }
-  return record;
-};
-
-const writeJson = (response: ServerResponse, statusCode: number, body: unknown): void => {
-  writeJsonAs(response, statusCode, body, 'application/json; charset=utf-8');
-};
-
-const writeSesJson = (response: ServerResponse, statusCode: number, body: unknown): void => {
-  writeJsonAs(response, statusCode, body, 'application/x-amz-json-1.1; charset=utf-8');
-};
-
-const writeJsonAs = (
-  response: ServerResponse,
-  statusCode: number,
-  body: unknown,
-  contentType: string,
-): void => {
-  const payload = JSON.stringify(body);
-  response.writeHead(statusCode, {
-    'Content-Length': Buffer.byteLength(payload),
-    'Content-Type': contentType,
-  });
-  response.end(payload);
-};
-
-const writeBinary = (
-  response: ServerResponse,
-  statusCode: number,
-  body: Buffer,
-  contentType: string,
-  disposition?: string,
-): void => {
-  response.writeHead(statusCode, {
-    'Content-Length': body.byteLength,
-    'Content-Type': contentType,
-    ...(disposition ? { 'Content-Disposition': disposition } : {}),
-  });
-  response.end(body);
+  return Buffer.concat(chunks);
 };
 
 const listen = (server: Server, host: string, port: number): Promise<void> => {

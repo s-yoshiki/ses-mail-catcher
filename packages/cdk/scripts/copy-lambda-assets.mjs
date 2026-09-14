@@ -16,18 +16,6 @@ const assets = [
   { name: 'viewer-handler', sourceRoot: join(packageRoot, '..', 'cdk-lambda-viewer-handler', 'lib') },
 ];
 const legacyAssetEntries = [
-  'aws-sdk.js',
-  'event-types.js',
-  'mail-handler.js',
-  'mail-validation.js',
-  'metadata.js',
-  'mime.js',
-  'viewer-access.js',
-  'viewer-content.js',
-  'viewer-handler.js',
-  'viewer-static.js',
-  'viewer-store.js',
-  'vendor',
   'viewer',
 ];
 

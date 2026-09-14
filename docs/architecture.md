@@ -1,94 +1,90 @@
 # Architecture
 
-`ses-mail-catcher` provides two adapters over the same mail-capture purpose:
+`ses-mail-catcher` has a local backend and an AWS backend. Both store captured
+messages and serve the same viewer API contract.
 
 ```text
-Application
-   ├─ local SES v2 endpoint ──> packages/local ──> SQLite cache
-   │                                  └─ serves packages/viewer at /
-   └─ SendMailEvent invoke ──> packages/cdk ──> Lambda ──> S3 + DynamoDB
-                                       │                └─> SES (RELAY only)
-                                       └─ viewer function URL ──> serves
-                                          packages/viewer over the same data
+AWS SDK SES client
+       │ SES v1 Query / SES v2 JSON
+       ▼
+api-mail: API Gateway REST API
+       ▼
+Lambda + Hono ───────────────┐
+       │                     │
+       ▼                     ▼
+  S3 raw MIME          DynamoDB metadata
+                             │
+                             ▼
+web-viewer: CloudFront ── /api/* ──> api-viewer: API Gateway
+       │                                      ▼
+       └─ S3 static app                 Lambda + Hono
 ```
 
-## CDK / AWS serverless
+## AWS serverless construct
 
-`@s-yoshiki/cdk-ses-mail-catcher` provisions the existing serverless design:
+`@s-yoshiki/cdk-ses-mail-catcher` provisions a capture-only AWS backend:
 
-- The `@ses-mail-catcher/cdk-mail-handler` and `@ses-mail-catcher/cdk-viewer-handler` workspaces build
-  `mail-handler.handler` and `viewer-handler.handler`; the CDK package copies
-  them into separate directories in its published asset.
-- S3 stores canonical raw MIME.
-- DynamoDB stores searchable message metadata and TTL information.
-- CATCH mode grants S3/DynamoDB permissions only.
-- RELAY mode grants SES send permissions and sends the canonical MIME through SES.
-  The statement is narrowed to `relay.fromEmailAddressIdentityArn` (plus the
-  configuration set ARN when one is configured) and only falls back to `*` when
-  no identity ARN is given.
-- The bucket the construct creates is emptied on stack deletion, so captured
-  messages do not block `cdk destroy`.
+- `api-mail` is a regional API Gateway REST API and Lambda. The root route
+  accepts SES API v1 `SendEmail` and `SendRawEmail` Query requests. The
+  `/v2/email/outbound-emails` route accepts SES API v2 `SendEmail` JSON
+  requests from the AWS SDK.
+- Hono owns the Lambda HTTP adapter in both API Lambdas. SES protocol parsing,
+  MIME normalization, and DynamoDB/S3 access remain explicit domain modules so
+  the protocol behavior can be tested without API Gateway.
+- Simple messages are converted to canonical raw MIME. Raw messages are
+  preserved and stored in S3. DynamoDB stores searchable metadata, the S3 key,
+  size, and a TTL timestamp.
+- `api-viewer` is a separate regional API Gateway REST API and read-only Lambda.
+  It implements the shared `/api` contract for health, lists, details, raw
+  MIME, and attachments.
+- `web-viewer` is a private S3 bucket containing the compiled React viewer.
+  CloudFront uses S3 as its default origin and `api-viewer` for `/api/*`, so
+  the browser sees one origin and does not need CORS configuration.
+- The viewer Lambda does not serve static files. The two Lambda assets are
+  compiled and bundled into the CDK package's published `lib` directory; the
+  deployed assets do not rely on workspace `node_modules`.
+- The construct creates disposable S3 and DynamoDB resources by default. S3
+  uses lifecycle expiration and DynamoDB uses TTL for the retention period.
 
-The Lambda asset path is derived from `import.meta.url`, so handler source is not embedded in a hard-coded inline string and the installed package remains relocatable.
+The construct does not grant `ses:SendEmail` or `ses:SendRawEmail`. The mail
+API is unauthenticated by default for development use. An application can opt
+into API Gateway IAM authorization, and `api-mail` can be restricted by IP
+with an API Gateway resource policy. The CloudFront-hosted viewer uses a
+CloudFront Function attached to both the web and `/api/*` behaviors. Its IP
+allowlist defaults to `0.0.0.0/0` and `::/0`; Basic authentication can be
+added by associating a CloudFront KeyValueStore whose expected Authorization
+header is managed outside the synthesized template.
+
+This is deliberately a sandbox/mock capture service, not a replacement for
+Amazon SES. SES template operations are not implemented, and captured
+messages are untrusted data.
+
+## Viewer security boundary
+
+CloudFront is the intended entry point for the viewer. The viewer request
+function checks the source IPv4/IPv6 address before static or API origin
+processing, optionally checks a Basic Authorization value in a CloudFront
+KeyValueStore, and rewrites extensionless client-side routes to `index.html`.
+The API Lambda grants read access only to the existing message table and
+bucket. Captured HTML is rendered only in a sandboxed iframe in the React app.
 
 ## Local
 
-`@ses-mail-catcher/local` exposes a small SES v2-compatible JSON endpoint. It accepts `SendEmail` Simple/Raw content and `SendRawEmail`, then stores message metadata and raw MIME in SQLite.
+`@ses-mail-catcher/local` exposes a small SES v2-compatible JSON endpoint and
+stores messages in a disposable SQLite cache by default. It serves the viewer
+bundle and the `/api` contract from one local HTTP server. Set
+`SES_MAIL_CATCHER_DB_PATH` or `--db-path` when a fixed database location is
+required.
 
-The default database is intentionally placed in the platform cache directory. Use `SES_MAIL_CATCHER_DB_PATH` or `--db-path` for a durable project-specific location.
-
-The bind address defaults to `127.0.0.1` and is overridden with `SES_MAIL_CATCHER_HOST` / `--host`; the port with `SES_MAIL_CATCHER_PORT` / `--port`. The container image sets the host to `0.0.0.0` so that a published port reaches the server.
-
-The local store answers the viewer contract under `/api`:
-
-- `GET /api/messages`
-- `GET /api/messages/:id`
-- `GET /api/messages/:id/raw`
-- `GET /api/messages/:id/attachments/:index`
-- `GET /api/health`
-
-The original `/health-check`, `/store`, `/store/:id` and `/store/:id/raw` routes
-remain as aliases.
-
-The local server requires Node.js 22.5 or later for `node:sqlite` and has no native SQLite npm addon.
-
-## Viewer
-
-`@ses-mail-catcher/viewer` is a React single page app built with Vite. It is not
-published on its own: `packages/local` copies the bundle into `lib/viewer` at
-build time and serves it from the same port as the API, so no CORS handling and
-no second process are involved.
-
-The bundle is deliberately backend-agnostic. It uses relative asset URLs and
-resolves its API root from the document, so any host that answers the `/api`
-contract in `packages/api-contract/src/index.ts` can serve it. Message HTML is
-rendered inside an iframe with an empty `sandbox` attribute, because captured
-mail is untrusted input.
-
-The viewer, local server and CDK viewer share the API's TypeScript contract
-from `packages/api-contract`. The viewer validates JSON responses with the
-contract's Zod schemas at its HTTP boundary; server-side code uses type-only
-imports so the CDK Lambda asset remains free of workspace runtime dependencies.
-
-Two backends serve it today:
-
-- `packages/local` over SQLite, from its own HTTP server.
-- `packages/cdk` over DynamoDB and S3, from an optional Lambda function URL.
-
-The CDK viewer is opt-in and refuses to exist without access control. Basic
-authentication reads its credentials from Secrets Manager at run time, so they
-stay out of the template, and the address allow list matches the function URL
-request context rather than a forwarded header. Both are enforced inside the
-function, because a function URL a browser can open is unauthenticated at the
-AWS layer.
-
-The Lambda asset is the compiled `lib` directory and carries no `node_modules`.
-The build copies the viewer bundle into `viewer-handler/lib/viewer` and vendors
-the MIME parser into `viewer-handler/lib/vendor` before packaging both handler
-workspaces into the CDK asset.
+The local backend intentionally does not share the AWS Lambda implementation:
+it uses SQLite and a Node.js HTTP adapter around a Hono application, while the
+AWS backend uses API Gateway, Hono, S3, and DynamoDB. Both implementations
+keep the route boundary and viewer API contract aligned. Basic authentication
+is an AWS CloudFront feature and is not added to the local server.
 
 ## Distribution
 
 - CDK: npm package `@s-yoshiki/cdk-ses-mail-catcher`.
 - Local: Docker image built from `packages/local/Dockerfile`.
-- Native binary: `scriptc` is available through `build:binary` as an experimental host-native option; the Node.js CLI and container image are the supported baseline.
+- Native binary: `scriptc` remains an experimental host-native option; the
+  Node.js CLI and container image are the supported baseline.

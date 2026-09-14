@@ -11,6 +11,12 @@ The package is ESM (`type: module`) and uses NodeNext TypeScript resolution.
 
 The local implementation uses the built-in `node:sqlite` module, so it does not require a native SQLite npm addon.
 
+The HTTP routes are implemented with Hono, using the same `/api` viewer
+contract and route boundary as the AWS Lambda handlers. The Node.js HTTP server
+only adapts incoming requests to the Hono application. Basic authentication is
+not part of the local server; its default loopback bind is the local access
+boundary.
+
 ## Run locally
 
 ```sh

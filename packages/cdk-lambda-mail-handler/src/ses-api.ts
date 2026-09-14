@@ -1,31 +1,42 @@
 import { randomUUID } from 'node:crypto';
 
-import type { SendMailEvent } from './event-types.js';
-
 const CRLF = '\r\n';
 
-/** The internal event passed from the SES-compatible Function URL adapter. */
-export type SesApiMailEvent = SendMailEvent & {
-  readonly rawMimeBase64: string;
-};
+/** @internal */
+export type SesApiProtocol = 'v1' | 'v2';
 
-/** The request shape emitted by a Lambda Function URL. */
+/** @internal */
+export interface SesApiMailEvent {
+  readonly from: string;
+  readonly to: string[];
+  readonly cc?: string[];
+  readonly bcc?: string[];
+  readonly replyTo?: string[];
+  readonly subject: string;
+  readonly text?: string;
+  readonly html?: string;
+  readonly metadata?: Record<string, string>;
+  /** The canonical MIME message, encoded for transport between adapters. */
+  readonly rawMimeBase64: string;
+}
+
+/** API Gateway REST or HTTP proxy event fields used by the adapter. */
 export interface SesApiRequest {
+  readonly path?: string;
   readonly rawPath?: string;
+  readonly httpMethod?: string;
   readonly headers?: Record<string, string | undefined>;
-  readonly body?: string;
+  readonly body?: string | null;
   readonly isBase64Encoded?: boolean;
   readonly requestContext?: {
-    readonly http?: {
-      readonly method?: string;
-    };
+    readonly identity?: { readonly sourceIp?: string };
+    readonly http?: { readonly method?: string };
   };
 }
 
 /**
- * Converts the SES v2 SendEmail JSON shape into the mail handler event shape.
- * The resulting MIME is kept as base64 so Raw and Simple messages are stored
- * using the same path and permissions as directly invoked mail events.
+ * Converts an SES v2 SendEmail request into the common capture event.
+ * Templates are intentionally outside the scope of the mail catcher.
  */
 export const toSesApiMailEvent = (
   input: Record<string, unknown>,
@@ -40,13 +51,14 @@ export const toSesApiMailEvent = (
   if (asRecord(content?.Template) !== undefined) {
     throw new Error('Content.Template is not supported by the mail catcher API; use Content.Simple or Content.Raw');
   }
-  const rawData = asString(asRecord(content?.Raw)?.Data) ?? asString(asRecord(input.RawMessage)?.Data);
+
+  const rawData = asString(asRecord(content?.Raw)?.Data);
+  const rawMime = rawData === undefined ? undefined : decodeBase64(rawData);
   const destination = asRecord(input.Destination);
   const to = stringArray(destination?.ToAddresses);
   const cc = stringArray(destination?.CcAddresses);
   const bcc = stringArray(destination?.BccAddresses);
   const replyTo = stringArray(input.ReplyToAddresses);
-  const rawMime = rawData === undefined ? undefined : Buffer.from(rawData, 'base64');
   const from = asString(input.FromEmailAddress) ?? readHeader(rawMime, 'From');
   const subject = rawMime === undefined
     ? readSimpleSubject(content)
@@ -57,11 +69,9 @@ export const toSesApiMailEvent = (
 
   requireString(from, 'FromEmailAddress or raw From header');
   requireString(subject, 'Subject');
-  if (rawTo.length === 0) {
-    throw new Error('Destination.ToAddresses or a raw To header is required');
-  }
+  requireAddresses(rawTo, 'Destination.ToAddresses or raw To header');
 
-  const metadata = readMetadata(input);
+  const metadata = readMetadata(input.EmailTags);
   if (rawMime !== undefined) {
     return {
       from,
@@ -79,7 +89,6 @@ export const toSesApiMailEvent = (
   if (simple === undefined) {
     throw new Error('Content.Simple or Content.Raw is required');
   }
-
   const text = readContentValue(asRecord(asRecord(simple.Body)?.Text));
   const html = readContentValue(asRecord(asRecord(simple.Body)?.Html));
   const attachments = readAttachments(simple.Attachments);
@@ -87,7 +96,7 @@ export const toSesApiMailEvent = (
     throw new Error('Content.Simple.Body.Text or Content.Simple.Body.Html is required');
   }
 
-  const simpleMime = createSimpleMime({
+  return createEvent({
     from,
     to: rawTo,
     cc: rawCc,
@@ -97,22 +106,84 @@ export const toSesApiMailEvent = (
     text,
     html,
     attachments,
+    metadata,
   });
-  return {
-    from,
-    to: rawTo,
-    ...(rawCc.length > 0 ? { cc: rawCc } : {}),
-    ...(rawBcc.length > 0 ? { bcc: rawBcc } : {}),
-    ...(replyTo.length > 0 ? { replyTo } : {}),
-    subject,
-    ...(text === undefined ? {} : { text }),
-    ...(html === undefined ? {} : { html }),
-    ...(metadata === undefined ? {} : { metadata }),
-    rawMimeBase64: simpleMime.toString('base64'),
-  };
 };
 
-const createSimpleMime = (message: {
+/** Converts the SES API v1 Query protocol into the common capture event. */
+export const toSesQueryMailEvent = (params: URLSearchParams): SesApiMailEvent => {
+  const action = params.get('Action')?.toLowerCase();
+  if (action !== 'sendemail' && action !== 'sendrawemail') {
+    throw new Error('Action must be SendEmail or SendRawEmail');
+  }
+
+  const rawData = params.get('RawMessage.Data');
+  const rawMime = rawData === null ? undefined : decodeBase64(rawData);
+  const from = params.get('Source') ?? readHeader(rawMime, 'From');
+  const to = rawMime === undefined
+    ? indexedValues(params, 'Destination.ToAddresses')
+    : indexedValues(params, 'Destinations').length > 0
+      ? indexedValues(params, 'Destinations')
+      : splitHeaderAddresses(readHeader(rawMime, 'To'));
+  const cc = rawMime === undefined
+    ? indexedValues(params, 'Destination.CcAddresses')
+    : splitHeaderAddresses(readHeader(rawMime, 'Cc'));
+  const bcc = rawMime === undefined
+    ? indexedValues(params, 'Destination.BccAddresses')
+    : splitHeaderAddresses(readHeader(rawMime, 'Bcc'));
+  const replyTo = indexedValues(params, 'ReplyToAddresses');
+  const subject = rawMime === undefined
+    ? params.get('Message.Subject.Data') ?? undefined
+    : readHeader(rawMime, 'Subject');
+
+  requireString(from, 'Source or raw From header');
+  requireString(subject, 'Message.Subject.Data or raw Subject header');
+  requireAddresses(to, 'Destination.ToAddresses or Destinations');
+
+  const metadata = readQueryMetadata(params);
+  if (rawMime !== undefined) {
+    return {
+      from,
+      to,
+      ...(cc.length > 0 ? { cc } : {}),
+      ...(bcc.length > 0 ? { bcc } : {}),
+      ...(replyTo.length > 0 ? { replyTo } : {}),
+      subject,
+      ...(metadata === undefined ? {} : { metadata }),
+      rawMimeBase64: rawMime.toString('base64'),
+    };
+  }
+
+  const text = optionalQueryValue(params, 'Message.Body.Text.Data');
+  const html = optionalQueryValue(params, 'Message.Body.Html.Data');
+  if (text === undefined && html === undefined) {
+    throw new Error('Message.Body.Text.Data or Message.Body.Html.Data is required');
+  }
+
+  return createEvent({
+    from,
+    to,
+    cc,
+    bcc,
+    replyTo,
+    subject,
+    text,
+    html,
+    attachments: [],
+    metadata,
+  });
+};
+
+interface SimpleAttachment {
+  readonly filename: string;
+  readonly contentType: string;
+  readonly rawContentBase64: string;
+  readonly disposition: string;
+  readonly description?: string;
+  readonly contentId?: string;
+}
+
+const createEvent = (message: {
   readonly from: string;
   readonly to: string[];
   readonly cc: string[];
@@ -121,8 +192,9 @@ const createSimpleMime = (message: {
   readonly subject: string;
   readonly text?: string;
   readonly html?: string;
-  readonly attachments: SesAttachment[];
-}): Buffer => {
+  readonly attachments: SimpleAttachment[];
+  readonly metadata?: Record<string, string>;
+}): SesApiMailEvent => {
   const body = createBody(message.text, message.html);
   const content = message.attachments.length === 0
     ? body
@@ -139,7 +211,18 @@ const createSimpleMime = (message: {
     content,
     '',
   ];
-  return Buffer.from(headers.join(CRLF), 'utf8');
+  return {
+    from: message.from,
+    to: message.to,
+    ...(message.cc.length > 0 ? { cc: message.cc } : {}),
+    ...(message.bcc.length > 0 ? { bcc: message.bcc } : {}),
+    ...(message.replyTo.length > 0 ? { replyTo: message.replyTo } : {}),
+    subject: message.subject,
+    ...(message.text === undefined ? {} : { text: message.text }),
+    ...(message.html === undefined ? {} : { html: message.html }),
+    ...(message.metadata === undefined ? {} : { metadata: message.metadata }),
+    rawMimeBase64: Buffer.from(headers.join(CRLF), 'utf8').toString('base64'),
+  };
 };
 
 const createBody = (text: string | undefined, html: string | undefined): string => {
@@ -179,7 +262,7 @@ const createBody = (text: string | undefined, html: string | undefined): string 
   ].join(CRLF);
 };
 
-const createMixedBody = (body: string, attachments: SesAttachment[]): string => {
+const createMixedBody = (body: string, attachments: SimpleAttachment[]): string => {
   const boundary = `ses-mail-catcher-mixed-${randomUUID()}`;
   const parts = [
     `Content-Type: multipart/mixed; boundary="${boundary}"`,
@@ -205,16 +288,7 @@ const createMixedBody = (body: string, attachments: SesAttachment[]): string => 
   return parts.join(CRLF);
 };
 
-interface SesAttachment {
-  readonly filename: string;
-  readonly contentType: string;
-  readonly rawContentBase64: string;
-  readonly disposition: string;
-  readonly description?: string;
-  readonly contentId?: string;
-}
-
-const readAttachments = (value: unknown): SesAttachment[] => {
+const readAttachments = (value: unknown): SimpleAttachment[] => {
   if (value === undefined) return [];
   if (!Array.isArray(value)) throw new Error('Content.Simple.Attachments must be an array');
   return value.map((item) => {
@@ -224,6 +298,7 @@ const readAttachments = (value: unknown): SesAttachment[] => {
     if (rawContentBase64 === undefined || filename === undefined) {
       throw new Error('attachments require RawContent and FileName');
     }
+    requireString(filename, 'attachments[].FileName');
     return {
       rawContentBase64,
       filename,
@@ -245,25 +320,53 @@ const readContentValue = (value: Record<string, unknown> | undefined): string | 
   return asString(value?.Data);
 };
 
-const readMetadata = (input: Record<string, unknown>): Record<string, string> | undefined => {
-  const tags = Array.isArray(input.EmailTags) ? input.EmailTags : [];
-  const entries = tags
-    .map(asRecord)
-    .flatMap((tag) => {
-      const name = asString(tag?.Name);
-      const value = asString(tag?.Value);
-      return name === undefined || value === undefined
-        ? []
-        : [[name, value] as const];
-    });
+const readMetadata = (value: unknown): Record<string, string> | undefined => {
+  const tags = Array.isArray(value) ? value : [];
+  const entries = tags.flatMap((tag) => {
+    const record = asRecord(tag);
+    const name = asString(record?.Name);
+    const tagValue = asString(record?.Value);
+    return name === undefined || tagValue === undefined ? [] : [[name, tagValue] as const];
+  });
   return entries.length === 0 ? undefined : Object.fromEntries(entries);
+};
+
+const readQueryMetadata = (params: URLSearchParams): Record<string, string> | undefined => {
+  const indexes = [...params.keys()]
+    .flatMap((key) => {
+      const match = /^Tags\.member\.(\d+)\.(?:Name|Value)$/.exec(key);
+      return match === null ? [] : [Number(match[1])];
+    });
+  // eslint-disable-next-line unicorn/no-array-sort
+  const entries = [...new Set(indexes)].sort((left, right) => left - right).flatMap((number) => {
+    const name = params.get(`Tags.member.${number}.Name`);
+    const value = params.get(`Tags.member.${number}.Value`);
+    return name === null || value === null ? [] : [[name, value] as const];
+  });
+  return entries.length === 0 ? undefined : Object.fromEntries(entries);
+};
+
+const indexedValues = (params: URLSearchParams, prefix: string): string[] => {
+  return [...params.entries()]
+    .flatMap(([key, value]) => {
+      const match = new RegExp(`^${escapeRegExp(prefix)}\\.member\\.(\\d+)$`).exec(key);
+      return match === null ? [] : [{ index: Number(match[1]), value }];
+    })
+    // eslint-disable-next-line unicorn/no-array-sort
+    .sort((left, right) => left.index - right.index)
+    .map((entry) => entry.value);
+};
+
+const optionalQueryValue = (params: URLSearchParams, key: string): string | undefined => {
+  const value = params.get(key);
+  return value === null ? undefined : value;
 };
 
 const readHeader = (rawMime: Buffer | undefined, name: string): string | undefined => {
   if (rawMime === undefined) return undefined;
-  const pattern = new RegExp(`^${name}:\\s*(.+(?:\\r?\\n[ \\t].+)*)$`, 'im');
+  const pattern = new RegExp(`^${escapeRegExp(name)}:\\s*(.+(?:\\r?\\n[ \\t].+)*)$`, 'im');
   const match = pattern.exec(rawMime.toString('utf8'));
-  return match?.[1]?.replace(/\\r?\\n[ \\t]+/g, ' ').trim();
+  return match?.[1]?.replace(/\r?\n[ \t]+/g, ' ').trim();
 };
 
 const splitHeaderAddresses = (value: string | undefined): string[] => {
@@ -276,12 +379,22 @@ const requireString: (value: string | undefined, name: string) => asserts value 
   }
 };
 
+const requireAddresses = (value: string[], name: string): void => {
+  if (value.length === 0) throw new Error(`${name} must contain at least one address`);
+  for (const address of value) requireString(address, `${name}[]`);
+};
+
 const stringArray = (value: unknown): string[] => {
   if (value === undefined) return [];
   if (!Array.isArray(value) || !value.every((item) => typeof item === 'string')) {
     throw new Error('Email addresses must be an array of strings');
   }
   return value;
+};
+
+const decodeBase64 = (value: string): Buffer => {
+  if (value.length === 0) throw new Error('raw message data must not be empty');
+  return Buffer.from(value, 'base64');
 };
 
 const encodeHeader = (value: string): string => {
@@ -293,11 +406,11 @@ const encodeParameter = (value: string): string => value.replace(/[\\"]/g, '_');
 
 const safeHeader = (value: string): string => value.replace(/[\r\n]+/g, ' ');
 
-const wrapBase64 = (value: string): string => {
-  return wrapRawBase64(Buffer.from(value, 'utf8').toString('base64'));
-};
+const wrapBase64 = (value: string): string => wrapRawBase64(Buffer.from(value, 'utf8').toString('base64'));
 
 const wrapRawBase64 = (value: string): string => value.match(/.{1,76}/g)?.join(CRLF) ?? '';
+
+const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const asRecord = (value: unknown): Record<string, unknown> | undefined => {
   return typeof value === 'object' && value !== null && !Array.isArray(value)

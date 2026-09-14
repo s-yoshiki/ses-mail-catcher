@@ -2,134 +2,160 @@
 
 [![View on Construct Hub](https://constructs.dev/badge?package=%40s-yoshiki%2Fcdk-ses-mail-catcher)](https://constructs.dev/packages/%40s-yoshiki%2Fcdk-ses-mail-catcher)
 
-An AWS CDK Construct Library for safely capturing emails in development and
-staging environments, or relaying them through Amazon SES in production.
-
-The construct accepts a small mail event rather than attempting to emulate the
-SES API. Captured messages are stored as raw MIME in S3, with searchable
-metadata in DynamoDB.
+An AWS CDK Construct Library for capturing SES requests in development and
+staging environments. The construct is intentionally capture-only: it does
+not send captured messages through SES.
 
 ## Usage
 
 ```ts
-import { Duration, Stack } from "aws-cdk-lib";
-import { Code, Function, Runtime } from "aws-cdk-lib/aws-lambda";
-import { MailMode, SesMailCatcher } from "@s-yoshiki/cdk-ses-mail-catcher";
+import { Duration } from 'aws-cdk-lib';
+import { ApiAuthorization, SesMailCatcher } from '@s-yoshiki/cdk-ses-mail-catcher';
 
-const stack = new Stack();
-const mailCatcher = new SesMailCatcher(stack, "MailCatcher", {
+const mailCatcher = new SesMailCatcher(stack, 'MailCatcher', {
   retention: Duration.days(7),
-  mode: MailMode.CATCH,
+  mailApi: {
+    // NONE is the default. Use AWS_IAM when the sender signs the SDK request.
+    authorization: ApiAuthorization.AWS_IAM,
+    allowedIpCidrs: ['203.0.113.0/24'],
+  },
+  viewer: {
+    // Optional: restrict the viewer at the CloudFront edge.
+    allowedIpCidrs: ['203.0.113.0/24'],
+  },
 });
-
-const applicationFunction = new Function(stack, "Application", {
-  runtime: Runtime.NODEJS_20_X,
-  handler: "index.handler",
-  code: Code.fromInline("exports.handler = async () => undefined;"),
-});
-mailCatcher.grantSend(applicationFunction);
 ```
 
-The application invokes `mailCatcher.function` with an event such as:
+`mailApi` is an API Gateway REST API backed by a Lambda function using Hono.
+It accepts the request protocols emitted by the AWS SES SDK:
+
+- SES API v1 Query protocol at `POST /` (`SendEmail` and `SendRawEmail`);
+- SES API v2 JSON protocol at `POST /v2/email/outbound-emails` (`SendEmail`);
+- v2 `Content.Simple` and `Content.Raw` messages.
+
+Templates are outside the scope of the catcher. The API converts Simple
+content into canonical raw MIME, preserves Raw MIME bytes, stores the message
+body in S3, and stores searchable metadata in DynamoDB. The Lambda has only
+S3 write and DynamoDB write permissions; it has no SES permissions.
+
+Use the construct endpoint directly with an AWS SDK SES client:
 
 ```ts
-{
-  from: "noreply@example.com",
-  to: ["developer@example.com"],
-  subject: "Registration complete",
-  text: "Welcome!",
-  html: "<h1>Welcome!</h1>",
-}
-```
-
-In `CATCH` mode the Lambda writes a canonical raw MIME message to S3 under
-`messages/YYYY/MM/DD/{messageId}.eml` and stores its index in DynamoDB.
-Both resources use the configured retention period; DynamoDB uses TTL and S3
-uses a lifecycle expiration rule. The construct deliberately does not grant
-SES permissions in this mode.
-
-For production relay, opt in explicitly:
-
-```ts
-new SesMailCatcher(stack, "MailRelay", {
-  mode: MailMode.RELAY,
-  relay: { configurationSetName: "production" },
+const ses = new SESv2Client({
+  endpoint: mailCatcher.mailApiEndpoint,
+  region: 'ap-northeast-1',
+  credentials: { accessKeyId: 'local', secretAccessKey: 'local' },
 });
 ```
 
-Relay mode grants the handler `ses:SendEmail` and `ses:SendRawEmail` and sends
-the same raw MIME representation through SES. Attachments are passed as S3
-references (`bucket`, `key`); the referenced bucket must grant read access to
-`mailCatcher.function`.
+When `authorization` is `AWS_IAM`, grant the sending principal permission to
+invoke the API:
 
-The public resources are available as `mailCatcher.function`,
-`mailCatcher.bucket`, and `mailCatcher.table`. Use `grantSend()` to give an
-application Lambda permission to invoke the handler. Queue-based transports are
-intentionally reserved for a later release.
+```ts
+mailCatcher.grantMailApiInvoke(applicationFunction);
+```
+
+`allowedIpCidrs` on `mailApi` creates an API Gateway resource policy with an
+explicit `Deny` for requests outside the configured IPv4/IPv6 ranges. Both
+authorization and the IP policy are optional for development environments.
+
+The public resources are available as `mailCatcher.mailApi`,
+`mailCatcher.mailFunction`, `mailCatcher.bucket`, and `mailCatcher.table`.
+Storage created by the construct is disposable and is removed with the stack;
+the retention period is also applied to the S3 lifecycle rule and DynamoDB
+TTL.
 
 ## Viewer
 
-`viewer` adds a Lambda function URL that serves the same React viewer as the
-local server, reading messages straight from DynamoDB and S3. It is not created
-unless asked for, and it only works in `CATCH` mode, because relay mode stores
-nothing.
+The viewer is created by default and consists of three parts:
 
-Captured mail is exactly the kind of thing that should not sit on an open URL,
-so the construct refuses to create a viewer without some form of access
-control. Two are built in and can be combined.
+- `api-viewer`: API Gateway + Lambda + Hono, exposing the shared `/api`
+  contract and read-only access to DynamoDB/S3;
+- `web-viewer`: a private S3 bucket containing the React application;
+- one CloudFront distribution with the S3 bucket as its default origin and
+  `api-viewer` as the `/api/*` origin.
+
+Both are therefore served from the same browser origin. The viewer Lambda does
+not serve static files. It has only DynamoDB read and S3 read permissions.
+
+The viewer uses a built-in CloudFront Function for IP filtering and SPA route
+rewriting. If `allowedIpCidrs` is omitted, the function defaults to allowing
+all IPv4 and IPv6 ranges (`0.0.0.0/0` and `::/0`), which is intended for
+development environments:
 
 ```ts
-import { Secret } from "aws-cdk-lib/aws-secretsmanager";
-
-const credentials = new Secret(stack, "ViewerCredentials", {
-  generateSecretString: {
-    secretStringTemplate: JSON.stringify({ username: "developer" }),
-    generateStringKey: "password",
-  },
-});
-
-const mailCatcher = new SesMailCatcher(stack, "MailCatcher", {
+const mailCatcher = new SesMailCatcher(stack, 'MailCatcher', {
   viewer: {
-    basicAuth: { secret: credentials },
-    allowedIpCidrs: ["203.0.113.0/24"],
+    allowedIpCidrs: ['192.0.2.10/32', '2001:db8:1234::/48'],
   },
 });
 ```
 
-`mailCatcher.viewerUrl` is the address to open, `mailCatcher.viewerFunctionUrl`
-is the CDK Function URL resource, and `mailCatcher.viewerFunction` is the
-function behind it.
+The construct creates a CloudFront Function that checks the viewer IP and
+rewrites extensionless SPA routes to `index.html`. The same function is
+attached to the `/api/*` behavior, so the browser and viewer API receive the
+same edge IP restriction. `mailCatcher.viewerUrl` is the URL to open.
 
-- **Basic authentication** reads its credentials from a Secrets Manager secret
-  at run time, so they never appear in the synthesized template. The secret
-  holds JSON; `usernameField` and `passwordField` rename the fields it reads.
-  Credentials are compared with a constant-time digest comparison.
-- **Address ranges** accept IPv4 and IPv6 CIDR blocks. The address comes from
-  the function URL request context rather than a forwarded header, so a caller
-  cannot spoof it.
+Basic authentication is also available through a CloudFront KeyValueStore:
 
-The function URL uses `AuthType.NONE` by default, because a browser cannot sign
-requests; the checks above are what protect the messages. Set
-`authType: FunctionUrlAuthType.AWS_IAM` when the viewer is reached through a
-signing client instead. A viewer with no access control at all has to be
-acknowledged explicitly with `allowPublicAccess: true`.
+```ts
+import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 
-The viewer function is granted read access only: `dynamodb:Query`/`Scan` on the
-table, `s3:GetObject` on the bucket, and `secretsmanager:GetSecretValue` on the
-credentials secret.
+const authStore = cloudfront.KeyValueStore.fromKeyValueStoreArn(
+  stack,
+  'ViewerAuthStore',
+  'arn:aws:cloudfront::123456789012:key-value-store/KEY_VALUE_STORE_ID',
+);
 
-The Lambda asset carries the built viewer bundle and a vendored copy of
-[postal-mime](https://github.com/postalsys/postal-mime) (MIT-0) under
-`lib/vendor`, because the asset is the compiled `lib` directory and has no
-`node_modules` of its own.
+const mailCatcher = new SesMailCatcher(stack, 'MailCatcher', {
+  viewer: {
+    basicAuth: { keyValueStore: authStore },
+  },
+});
+```
 
-The Lambda implementation is kept in two private workspaces:
-[`@ses-mail-catcher/cdk-mail-handler`](../cdk-lambda-mail-handler) owns
-validation, MIME creation, storage, and relay, while
-[`@ses-mail-catcher/cdk-viewer-handler`](../cdk-lambda-viewer-handler)
-owns the viewer API and static assets. Each workspace has its own tests and
-compiled asset; the CDK package copies them into separate directories in its
-`lib/` directory and uses those directories as the Lambda sources.
+The KeyValueStore must contain the expected `Authorization` header value,
+including the `Basic ` prefix, under the `authorization` key by default. The
+construct does not receive or store the username/password; populate the store
+through an operational process outside the synthesized template. A custom
+`key` and `realm` can be supplied. `allowedIpCidrs` and `basicAuth` may be used
+together, in which case both checks must pass.
+
+To manage the CloudFront Function in the application instead, pass an existing
+`cloudfront.IFunction` as `edgeFunction`:
+
+```ts
+import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
+
+const edgeFunction = new cloudfront.Function(stack, 'ViewerEdgeFunction', {
+  code: cloudfront.FunctionCode.fromInline('function handler(event) { return event.request; }'),
+});
+
+const mailCatcher = new SesMailCatcher(stack, 'MailCatcher', {
+  viewer: { edgeFunction },
+});
+```
+
+The supplied function replaces the built-in IP allowlist and SPA rewrite and
+is attached to both the web and `/api/*` behaviors. It must implement any
+access control and request rewriting required by the application. When
+`allowedIpCidrs` is explicitly set to an empty array, the construct rejects
+the configuration because the built-in function would deny every request.
+`basicAuth` cannot be combined with `edgeFunction`; a custom function owns the
+complete viewer access policy.
+
+The viewer API is read-only and implements the same contract as the local
+server: health, message listing, message details, raw MIME, and attachments.
+Captured HTML is rendered only in the viewer's sandboxed iframe because it is
+untrusted input.
+
+The Lambda implementations live in two private workspaces:
+[`@ses-mail-catcher/cdk-mail-handler`](../cdk-lambda-mail-handler) owns SES
+protocol parsing, MIME normalization, and storage, while
+[`@ses-mail-catcher/cdk-viewer-handler`](../cdk-lambda-viewer-handler) owns the
+viewer API. Both use Hono's AWS Lambda adapter. Each workspace is compiled and
+bundled into the CDK package; the deployed assets do not depend on workspace
+`node_modules`.
 
 ## Development
 
@@ -142,14 +168,12 @@ pnpm --filter @s-yoshiki/cdk-ses-mail-catcher test
 ```
 
 Generated project files are managed by [projen](https://github.com/projen/projen).
-Edit `.projenrc.ts` and run `pnpm --filter @s-yoshiki/cdk-ses-mail-catcher projen` when
-changing project settings.
+Edit `.projenrc.ts` and run `pnpm --filter @s-yoshiki/cdk-ses-mail-catcher projen`
+when changing project settings.
 
 ## Publishing
 
 The package is configured for public npm publishing and jsii-compatible API
 generation. The CI workflow validates the package before release; npm
 publication and Trusted Publishing credentials should be configured in the
-repository before the first release. Public jsii-compatible packages with a
-recognized CDK keyword are automatically discoverable by Construct Hub after
-they are published to npm.
+repository before the first release.

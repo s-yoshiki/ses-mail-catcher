@@ -12,8 +12,7 @@
     "synth": "pnpm run build:dependencies && pnpm run build && cdk synth",
     "diff": "pnpm run build:dependencies && pnpm run build && cdk diff",
     "deploy:cdk": "pnpm run build:dependencies && pnpm run build && cdk deploy --require-approval never",
-    "deploy": "pnpm run deploy:cdk && pnpm run sync:edge-auth",
-    "sync:edge-auth": "node scripts/sync-edge-basic-auth.mjs",
+    "deploy": "pnpm run deploy:cdk",
     "destroy": "pnpm run build:dependencies && pnpm run build && cdk destroy --force",
     "bootstrap": "pnpm run build:dependencies && pnpm run build && cdk bootstrap"
   },
