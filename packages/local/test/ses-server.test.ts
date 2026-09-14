@@ -183,7 +183,10 @@ describe('viewer API', () => {
     const { url, id } = await seed();
 
     expect(healthResponseSchema.parse(await (await fetch(`${url}/health-check`)).json())).toEqual({ status: 'ok' });
-    expect(healthResponseSchema.parse(await (await fetch(`${url}/api/health`)).json())).toEqual({ status: 'ok' });
+    expect(healthResponseSchema.parse(await (await fetch(`${url}/api/health`)).json())).toEqual({
+      status: 'ok',
+      features: { delete: true },
+    });
 
     const apiList = messageListResponseSchema.parse(await (await fetch(`${url}/api/messages`)).json());
     const storeList = messageListResponseSchema.parse(await (await fetch(`${url}/store`)).json());

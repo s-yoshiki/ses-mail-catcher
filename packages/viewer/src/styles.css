@@ -4,9 +4,10 @@
   --border: #d8dce3;
   --text: #1c2027;
   --muted: #61697a;
-  --accent: #1f6feb;
+  --accent: #0b5cd6;
   --accent-soft: #e8f0fe;
-  --error: #b3261e;
+  --error: #a4231b;
+  --success: #1a7a3c;
   color-scheme: light;
 }
 
@@ -16,10 +17,11 @@
     --surface: #1c2027;
     --border: #2f353f;
     --text: #e6e8ec;
-    --muted: #9aa3b2;
-    --accent: #4c8dff;
+    --muted: #a7afbe;
+    --accent: #6ba4ff;
     --accent-soft: #1e2a3d;
     --error: #f2857c;
+    --success: #6bd190;
     color-scheme: dark;
   }
 }
@@ -47,9 +49,19 @@ body {
   height: 100%;
 }
 
+/* Focus rings. RAC components expose `data-focus-visible`; plain native
+   elements (inputs, links) fall back to the `:focus-visible` pseudo-class. */
+:focus-visible,
+[data-focus-visible] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Toolbar ---------- */
+
 .toolbar {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   align-items: center;
   flex-wrap: wrap;
   padding: 10px 16px;
@@ -61,42 +73,202 @@ body {
   margin: 0;
   font-size: 15px;
   font-weight: 600;
-}
-
-.toolbar-field {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  color: var(--muted);
-}
-
-.toolbar-checkbox {
-  cursor: pointer;
+  white-space: nowrap;
 }
 
 .toolbar-count {
   color: var(--muted);
-  margin-left: auto;
+  white-space: nowrap;
+}
+
+.toolbar-updated {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.toolbar > .search-field {
+  margin-right: auto;
+}
+
+.toolbar > .shortcuts-help {
+  margin-left: 0;
+}
+
+/* Narrow layout (below 720px): title + search + count + overflow menu on
+   their own row; Auto refresh / Refresh / Delete all / Keyboard shortcuts
+   move into that menu (see `Toolbar.tsx`). */
+.toolbar-narrow {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.toolbar-row-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.toolbar-row-main > .search-field {
+  margin-right: auto;
+}
+
+/* `DeleteAllDialog` / `ShortcutsHelpDialog` stay mounted on narrow screens
+   so their externally-controlled `isOpen` still opens them from the
+   overflow menu; only their own (now-redundant) trigger buttons are
+   hidden. The dialogs themselves are portalled to `document.body`, so this
+   has no effect on them. */
+.toolbar-dialog-triggers {
+  display: contents;
+}
+
+.toolbar-dialog-triggers-hidden {
+  display: none;
 }
 
 select,
-button {
+button,
+.button-link {
   font: inherit;
   color: inherit;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 4px 10px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
-button:not(:disabled) {
+button:not([disabled]):not([aria-disabled='true']),
+.button-link {
   cursor: pointer;
 }
 
-button:disabled {
+button[disabled],
+button[data-disabled],
+button[aria-disabled='true'] {
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+.button-destructive {
+  color: var(--error);
+  border-color: var(--error);
+}
+
+.icon-button {
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+.link-button {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--accent);
+  text-decoration: underline;
+  font-size: 12px;
+}
+
+/* SearchField (react-aria-components): a Group-like row wrapping the input
+   and its built-in clear button. */
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 200px;
+  max-width: 360px;
+  flex: 1 1 240px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 4px 2px 10px;
+  background: var(--surface);
+}
+
+.search-field input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 4px 0;
+  min-width: 0;
+}
+
+.search-field input:focus-visible {
+  outline: none;
+}
+
+.search-field:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.search-field .search-clear-button {
+  border: 0;
+  background: transparent;
+  padding: 2px 6px;
+}
+
+.search-field[data-empty] .search-clear-button {
+  visibility: hidden;
+}
+
+/* Switch (react-aria-components): a label wrapping a visually-hidden native
+   checkbox input plus our own track/thumb indicator. */
+.toolbar-switch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.switch-indicator {
+  width: 32px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  position: relative;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease;
+}
+
+.switch-indicator::before {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  transition: transform 0.15s ease;
+}
+
+.toolbar-switch[data-selected] .switch-indicator {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.toolbar-switch[data-selected] .switch-indicator::before {
+  transform: translateX(14px);
+  border-color: var(--accent);
+}
+
+.toolbar-switch[data-focus-visible] .switch-indicator {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Layout ---------- */
 
 .panes {
   display: grid;
@@ -105,17 +277,35 @@ button:disabled {
   min-height: 0;
 }
 
+/* Below the Phase 5 breakpoint, `App` renders only one of the two panes at a
+   time (see `App.tsx`), so the second grid track would otherwise leave an
+   empty 30%-wide gap next to it. */
+.panes-narrow {
+  grid-template-columns: 1fr;
+}
+
 .list {
   overflow-y: auto;
   border-right: 1px solid var(--border);
   background: var(--surface);
+  display: flex;
+  flex-direction: column;
 }
 
-.list ul {
-  margin: 0;
-  padding: 0;
-  list-style: none;
+.message-grid {
+  outline: none;
 }
+
+.list-limit-note {
+  margin: 0;
+  padding: 8px 14px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+  border-top: 1px solid var(--border);
+}
+
+/* ---------- Message list rows (GridList) ---------- */
 
 .list-item {
   display: grid;
@@ -125,16 +315,21 @@ button:disabled {
   padding: 10px 14px;
   border: 0;
   border-bottom: 1px solid var(--border);
-  border-radius: 0;
-  background: transparent;
+  cursor: pointer;
+  position: relative;
 }
 
-.list-item:hover {
+/* The row's single gridcell wrapper: let our own children participate in
+   the row's grid layout directly instead of adding another box. */
+.list-item [role='gridcell'] {
+  display: contents;
+}
+
+.list-item[data-hovered] {
   background: var(--bg);
 }
 
-.list-item-selected,
-.list-item-selected:hover {
+.list-item[data-selected] {
   background: var(--accent-soft);
   box-shadow: inset 3px 0 0 var(--accent);
 }
@@ -142,12 +337,37 @@ button:disabled {
 .list-item-subject {
   font-weight: 600;
   overflow-wrap: anywhere;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.list-item-subject-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.badge {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0 8px;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.badge-new {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 .list-item-from,
 .list-item-to {
   color: var(--muted);
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .list-item-meta {
@@ -159,41 +379,98 @@ button:disabled {
   margin-top: 4px;
 }
 
-.badge {
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 0 8px;
-  font-size: 12px;
+.list-item-delete {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  padding: 2px 8px;
 }
+
+/* ---------- Detail pane ---------- */
 
 .detail {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
   padding: 16px;
-  overflow-y: auto;
+  /* The header/headers/tabs below stay put; only the active tab panel
+     scrolls (see `.tab-panel`), so there is one scroll area, not two. */
+  overflow: hidden;
+}
+
+.detail-back-row {
+  flex-shrink: 0;
+  margin-bottom: 8px;
+}
+
+.back-button {
+  align-self: flex-start;
+}
+
+.detail-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
 }
 
 .detail-subject {
-  margin: 0 0 12px;
+  margin: 0;
   font-size: 18px;
   overflow-wrap: anywhere;
+}
+
+.detail-action-bar {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .detail-headers {
   display: grid;
   grid-template-columns: max-content 1fr;
-  gap: 2px 16px;
+  gap: 4px 16px;
   margin: 0 0 16px;
+  align-items: start;
+  flex-shrink: 0;
 }
 
 .detail-headers dt {
   color: var(--muted);
+  padding-top: 3px;
 }
 
 .detail-headers dd {
   margin: 0;
   overflow-wrap: anywhere;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.detail-header-value {
+  padding-top: 3px;
+}
+
+.detail-header-value-text {
+  /* A flex item's default min-width is `auto` (its content size), which
+     stops `overflow-wrap: anywhere` (inherited from `.detail-headers dd`)
+     from having any effect — a long address would overflow instead of
+     wrapping. */
+  min-width: 0;
+}
+
+/* ---------- Tabs (react-aria-components) ---------- */
+
+.tabs-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
 }
 
 .tabs {
@@ -203,30 +480,95 @@ button:disabled {
   flex-wrap: wrap;
   border-bottom: 1px solid var(--border);
   padding-bottom: 8px;
+  flex-shrink: 0;
 }
 
-.tab-active {
+.tab {
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.tab[data-hovered] {
+  background: var(--bg);
+}
+
+.tab[data-selected] {
   border-color: var(--accent);
   color: var(--accent);
+  font-weight: 600;
 }
 
-.tab-link {
-  margin-left: auto;
-  color: var(--accent);
+.tab[data-disabled] {
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .tab-panel {
   flex: 1;
-  min-height: 320px;
+  min-height: 0;
   padding-top: 12px;
+  /* The Text / Attachments / Links / Raw panels scroll internally, below the
+     fixed header and tabs above (see `.detail`). The HTML panel overrides
+     this with `.tab-panel-html`: the iframe is the only scroll area there. */
+  overflow-y: auto;
+}
+
+.tab-panel[data-focus-visible] {
+  outline: none;
+}
+
+.tab-panel-html {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.html-preview-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 8px;
+}
+
+.preview-width-toggle {
+  display: inline-flex;
+  gap: 4px;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+.toggle-button[data-selected] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.toggle-button[data-focus-visible] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.html-preview-frame-container {
+  flex: 1;
+  min-height: 200px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
 }
 
 .html-preview {
   width: 100%;
   height: 100%;
-  min-height: 320px;
   border: 1px solid var(--border);
   border-radius: 6px;
+  /* Mail assumes a light background; this stays white regardless of theme,
+     with the border above kept visible in dark mode via `--border`. */
   background: #ffffff;
 }
 
@@ -250,18 +592,151 @@ button:disabled {
   gap: 8px;
 }
 
-.attachments li {
-  display: grid;
-  gap: 2px;
+.attachment-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 8px 12px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 6px;
 }
 
+.attachment-icon-cell {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+
+.attachment-thumb {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+.attachment-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.attachment-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.attachment-inline-badge {
+  color: var(--muted);
+  font-weight: 400;
+  flex-shrink: 0;
+}
+
 .attachment-meta {
   color: var(--muted);
   font-size: 12px;
+}
+
+.attachment-download {
+  flex-shrink: 0;
+}
+
+/* ---------- Raw tab ---------- */
+
+.raw-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.raw-section-title {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.raw-headers {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.raw-headers th,
+.raw-headers td {
+  text-align: left;
+  vertical-align: top;
+  padding: 4px 8px 4px 0;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+
+.raw-headers th {
+  color: var(--muted);
+  font-weight: 600;
+  white-space: nowrap;
+  width: 1%;
+}
+
+.raw-source-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.raw-source-toolbar .raw-section-title {
+  margin-right: auto;
+}
+
+.body-text-nowrap {
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/* ---------- Links tab ---------- */
+
+.links-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.links-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.links-list-url {
+  overflow-wrap: anywhere;
+  min-width: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
+
+.links-list-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .placeholder {
@@ -272,6 +747,13 @@ button:disabled {
 .banner {
   margin: 0;
   padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.banner p {
+  margin: 0;
 }
 
 .banner-error {
@@ -280,14 +762,155 @@ button:disabled {
   border-bottom: 1px solid var(--border);
 }
 
-@media (max-width: 720px) {
-  .panes {
-    grid-template-columns: 1fr;
-    grid-template-rows: minmax(180px, 40%) 1fr;
-  }
+/* ---------- Modal / Dialog (react-aria-components) ---------- */
 
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 40%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 100;
+}
+
+.modal {
+  width: 100%;
+  max-width: 420px;
+}
+
+.dialog {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  outline: none;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 20%);
+}
+
+.dialog-title {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.dialog-body {
+  margin: 0 0 16px;
+  color: var(--muted);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.shortcuts-list {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+
+.shortcuts-row {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.shortcuts-row kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+/* ---------- Menu / Popover (react-aria-components): the narrow toolbar's overflow menu ---------- */
+
+.popover {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 20%);
+  min-width: 200px;
+  z-index: 100;
+}
+
+.menu {
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  outline: none;
+}
+
+.menu-item {
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  outline: none;
+}
+
+.menu-item[data-hovered],
+.menu-item[data-focus-visible] {
+  background: var(--bg);
+}
+
+.menu-item[data-disabled] {
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Toasts (sonner) are themed via an inline `style` on `<Toaster>` itself
+   (see `src/toaster-theme.ts`) rather than CSS here, since sonner declares
+   its own palette variables scoped to `[data-sonner-toaster]`, which beats
+   a plain `:root` rule regardless of source order. */
+
+@media (max-width: 720px) {
+  /* `App` renders only one pane at a time below this breakpoint (see
+     `App.tsx` / `.panes-narrow` above), so there is no second track or row
+     to size here — just drop the border the two-pane desktop layout used
+     between them. */
   .list {
     border-right: 0;
-    border-bottom: 1px solid var(--border);
+  }
+
+  /* Touch targets: keep every interactive control at least 40px in its
+     smallest dimension. `.link-button` (the header "+N more" toggle) is
+     excluded — it is an inline text link, not a primary tap target. */
+  button:not(.link-button),
+  .button-link,
+  .tab,
+  .toolbar-switch,
+  .menu-item {
+    min-height: 40px;
+  }
+
+  .icon-button,
+  .search-clear-button,
+  .list-item-delete {
+    min-height: 40px;
+    min-width: 40px;
+  }
+}
+
+/* ---------- Row delete button: hover-only on pointer devices ---------- */
+
+@media (hover: hover) {
+  .list-item-delete {
+    opacity: 0;
+    transition: opacity 0.1s ease;
+  }
+
+  /* `data-focus-visible-within` (set by react-aria's GridListItem while a
+     descendant — this button — has keyboard focus) keeps the button
+     reachable and visible for keyboard users, not just the mouse. */
+  .list-item[data-hovered] .list-item-delete,
+  .list-item[data-focus-visible-within] .list-item-delete,
+  .list-item[data-selected] .list-item-delete,
+  .list-item-delete:focus-visible {
+    opacity: 1;
   }
 }

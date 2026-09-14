@@ -96,8 +96,10 @@ const mailCatcher = new SesMailCatcher(stack, 'MailCatcher', {
 
 AWS SDK SES クライアントの endpoint には `mailCatcher.mailApiEndpoint` を指定します。必要な場合は `mailApi.authorization` に `AWS_IAM` を指定し、送信元 Principal に `mailCatcher.grantMailApiInvoke()` で API 呼び出し権限を付与できます。`mailApi` の IP 制限には API Gateway の resource policy を使用します。
 
-`api-viewer` は読み取り専用の API Gateway + Lambda + Hono、`web-viewer` は非公開 S3 から配信する React アプリです。CloudFront で両方を同一オリジンとして配信します。viewer はデフォルトで作成され、`viewer.allowedIpCidrs` を省略した場合は、開発用途として組み込み CloudFront Function が IPv4/IPv6 のすべての範囲（`0.0.0.0/0` と `::/0`）を許可します。捕捉した HTML はサンドボックス化された iframe 内で表示します。独自の `cloudfront.IFunction` を `viewer.edgeFunction` に渡して、CloudFront のエッジ処理をアプリケーション側で管理することもできます。この場合、アクセス制御と SPA の rewrite は渡した Function 側で実装します。
+`api-viewer` は API Gateway + Lambda + Hono、`web-viewer` は非公開 S3 から配信する React アプリです。CloudFront で両方を同一オリジンとして配信します。viewer はデフォルトで作成され、`viewer.allowedIpCidrs` を省略した場合は、開発用途として組み込み CloudFront Function が IPv4/IPv6 のすべての範囲（`0.0.0.0/0` と `::/0`）を許可します。捕捉した HTML はサンドボックス化された iframe 内で表示します。独自の `cloudfront.IFunction` を `viewer.edgeFunction` に渡して、CloudFront のエッジ処理をアプリケーション側で管理することもできます。この場合、アクセス制御と SPA の rewrite は渡した Function 側で実装します。
 Basic 認証を利用する場合は CloudFront KeyValueStore を指定できます。KeyValueStore には `Basic ` prefix を含む期待する `Authorization` ヘッダー値を保存し、認証情報自体は CDK の template の外で管理します。IP 制限と Basic 認証は組み合わせて利用できます。
+
+viewer はデフォルトで、捕捉したメールを 1 件または全件削除できます。Lambda には message テーブルへの `dynamodb:DeleteItem` / `dynamodb:BatchWriteItem` と、ストレージバケットへの S3 削除権限が付与され、DELETE リクエストはクロスオリジン呼び出しから保護されます。`viewer.allowDelete: false` を指定すると viewer API は読み取り専用のままになり、これらの権限は付与されず、`/api/*` の CloudFront ビヘイビアも GET と HEAD のみに制限されます。
 
 Construct API、viewer の設定、IAM 権限、公開方法の詳細は [`packages/cdk/README.md`](./packages/cdk/README.md) を参照してください。
 

@@ -8,9 +8,10 @@ A serverless SES-compatible mail catcher for development and test environments.
 
 The construct creates an API Gateway endpoint that accepts SES v1
 `SendEmail`/`SendRawEmail` requests and SES v2 `SendEmail` requests. It
-stores canonical raw MIME in S3 and searchable metadata in DynamoDB. An
-CloudFront-hosted viewer uses a separate read-only API and is created by
-default.
+stores canonical raw MIME in S3 and searchable metadata in DynamoDB. A
+CloudFront-hosted viewer uses a separate API and is created by default;
+that API can delete captured messages unless `viewer.allowDelete` is set
+to `false`.
 
 #### Initializers <a name="Initializers" id="@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.Initializer"></a>
 
@@ -151,7 +152,7 @@ Any object.
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.mailApiEndpoint">mailApiEndpoint</a></code> | <code>string</code> | The endpoint to use as an AWS SDK SES client endpoint. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.mailFunction">mailFunction</a></code> | <code>aws-cdk-lib.aws_lambda.Function</code> | The Lambda function behind the SES-compatible mail API. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.table">table</a></code> | <code>aws-cdk-lib.aws_dynamodb.ITable</code> | The message metadata table. |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerApi">viewerApi</a></code> | <code>aws-cdk-lib.aws_apigateway.RestApi</code> | The read-only viewer API. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerApi">viewerApi</a></code> | <code>aws-cdk-lib.aws_apigateway.RestApi</code> | The viewer API. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerDistribution">viewerDistribution</a></code> | <code>aws-cdk-lib.aws_cloudfront.IDistribution</code> | The CloudFront distribution serving the viewer. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerFunction">viewerFunction</a></code> | <code>aws-cdk-lib.aws_lambda.Function</code> | The Lambda function behind the viewer API. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerUrl">viewerUrl</a></code> | <code>string</code> | The CloudFront URL serving the viewer. |
@@ -239,7 +240,9 @@ public readonly viewerApi: RestApi;
 
 - *Type:* aws-cdk-lib.aws_apigateway.RestApi
 
-The read-only viewer API.
+The viewer API.
+
+It can delete captured messages unless `viewer.allowDelete` is `false`.
 
 ---
 
@@ -553,10 +556,31 @@ const viewerOptions: ViewerOptions = { ... }
 
 | **Name** | **Type** | **Description** |
 | --- | --- | --- |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.allowDelete">allowDelete</a></code> | <code>boolean</code> | Lets the viewer delete one or all captured messages. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.allowedIpCidrs">allowedIpCidrs</a></code> | <code>string[]</code> | IPv4 and IPv6 CIDR ranges allowed at the CloudFront edge. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.basicAuth">basicAuth</a></code> | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.BasicAuthOptions">BasicAuthOptions</a></code> | Optional Basic authentication checked by the built-in CloudFront Function. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.edgeFunction">edgeFunction</a></code> | <code>aws-cdk-lib.aws_cloudfront.IFunction</code> | An optional user-managed CloudFront Function for viewer requests. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.timeout">timeout</a></code> | <code>aws-cdk-lib.Duration</code> | Lambda timeout for viewer API requests. |
+
+---
+
+##### `allowDelete`<sup>Optional</sup> <a name="allowDelete" id="@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.allowDelete"></a>
+
+```typescript
+public readonly allowDelete: boolean;
+```
+
+- *Type:* boolean
+- *Default:* true
+
+Lets the viewer delete one or all captured messages.
+
+When enabled, the viewer Lambda is granted `dynamodb:DeleteItem` and
+`dynamodb:BatchWriteItem` on the message table and S3 delete permissions
+on the storage bucket, and the `/api/*` CloudFront behavior allows all
+HTTP methods so DELETE requests reach the Lambda. When `false`, the
+viewer API stays read-only: no delete permissions are granted and the
+`/api/*` behavior only allows GET and HEAD.
 
 ---
 

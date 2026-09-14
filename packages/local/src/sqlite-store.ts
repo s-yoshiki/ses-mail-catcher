@@ -109,6 +109,18 @@ export class SqliteStore {
     };
   }
 
+  public delete(id: string): boolean {
+    const statement = this.db.prepare('DELETE FROM messages WHERE id = ?');
+    const result = statement.run(id);
+    return Number(result.changes) > 0;
+  }
+
+  public clear(): number {
+    const statement = this.db.prepare('DELETE FROM messages');
+    const result = statement.run();
+    return Number(result.changes);
+  }
+
   public close(): void {
     this.db.close();
   }

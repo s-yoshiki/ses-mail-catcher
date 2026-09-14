@@ -90,6 +90,20 @@ export interface ViewerOptions {
 
   /** Lambda timeout for viewer API requests. @default Duration.seconds(29) */
   readonly timeout?: Duration;
+
+  /**
+   * Lets the viewer delete one or all captured messages.
+   *
+   * When enabled, the viewer Lambda is granted `dynamodb:DeleteItem` and
+   * `dynamodb:BatchWriteItem` on the message table and S3 delete permissions
+   * on the storage bucket, and the `/api/*` CloudFront behavior allows all
+   * HTTP methods so DELETE requests reach the Lambda. When `false`, the
+   * viewer API stays read-only: no delete permissions are granted and the
+   * `/api/*` behavior only allows GET and HEAD.
+   *
+   * @default true
+   */
+  readonly allowDelete?: boolean;
 }
 
 /** Properties for {@link SesMailCatcher}. */
@@ -116,9 +130,10 @@ export interface SesMailCatcherProps {
  *
  * The construct creates an API Gateway endpoint that accepts SES v1
  * `SendEmail`/`SendRawEmail` requests and SES v2 `SendEmail` requests. It
- * stores canonical raw MIME in S3 and searchable metadata in DynamoDB. An
- * CloudFront-hosted viewer uses a separate read-only API and is created by
- * default.
+ * stores canonical raw MIME in S3 and searchable metadata in DynamoDB. A
+ * CloudFront-hosted viewer uses a separate API and is created by default;
+ * that API can delete captured messages unless `viewer.allowDelete` is set
+ * to `false`.
  */
 export class SesMailCatcher extends Construct {
   /** The Lambda function behind the SES-compatible mail API. */
@@ -136,7 +151,7 @@ export class SesMailCatcher extends Construct {
   /** The message metadata table. */
   public readonly table: dynamodb.ITable;
 
-  /** The read-only viewer API. */
+  /** The viewer API. It can delete captured messages unless `viewer.allowDelete` is `false`. */
   public readonly viewerApi: apigateway.RestApi;
 
   /** The Lambda function behind the viewer API. */
@@ -265,6 +280,7 @@ export class SesMailCatcher extends Construct {
     if (options.basicAuth !== undefined) {
       validateBasicAuth(options.basicAuth);
     }
+    const allowDelete = options.allowDelete ?? true;
 
     const viewerFunction = new lambda.Function(this, 'ViewerHandler', {
       code: lambda.Code.fromAsset(join(lambdaAssetDirectory, 'viewer-handler')),
@@ -272,6 +288,7 @@ export class SesMailCatcher extends Construct {
       environment: {
         METADATA_TABLE_NAME: this.table.tableName,
         STORAGE_BUCKET_NAME: this.bucket.bucketName,
+        ALLOW_DELETE: allowDelete ? 'true' : 'false',
       },
       handler: 'handler.handler',
       memorySize: 512,
@@ -280,6 +297,10 @@ export class SesMailCatcher extends Construct {
     });
     this.bucket.grantRead(viewerFunction);
     this.table.grantReadData(viewerFunction);
+    if (allowDelete) {
+      this.table.grant(viewerFunction, 'dynamodb:DeleteItem', 'dynamodb:BatchWriteItem');
+      this.bucket.grantDelete(viewerFunction);
+    }
 
     const viewerApi = new apigateway.RestApi(this, 'ViewerApi', {
       // The viewer Lambda returns raw MIME as a base64-encoded proxy response.
@@ -287,7 +308,9 @@ export class SesMailCatcher extends Construct {
       // type, and browsers commonly send `*/*`; register the wildcard so it
       // decodes the Lambda response before sending it to the browser.
       binaryMediaTypes: ['*/*'],
-      description: 'Read-only API for the ses-mail-catcher viewer',
+      description: allowDelete
+        ? 'API for the ses-mail-catcher viewer'
+        : 'Read-only API for the ses-mail-catcher viewer',
       endpointTypes: [apigateway.EndpointType.REGIONAL],
       deployOptions: {
         stageName: 'prod',
@@ -331,7 +354,7 @@ export class SesMailCatcher extends Construct {
       additionalBehaviors: {
         '/api/*': {
           origin: new origins.RestApiOrigin(viewerApi),
-          allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD,
+          allowedMethods: allowDelete ? cloudfront.AllowedMethods.ALLOW_ALL : cloudfront.AllowedMethods.ALLOW_GET_HEAD,
           cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
           functionAssociations: edgeAssociation,
           originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,

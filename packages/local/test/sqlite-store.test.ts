@@ -45,3 +45,50 @@ describe('SqliteStore', () => {
     store.close();
   });
 });
+
+describe('SqliteStore delete', () => {
+  it('deletes a single message and reports whether one was removed', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'ses-mail-catcher-'));
+    temporaryDirectories.push(directory);
+    const store = await SqliteStore.open(join(directory, 'mailbox.sqlite3'));
+    const message: StoredMessage = {
+      id: 'message-1',
+      toAddresses: ['recipient@example.com'],
+      ccAddresses: [],
+      bccAddresses: [],
+      replyToAddresses: [],
+      subject: 'Hello',
+      rawMime: Buffer.from('Subject: Hello\r\n\r\nBody'),
+      receivedAt: '2026-09-05T00:00:00.000Z',
+    };
+    store.save(message);
+
+    expect(store.delete(message.id)).toBe(true);
+    expect(store.get(message.id)).toBeUndefined();
+    expect(store.delete(message.id)).toBe(false);
+    store.close();
+  });
+
+  it('clears every message and returns the deleted row count', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'ses-mail-catcher-'));
+    temporaryDirectories.push(directory);
+    const store = await SqliteStore.open(join(directory, 'mailbox.sqlite3'));
+    for (const id of ['message-1', 'message-2', 'message-3']) {
+      store.save({
+        id,
+        toAddresses: ['recipient@example.com'],
+        ccAddresses: [],
+        bccAddresses: [],
+        replyToAddresses: [],
+        subject: 'Hello',
+        rawMime: Buffer.from('Subject: Hello\r\n\r\nBody'),
+        receivedAt: '2026-09-05T00:00:00.000Z',
+      });
+    }
+
+    expect(store.clear()).toBe(3);
+    expect(store.list()).toEqual([]);
+    expect(store.clear()).toBe(0);
+    store.close();
+  });
+});

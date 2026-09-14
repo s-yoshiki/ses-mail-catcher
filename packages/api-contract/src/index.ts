@@ -47,9 +47,17 @@ export type MessageListResponse = z.infer<typeof messageListResponseSchema>;
 
 export const healthResponseSchema = z.object({
   status: z.literal('ok'),
+  features: z.object({ delete: z.boolean() }).optional(),
 });
 
 export type HealthResponse = z.infer<typeof healthResponseSchema>;
+
+export const deleteMessagesResponseSchema = z.object({
+  deletedCount: z.number().int().nonnegative(),
+  hasMore: z.boolean(),
+});
+
+export type DeleteMessagesResponse = z.infer<typeof deleteMessagesResponseSchema>;
 
 export const apiErrorSchema = z.object({
   message: z.string(),

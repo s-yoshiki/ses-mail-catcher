@@ -1,10 +1,12 @@
 import {
   apiErrorSchema,
+  deleteMessagesResponseSchema,
+  healthResponseSchema,
   messageDetailSchema,
   messageListResponseSchema,
 } from '@ses-mail-catcher/api-contract';
 
-import type { MessageDetail, MessageListResponse } from './types.js';
+import type { DeleteMessagesResponse, HealthResponse, MessageDetail, MessageListResponse } from './types.js';
 
 export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
 
@@ -44,6 +46,45 @@ export class MailCatcherClient {
 
   public async getMessage(id: string, signal?: AbortSignal): Promise<MessageDetail> {
     return this.requestJson<MessageDetail>(`messages/${encodeURIComponent(id)}`, messageDetailSchema, signal);
+  }
+
+  public async getHealth(signal?: AbortSignal): Promise<HealthResponse> {
+    return this.requestJson<HealthResponse>('health', healthResponseSchema, signal);
+  }
+
+  /** Reads the raw `message/rfc822` body as text. */
+  public async getRaw(id: string, signal?: AbortSignal): Promise<string> {
+    const response = await this.fetchImpl(this.rawUrl(id), signal ? { signal } : {});
+    if (!response.ok) {
+      throw new Error(await readErrorMessage(response));
+    }
+    return response.text();
+  }
+
+  /** Deletes one message. Resolves on `204`; throws using the same error reading as the other requests. */
+  public async deleteMessage(id: string): Promise<void> {
+    const response = await this.fetchImpl(new URL(`messages/${encodeURIComponent(id)}`, this.base).toString(), {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      throw new Error(await readErrorMessage(response));
+    }
+  }
+
+  /**
+   * Deletes one batch of messages. A backend enforcing a time budget can stop
+   * early and return `hasMore: true`; callers repeat the call until it comes
+   * back `false`.
+   */
+  public async deleteAllMessages(): Promise<DeleteMessagesResponse> {
+    const response = await this.fetchImpl(new URL('messages', this.base).toString(), {
+      method: 'DELETE',
+      headers: { accept: 'application/json' },
+    });
+    if (!response.ok) {
+      throw new Error(await readErrorMessage(response));
+    }
+    return deleteMessagesResponseSchema.parse(await response.json());
   }
 
   public rawUrl(id: string): string {

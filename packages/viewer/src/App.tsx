@@ -1,114 +1,108 @@
-import { useCallback, useEffect, useState } from 'react';
-import type { JSX } from 'react';
+import type { JSX, ReactNode, RefObject } from 'react';
+import { Button } from 'react-aria-components';
 
-import type { MailCatcherClient } from './api.js';
-import { MessageDetailPane } from './components/MessageDetailPane.js';
 import { MessageList } from './components/MessageList.js';
 import { Toolbar } from './components/Toolbar.js';
-import type { MessageDetail, MessageSummary } from './types.js';
-
-const REFRESH_INTERVAL_MS = 5000;
+import type { MessageSummary } from './types.js';
 
 export interface AppProps {
-  readonly client: MailCatcherClient;
+  /** Already filtered by the search query, in list order. */
+  readonly messages: MessageSummary[];
+  /** The unfiltered count. */
+  readonly totalCount: number;
+  readonly newIds: ReadonlySet<string>;
+  readonly selectedId: string | undefined;
+  /** Below the Phase 5 breakpoint, only one of the list / detail panes is shown at a time. */
+  readonly isNarrow: boolean;
+  readonly listLoading: boolean;
+  readonly listError: string | undefined;
+  readonly onRetryList: () => void;
+  readonly autoRefresh: boolean;
+  readonly onAutoRefreshChange: (enabled: boolean) => void;
+  readonly onRefresh: () => void;
+  readonly isRefreshing: boolean;
+  readonly updatedAt: number | undefined;
+  readonly onSelect: (id: string) => void;
+  readonly searchQuery: string;
+  readonly onSearchChange: (value: string) => void;
+  readonly searchInputRef: RefObject<HTMLInputElement | null>;
+  readonly deleteSupported: boolean;
+  readonly onDeleteMessage: (id: string) => void;
+  readonly onDeleteAll: () => void;
+  readonly isDeletingAll: boolean;
+  readonly deleteAllOpen: boolean;
+  readonly onDeleteAllOpenChange: (open: boolean) => void;
+  readonly helpOpen: boolean;
+  readonly onHelpOpenChange: (open: boolean) => void;
+  /** The detail pane content, rendered by whichever route is active. */
+  readonly children: ReactNode;
 }
 
-interface DetailError {
-  readonly id: string;
-  readonly message: string;
-}
+/**
+ * The app's layout: toolbar, message list, and detail pane.
+ *
+ * This component is purely presentational. `src/router.tsx` owns fetching
+ * the message list and health status through TanStack Query and the current
+ * selection/search/tab through TanStack Router, and passes the results down
+ * as props.
+ */
+export const App = (props: AppProps): JSX.Element => {
+  const isFiltering = props.searchQuery.trim().length > 0;
 
-export const App = ({ client }: AppProps): JSX.Element => {
-  const [messages, setMessages] = useState<MessageSummary[]>([]);
-  const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
-  const [detail, setDetail] = useState<MessageDetail | undefined>(undefined);
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [listError, setListError] = useState<string | undefined>(undefined);
-  const [detailError, setDetailError] = useState<DetailError | undefined>(undefined);
-  // Only the first load blocks the list. Auto refresh replaces the rows in
-  // place, so a spinner every few seconds would just flicker.
-  const [initialLoad, setInitialLoad] = useState(true);
-
-  const refresh = useCallback((signal?: AbortSignal) => {
-    return client.listMessages(signal ? { signal } : {})
-      .then((response) => {
-        setMessages(response.messages);
-        setListError(undefined);
-      })
-      .catch((error: unknown) => {
-        if (!isAbort(error)) {
-          setListError(toMessage(error));
-        }
-      })
-      .finally(() => setInitialLoad(false));
-  }, [client]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    void refresh(controller.signal);
-    return () => controller.abort();
-  }, [refresh]);
-
-  useEffect(() => {
-    if (!autoRefresh) {
-      return;
-    }
-    const timer = setInterval(() => void refresh(), REFRESH_INTERVAL_MS);
-    return () => clearInterval(timer);
-  }, [autoRefresh, refresh]);
-
-  // A selection only stays active while the message is still listed, so a
-  // refreshed list cannot leave the detail pane showing a missing message.
-  const activeId = selectedId !== undefined && messages.some((message) => message.id === selectedId)
-    ? selectedId
-    : undefined;
-
-  useEffect(() => {
-    if (activeId === undefined) {
-      return;
-    }
-
-    const controller = new AbortController();
-    client.getMessage(activeId, controller.signal)
-      .then((loaded) => setDetail(loaded))
-      .catch((error: unknown) => {
-        if (!isAbort(error)) {
-          setDetailError({ id: activeId, message: toMessage(error) });
-        }
-      });
-    return () => controller.abort();
-  }, [client, activeId]);
+  // Below the Phase 5 breakpoint, the list and the detail pane are never
+  // shown together: `/` (no `selectedId`) shows the list, and
+  // `/messages/$messageId` shows only `children` (the routed detail pane,
+  // which carries its own Back button — see `MessageDetailPane`).
+  const showList = !props.isNarrow || props.selectedId === undefined;
+  const showDetail = !props.isNarrow || props.selectedId !== undefined;
 
   return (
     <div className="app">
       <Toolbar
-        messageCount={messages.length}
-        autoRefresh={autoRefresh}
-        onAutoRefreshChange={setAutoRefresh}
-        onRefresh={() => void refresh()}
+        totalCount={props.totalCount}
+        filteredCount={props.messages.length}
+        isFiltering={isFiltering}
+        searchQuery={props.searchQuery}
+        onSearchChange={props.onSearchChange}
+        searchInputRef={props.searchInputRef}
+        isNarrow={props.isNarrow}
+        autoRefresh={props.autoRefresh}
+        onAutoRefreshChange={props.onAutoRefreshChange}
+        onRefresh={props.onRefresh}
+        isRefreshing={props.isRefreshing}
+        updatedAt={props.updatedAt}
+        deleteSupported={props.deleteSupported}
+        onDeleteAll={props.onDeleteAll}
+        isDeletingAll={props.isDeletingAll}
+        deleteAllOpen={props.deleteAllOpen}
+        onDeleteAllOpenChange={props.onDeleteAllOpenChange}
+        helpOpen={props.helpOpen}
+        onHelpOpenChange={props.onHelpOpenChange}
       />
-      {listError === undefined ? undefined : <p className="banner banner-error">{listError}</p>}
-      <div className="panes">
-        <MessageList
-          messages={messages}
-          selectedId={activeId}
-          loading={initialLoad}
-          onSelect={setSelectedId}
-        />
-        <MessageDetailPane
-          client={client}
-          detail={detail?.id === activeId ? detail : undefined}
-          error={detailError !== undefined && detailError.id === activeId ? detailError.message : undefined}
-        />
+
+      {props.listError === undefined ? undefined : (
+        <div className="banner banner-error">
+          <p>{props.listError}</p>
+          <Button type="button" onPress={props.onRetryList}>Retry</Button>
+        </div>
+      )}
+
+      <div className={props.isNarrow ? 'panes panes-narrow' : 'panes'}>
+        {showList ? (
+          <MessageList
+            messages={props.messages}
+            totalCount={props.totalCount}
+            selectedId={props.selectedId}
+            loading={props.listLoading}
+            newIds={props.newIds}
+            searchActive={isFiltering}
+            deleteSupported={props.deleteSupported}
+            onSelect={props.onSelect}
+            onDelete={props.onDeleteMessage}
+          />
+        ) : undefined}
+        {showDetail ? props.children : undefined}
       </div>
     </div>
   );
-};
-
-const isAbort = (error: unknown): boolean => {
-  return error instanceof Error && error.name === 'AbortError';
-};
-
-const toMessage = (error: unknown): string => {
-  return error instanceof Error ? error.message : 'Unexpected error';
 };
