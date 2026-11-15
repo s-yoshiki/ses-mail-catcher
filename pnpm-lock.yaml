@@ -334,46 +334,46 @@ importers:
         specifier: workspace:*
         version: link:../cdk-lambda-viewer-handler
       '@types/node':
-        specifier: 'catalog:'
+        specifier: ^26.4.1
         version: 26.4.1
       aws-cdk-lib:
-        specifier: 'catalog:'
+        specifier: 2.268.0
         version: 2.268.0(constructs@10.8.1)
       commit-and-tag-version:
-        specifier: 'catalog:'
+        specifier: ^13.1.2
         version: 13.1.2(conventional-commits-filter@6.0.1)(conventional-commits-parser@7.1.2)
       constructs:
-        specifier: 'catalog:'
+        specifier: 10.8.1
         version: 10.8.1
       jsii:
-        specifier: 'catalog:'
+        specifier: ~6.0.12
         version: 6.0.12(supports-color@7.2.0)
       jsii-diff:
-        specifier: 'catalog:'
+        specifier: ^1.140.0
         version: 1.140.0(supports-color@7.2.0)
       jsii-docgen:
-        specifier: 'catalog:'
+        specifier: ^10.12.6
         version: 10.12.6(jsii-rosetta@6.0.13(supports-color@7.2.0))
       jsii-pacmak:
-        specifier: 'catalog:'
+        specifier: ^1.140.0
         version: 1.140.0(jsii-rosetta@6.0.13(supports-color@7.2.0))
       jsii-rosetta:
-        specifier: 'catalog:'
+        specifier: ~6.0.13
         version: 6.0.13(supports-color@7.2.0)
       oxlint:
-        specifier: 'catalog:'
+        specifier: ^1.81.0
         version: 1.93.0
       projen:
-        specifier: 'catalog:'
+        specifier: ^0.103.19
         version: 0.103.19(constructs@10.8.1)
       tsx:
-        specifier: 'catalog:'
+        specifier: ^4.23.13
         version: 4.23.13
       typescript:
-        specifier: 'catalog:'
+        specifier: ~7.0.2
         version: 7.0.2
       vitest:
-        specifier: 'catalog:'
+        specifier: ^5.0.0
         version: 5.0.0(@types/node@26.4.1)(msw@2.15.0(@types/node@26.4.1)(typescript@7.0.2))(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0))
 
   packages/cdk-lambda-mail-handler:
