@@ -4,17 +4,19 @@
   "type": "module",
   "scripts": {
     "build": "turbo run build",
-    "test": "turbo run test",
-    "lint": "turbo run lint",
-    "compile": "turbo run compile",
     "typecheck": "turbo run typecheck",
-    "package": "turbo run package",
-    "clean": "node scripts/clean.mjs",
-    "projen": "pnpm --filter @s-yoshiki/cdk-ses-mail-catcher projen",
+    "lint": "turbo run lint",
+    "lint:fix": "oxlint --fix .",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
-    "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build",
-    "verify": "pnpm check"
+    "test": "turbo run test",
+    "check": "pnpm lint && pnpm format:check && pnpm typecheck",
+    "check:fix": "pnpm lint:fix && pnpm format",
+    "verify": "pnpm check && pnpm test && pnpm build",
+    "compile": "turbo run compile",
+    "package": "turbo run package",
+    "clean": "node scripts/clean.mjs",
+    "projen": "pnpm --filter @s-yoshiki/cdk-ses-mail-catcher projen"
   },
   "devDependencies": {
     "oxfmt": "catalog:",
