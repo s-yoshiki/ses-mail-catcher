@@ -19,16 +19,31 @@ const callAws = async (service, args, region) => {
   return JSON.parse(stdout);
 };
 
-const stackResponse = await callAws('cloudformation', ['describe-stacks', '--stack-name', stackName], stackRegion);
-const outputs = Object.fromEntries((stackResponse.Stacks?.[0]?.Outputs ?? []).map((output) => [output.OutputKey, output.OutputValue]));
+const stackResponse = await callAws(
+  'cloudformation',
+  ['describe-stacks', '--stack-name', stackName],
+  stackRegion,
+);
+const outputs = Object.fromEntries(
+  (stackResponse.Stacks?.[0]?.Outputs ?? []).map((output) => [
+    output.OutputKey,
+    output.OutputValue,
+  ]),
+);
 const secretArn = outputs.ViewerCredentialsSecretArn;
 const keyValueStoreArn = outputs.EdgeAuthKeyValueStoreArn;
 
 if (secretArn === undefined || keyValueStoreArn === undefined) {
-  throw new Error(`stack ${stackName} is missing ViewerCredentialsSecretArn or EdgeAuthKeyValueStoreArn outputs`);
+  throw new Error(
+    `stack ${stackName} is missing ViewerCredentialsSecretArn or EdgeAuthKeyValueStoreArn outputs`,
+  );
 }
 
-const secretResponse = await callAws('secretsmanager', ['get-secret-value', '--secret-id', secretArn], stackRegion);
+const secretResponse = await callAws(
+  'secretsmanager',
+  ['get-secret-value', '--secret-id', secretArn],
+  stackRegion,
+);
 if (secretResponse.SecretString === undefined) {
   throw new Error('the viewer credentials secret does not contain SecretString');
 }
@@ -40,7 +55,10 @@ if (typeof credentials.username !== 'string' || typeof credentials.password !== 
 
 // CloudFront Function compares the base64 payload after the `Basic ` prefix.
 // Keep the password out of stdout, the synthesized template, and stack outputs.
-const basicCredential = Buffer.from(`${credentials.username}:${credentials.password}`, 'utf8').toString('base64');
+const basicCredential = Buffer.from(
+  `${credentials.username}:${credentials.password}`,
+  'utf8',
+).toString('base64');
 
 let keyValueStore;
 for (let attempt = 0; attempt < 60; attempt += 1) {
@@ -53,7 +71,9 @@ for (let attempt = 0; attempt < 60; attempt += 1) {
     break;
   }
   if (keyValueStore.Status !== 'PROVISIONING') {
-    throw new Error(`CloudFront KeyValueStore is not ready: ${keyValueStore.Status} ${keyValueStore.FailureReason ?? ''}`.trim());
+    throw new Error(
+      `CloudFront KeyValueStore is not ready: ${keyValueStore.Status} ${keyValueStore.FailureReason ?? ''}`.trim(),
+    );
   }
   await sleep(5000);
 }

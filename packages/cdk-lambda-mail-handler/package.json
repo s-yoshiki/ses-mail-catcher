@@ -2,8 +2,8 @@
   "name": "@ses-mail-catcher/cdk-mail-handler",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "license": "Apache-2.0",
+  "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "compile": "tsc -p tsconfig.build.json",
@@ -13,9 +13,9 @@
     "lint": "oxlint src test"
   },
   "devDependencies": {
-    "@types/node": "^26.4.1",
-    "oxlint": "^1.81.0",
-    "typescript": "~7.0.2",
-    "vitest": "^5.0.0"
+    "@types/node": "catalog:",
+    "oxlint": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

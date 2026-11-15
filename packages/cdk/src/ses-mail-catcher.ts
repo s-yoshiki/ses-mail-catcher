@@ -165,24 +165,28 @@ export class SesMailCatcher extends Construct {
     // a sub-day remainder is never deleted before the requested retention.
     const retentionDays = Math.max(1, Math.ceil(retentionSeconds / Duration.days(1).toSeconds()));
 
-    this.bucket = props.storage?.bucket ?? new s3.Bucket(this, 'MailBucket', {
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      encryption: s3.BucketEncryption.S3_MANAGED,
-      enforceSSL: true,
-      lifecycleRules: [{ expiration: Duration.days(retentionDays) }],
-      removalPolicy: RemovalPolicy.DESTROY,
-      // Captured mail is disposable. Without this, a bucket that still holds
-      // messages blocks deletion of the whole stack.
-      autoDeleteObjects: true,
-    });
+    this.bucket =
+      props.storage?.bucket ??
+      new s3.Bucket(this, 'MailBucket', {
+        blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+        encryption: s3.BucketEncryption.S3_MANAGED,
+        enforceSSL: true,
+        lifecycleRules: [{ expiration: Duration.days(retentionDays) }],
+        removalPolicy: RemovalPolicy.DESTROY,
+        // Captured mail is disposable. Without this, a bucket that still holds
+        // messages blocks deletion of the whole stack.
+        autoDeleteObjects: true,
+      });
 
-    this.table = props.storage?.table ?? new dynamodb.Table(this, 'MailTable', {
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      partitionKey: { name: 'pk', type: dynamodb.AttributeType.STRING },
-      sortKey: { name: 'sortKey', type: dynamodb.AttributeType.STRING },
-      removalPolicy: RemovalPolicy.DESTROY,
-      timeToLiveAttribute: 'expiresAt',
-    });
+    this.table =
+      props.storage?.table ??
+      new dynamodb.Table(this, 'MailTable', {
+        billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+        partitionKey: { name: 'pk', type: dynamodb.AttributeType.STRING },
+        sortKey: { name: 'sortKey', type: dynamodb.AttributeType.STRING },
+        removalPolicy: RemovalPolicy.DESTROY,
+        timeToLiveAttribute: 'expiresAt',
+      });
 
     const relay = props.relay ?? {};
     this.function = new lambda.Function(this, 'MailHandler', {
@@ -197,9 +201,15 @@ export class SesMailCatcher extends Construct {
         METADATA_TABLE_NAME: this.table.tableName,
         STORAGE_BUCKET_NAME: this.bucket.bucketName,
         RETENTION_SECONDS: String(retentionSeconds),
-        ...(relay.configurationSetName ? { SES_CONFIGURATION_SET_NAME: relay.configurationSetName } : {}),
-        ...(relay.fromEmailAddressIdentityArn ? { SES_FROM_EMAIL_ADDRESS_IDENTITY_ARN: relay.fromEmailAddressIdentityArn } : {}),
-        ...(relay.feedbackForwardingEmailAddress ? { SES_FEEDBACK_FORWARDING_EMAIL_ADDRESS: relay.feedbackForwardingEmailAddress } : {}),
+        ...(relay.configurationSetName
+          ? { SES_CONFIGURATION_SET_NAME: relay.configurationSetName }
+          : {}),
+        ...(relay.fromEmailAddressIdentityArn
+          ? { SES_FROM_EMAIL_ADDRESS_IDENTITY_ARN: relay.fromEmailAddressIdentityArn }
+          : {}),
+        ...(relay.feedbackForwardingEmailAddress
+          ? { SES_FEEDBACK_FORWARDING_EMAIL_ADDRESS: relay.feedbackForwardingEmailAddress }
+          : {}),
       },
       handler: 'mail-handler/mail-handler.handler',
       memorySize: 512,
@@ -214,10 +224,12 @@ export class SesMailCatcher extends Construct {
       this.bucket.grantRead(this.function);
       this.table.grantWriteData(this.function);
     } else {
-      this.function.addToRolePolicy(new iam.PolicyStatement({
-        actions: ['ses:SendEmail', 'ses:SendRawEmail'],
-        resources: this.relayResources(relay),
-      }));
+      this.function.addToRolePolicy(
+        new iam.PolicyStatement({
+          actions: ['ses:SendEmail', 'ses:SendRawEmail'],
+          resources: this.relayResources(relay),
+        }),
+      );
     }
 
     if (props.viewer !== undefined) {
@@ -228,7 +240,11 @@ export class SesMailCatcher extends Construct {
     }
   }
 
-  private createViewer(options: ViewerOptions): { function: lambda.Function; functionUrl: lambda.IFunctionUrl; url: string } {
+  private createViewer(options: ViewerOptions): {
+    function: lambda.Function;
+    functionUrl: lambda.IFunctionUrl;
+    url: string;
+  } {
     if (this.mode !== MailMode.CATCH) {
       throw new Error('the viewer only has messages to show in CATCH mode');
     }
@@ -236,14 +252,14 @@ export class SesMailCatcher extends Construct {
     const authType = options.authType ?? lambda.FunctionUrlAuthType.NONE;
     const allowedIpCidrs = options.allowedIpCidrs ?? [];
     if (
-      authType === lambda.FunctionUrlAuthType.NONE
-      && options.basicAuth === undefined
-      && allowedIpCidrs.length === 0
-      && options.allowPublicAccess !== true
+      authType === lambda.FunctionUrlAuthType.NONE &&
+      options.basicAuth === undefined &&
+      allowedIpCidrs.length === 0 &&
+      options.allowPublicAccess !== true
     ) {
       throw new Error(
-        'an unauthenticated viewer would expose captured mail to anyone with the URL; '
-        + 'set viewer.basicAuth, viewer.allowedIpCidrs, an authType of AWS_IAM, or acknowledge it with viewer.allowPublicAccess',
+        'an unauthenticated viewer would expose captured mail to anyone with the URL; ' +
+          'set viewer.basicAuth, viewer.allowedIpCidrs, an authType of AWS_IAM, or acknowledge it with viewer.allowPublicAccess',
       );
     }
 
@@ -258,10 +274,10 @@ export class SesMailCatcher extends Construct {
         ...(allowedIpCidrs.length > 0 ? { VIEWER_ALLOWED_CIDRS: allowedIpCidrs.join(',') } : {}),
         ...(options.basicAuth
           ? {
-            VIEWER_BASIC_AUTH_SECRET_ARN: options.basicAuth.secret.secretArn,
-            VIEWER_BASIC_AUTH_USERNAME_FIELD: usernameField,
-            VIEWER_BASIC_AUTH_PASSWORD_FIELD: passwordField,
-          }
+              VIEWER_BASIC_AUTH_SECRET_ARN: options.basicAuth.secret.secretArn,
+              VIEWER_BASIC_AUTH_USERNAME_FIELD: usernameField,
+              VIEWER_BASIC_AUTH_PASSWORD_FIELD: passwordField,
+            }
           : {}),
       },
       handler: 'viewer-handler/viewer-handler.handler',
@@ -302,12 +318,14 @@ export class SesMailCatcher extends Construct {
 
     const resources = [relay.fromEmailAddressIdentityArn];
     if (relay.configurationSetName) {
-      resources.push(Stack.of(this).formatArn({
-        service: 'ses',
-        resource: 'configuration-set',
-        resourceName: relay.configurationSetName,
-        arnFormat: ArnFormat.SLASH_RESOURCE_NAME,
-      }));
+      resources.push(
+        Stack.of(this).formatArn({
+          service: 'ses',
+          resource: 'configuration-set',
+          resourceName: relay.configurationSetName,
+          arnFormat: ArnFormat.SLASH_RESOURCE_NAME,
+        }),
+      );
     }
     return resources;
   }

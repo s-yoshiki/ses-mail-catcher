@@ -12,7 +12,11 @@ export interface MessageListProps {
 
 export const MessageList = (props: MessageListProps): JSX.Element => {
   if (props.loading && props.messages.length === 0) {
-    return <nav className="list"><p className="placeholder">Loading…</p></nav>;
+    return (
+      <nav className="list">
+        <p className="placeholder">Loading…</p>
+      </nav>
+    );
   }
 
   if (props.messages.length === 0) {
@@ -32,7 +36,9 @@ export const MessageList = (props: MessageListProps): JSX.Element => {
           <li key={message.id}>
             <button
               type="button"
-              className={message.id === props.selectedId ? 'list-item list-item-selected' : 'list-item'}
+              className={
+                message.id === props.selectedId ? 'list-item list-item-selected' : 'list-item'
+              }
               onClick={() => props.onSelect(message.id)}
             >
               <span className="list-item-subject">{subjectLabel(message.subject)}</span>

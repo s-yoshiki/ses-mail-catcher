@@ -75,8 +75,10 @@ export const parseBasicAuth = (header: string | undefined): ViewerCredentials | 
  * Hashing first keeps the compared buffers the same size whatever was sent.
  */
 const matchesCredentials = (provided: ViewerCredentials, expected: ViewerCredentials): boolean => {
-  return equalSecret(provided.username, expected.username)
-    && equalSecret(provided.password, expected.password);
+  return (
+    equalSecret(provided.username, expected.username) &&
+    equalSecret(provided.password, expected.password)
+  );
 };
 
 const equalSecret = (left: string, right: string): boolean => {
@@ -168,7 +170,11 @@ const parseIpV6 = (address: string): ParsedAddress | undefined => {
     return undefined;
   }
 
-  const groups = [...headGroups, ...Array.from({ length: Math.max(missing, 0) }, () => 0), ...tailGroups];
+  const groups = [
+    ...headGroups,
+    ...Array.from({ length: Math.max(missing, 0) }, () => 0),
+    ...tailGroups,
+  ];
   let value = 0n;
   for (const group of groups) {
     value = (value << 16n) | BigInt(group);
@@ -206,5 +212,5 @@ const expandGroups = (segment: string): number[] | undefined => {
 
 const maskFor = (prefix: number, bits: number): bigint => {
   const suffix = BigInt(bits - prefix);
-  return ((1n << BigInt(bits)) - 1n) >> suffix << suffix;
+  return (((1n << BigInt(bits)) - 1n) >> suffix) << suffix;
 };

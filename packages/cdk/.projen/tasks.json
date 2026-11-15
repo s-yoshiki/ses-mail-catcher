@@ -259,6 +259,9 @@
         },
         {
           "exec": "node scripts/copy-lambda-assets.mjs"
+        },
+        {
+          "exec": "node scripts/normalize-api-docs.mjs"
         }
       ]
     },

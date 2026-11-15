@@ -40,6 +40,8 @@ describe('resolvePort', () => {
 
 describe('parsePort', () => {
   it('names the source in the error message', () => {
-    expect(() => parsePort('nope', '--port')).toThrow('--port must be an integer between 0 and 65535');
+    expect(() => parsePort('nope', '--port')).toThrow(
+      '--port must be an integer between 0 and 65535',
+    );
   });
 });

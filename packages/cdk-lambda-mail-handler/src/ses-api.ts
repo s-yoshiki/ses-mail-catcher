@@ -38,9 +38,12 @@ export const toSesApiMailEvent = (
 
   const content = asRecord(input.Content);
   if (asRecord(content?.Template) !== undefined) {
-    throw new Error('Content.Template is not supported by the mail catcher API; use Content.Simple or Content.Raw');
+    throw new Error(
+      'Content.Template is not supported by the mail catcher API; use Content.Simple or Content.Raw',
+    );
   }
-  const rawData = asString(asRecord(content?.Raw)?.Data) ?? asString(asRecord(input.RawMessage)?.Data);
+  const rawData =
+    asString(asRecord(content?.Raw)?.Data) ?? asString(asRecord(input.RawMessage)?.Data);
   const destination = asRecord(input.Destination);
   const to = stringArray(destination?.ToAddresses);
   const cc = stringArray(destination?.CcAddresses);
@@ -48,9 +51,8 @@ export const toSesApiMailEvent = (
   const replyTo = stringArray(input.ReplyToAddresses);
   const rawMime = rawData === undefined ? undefined : Buffer.from(rawData, 'base64');
   const from = asString(input.FromEmailAddress) ?? readHeader(rawMime, 'From');
-  const subject = rawMime === undefined
-    ? readSimpleSubject(content)
-    : readHeader(rawMime, 'Subject');
+  const subject =
+    rawMime === undefined ? readSimpleSubject(content) : readHeader(rawMime, 'Subject');
   const rawTo = to.length > 0 ? to : splitHeaderAddresses(readHeader(rawMime, 'To'));
   const rawCc = cc.length > 0 ? cc : splitHeaderAddresses(readHeader(rawMime, 'Cc'));
   const rawBcc = bcc.length > 0 ? bcc : splitHeaderAddresses(readHeader(rawMime, 'Bcc'));
@@ -124,15 +126,16 @@ const createSimpleMime = (message: {
   readonly attachments: SesAttachment[];
 }): Buffer => {
   const body = createBody(message.text, message.html);
-  const content = message.attachments.length === 0
-    ? body
-    : createMixedBody(body, message.attachments);
+  const content =
+    message.attachments.length === 0 ? body : createMixedBody(body, message.attachments);
   const headers = [
     `From: ${safeHeader(message.from)}`,
     `To: ${message.to.map(safeHeader).join(', ')}`,
     ...(message.cc.length === 0 ? [] : [`Cc: ${message.cc.map(safeHeader).join(', ')}`]),
     ...(message.bcc.length === 0 ? [] : [`Bcc: ${message.bcc.map(safeHeader).join(', ')}`]),
-    ...(message.replyTo.length === 0 ? [] : [`Reply-To: ${message.replyTo.map(safeHeader).join(', ')}`]),
+    ...(message.replyTo.length === 0
+      ? []
+      : [`Reply-To: ${message.replyTo.map(safeHeader).join(', ')}`]),
     `Subject: ${encodeHeader(message.subject)}`,
     `Date: ${new Date().toUTCString()}`,
     'MIME-Version: 1.0',
@@ -195,8 +198,12 @@ const createMixedBody = (body: string, attachments: SesAttachment[]): string => 
       `Content-Type: ${attachment.contentType}; name="${encodeParameter(attachment.filename)}"`,
       `Content-Disposition: ${disposition}; filename="${encodeParameter(attachment.filename)}"`,
       'Content-Transfer-Encoding: base64',
-      ...(attachment.description === undefined ? [] : [`Content-Description: ${safeHeader(attachment.description)}`]),
-      ...(attachment.contentId === undefined ? [] : [`Content-ID: <${safeHeader(attachment.contentId)}>`]),
+      ...(attachment.description === undefined
+        ? []
+        : [`Content-Description: ${safeHeader(attachment.description)}`]),
+      ...(attachment.contentId === undefined
+        ? []
+        : [`Content-ID: <${safeHeader(attachment.contentId)}>`]),
       '',
       wrapRawBase64(attachment.rawContentBase64),
     );
@@ -232,7 +239,9 @@ const readAttachments = (value: unknown): SesAttachment[] => {
       ...(asString(attachment?.ContentDescription) === undefined
         ? {}
         : { description: asString(attachment?.ContentDescription) }),
-      ...(asString(attachment?.ContentId) === undefined ? {} : { contentId: asString(attachment?.ContentId) }),
+      ...(asString(attachment?.ContentId) === undefined
+        ? {}
+        : { contentId: asString(attachment?.ContentId) }),
     };
   });
 };
@@ -247,15 +256,11 @@ const readContentValue = (value: Record<string, unknown> | undefined): string | 
 
 const readMetadata = (input: Record<string, unknown>): Record<string, string> | undefined => {
   const tags = Array.isArray(input.EmailTags) ? input.EmailTags : [];
-  const entries = tags
-    .map(asRecord)
-    .flatMap((tag) => {
-      const name = asString(tag?.Name);
-      const value = asString(tag?.Value);
-      return name === undefined || value === undefined
-        ? []
-        : [[name, value] as const];
-    });
+  const entries = tags.map(asRecord).flatMap((tag) => {
+    const name = asString(tag?.Name);
+    const value = asString(tag?.Value);
+    return name === undefined || value === undefined ? [] : [[name, value] as const];
+  });
   return entries.length === 0 ? undefined : Object.fromEntries(entries);
 };
 
@@ -267,10 +272,18 @@ const readHeader = (rawMime: Buffer | undefined, name: string): string | undefin
 };
 
 const splitHeaderAddresses = (value: string | undefined): string[] => {
-  return value === undefined ? [] : value.split(',').map((entry) => entry.trim()).filter(Boolean);
+  return value === undefined
+    ? []
+    : value
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter(Boolean);
 };
 
-const requireString: (value: string | undefined, name: string) => asserts value is string = (value, name) => {
+const requireString: (value: string | undefined, name: string) => asserts value is string = (
+  value,
+  name,
+) => {
   if (value === undefined || value.length === 0 || /[\r\n]/.test(value)) {
     throw new Error(`${name} must be a non-empty string without CR or LF`);
   }
@@ -301,7 +314,7 @@ const wrapRawBase64 = (value: string): string => value.match(/.{1,76}/g)?.join(C
 
 const asRecord = (value: unknown): Record<string, unknown> | undefined => {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
-    ? value as Record<string, unknown>
+    ? (value as Record<string, unknown>)
     : undefined;
 };
 

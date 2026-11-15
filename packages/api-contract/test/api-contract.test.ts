@@ -72,18 +72,26 @@ describe('message API schemas', () => {
 
   test('rejects missing fields and wrong field types', () => {
     expect(messageSummarySchema.safeParse({ ...SUMMARY, subject: 42 }).success).toBe(false);
-    expect(messageSummarySchema.safeParse({ ...SUMMARY, toAddresses: 'recipient@example.com' }).success).toBe(false);
+    expect(
+      messageSummarySchema.safeParse({ ...SUMMARY, toAddresses: 'recipient@example.com' }).success,
+    ).toBe(false);
     expect(messageContentSchema.safeParse({ text: 'plain' }).success).toBe(false);
-    expect(messageDetailSchema.safeParse({ ...SUMMARY, content: { attachments: [] } }).success).toBe(false);
+    expect(
+      messageDetailSchema.safeParse({ ...SUMMARY, content: { attachments: [] } }).success,
+    ).toBe(false);
     expect(messageListResponseSchema.safeParse({ messages: 'not-an-array' }).success).toBe(false);
-    expect(messageAttachmentSchema.safeParse({ ...ATTACHMENT, inline: 'false' }).success).toBe(false);
+    expect(messageAttachmentSchema.safeParse({ ...ATTACHMENT, inline: 'false' }).success).toBe(
+      false,
+    );
   });
 });
 
 describe('simple response schemas', () => {
   test('accepts health and error responses', () => {
     expect(healthResponseSchema.parse({ status: 'ok' })).toEqual({ status: 'ok' });
-    expect(apiErrorSchema.parse({ message: 'Message not found' })).toEqual({ message: 'Message not found' });
+    expect(apiErrorSchema.parse({ message: 'Message not found' })).toEqual({
+      message: 'Message not found',
+    });
   });
 
   test('rejects other health statuses and non-string errors', () => {

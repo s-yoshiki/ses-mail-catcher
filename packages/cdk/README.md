@@ -12,20 +12,20 @@ metadata in DynamoDB.
 ## Usage
 
 ```ts
-import { Duration, Stack } from "aws-cdk-lib";
-import { Code, Function, Runtime } from "aws-cdk-lib/aws-lambda";
-import { MailMode, SesMailCatcher } from "@s-yoshiki/cdk-ses-mail-catcher";
+import { Duration, Stack } from 'aws-cdk-lib';
+import { Code, Function, Runtime } from 'aws-cdk-lib/aws-lambda';
+import { MailMode, SesMailCatcher } from '@s-yoshiki/cdk-ses-mail-catcher';
 
 const stack = new Stack();
-const mailCatcher = new SesMailCatcher(stack, "MailCatcher", {
+const mailCatcher = new SesMailCatcher(stack, 'MailCatcher', {
   retention: Duration.days(7),
   mode: MailMode.CATCH,
 });
 
-const applicationFunction = new Function(stack, "Application", {
+const applicationFunction = new Function(stack, 'Application', {
   runtime: Runtime.NODEJS_20_X,
-  handler: "index.handler",
-  code: Code.fromInline("exports.handler = async () => undefined;"),
+  handler: 'index.handler',
+  code: Code.fromInline('exports.handler = async () => undefined;'),
 });
 mailCatcher.grantSend(applicationFunction);
 ```
@@ -51,9 +51,9 @@ SES permissions in this mode.
 For production relay, opt in explicitly:
 
 ```ts
-new SesMailCatcher(stack, "MailRelay", {
+new SesMailCatcher(stack, 'MailRelay', {
   mode: MailMode.RELAY,
-  relay: { configurationSetName: "production" },
+  relay: { configurationSetName: 'production' },
 });
 ```
 
@@ -79,19 +79,19 @@ so the construct refuses to create a viewer without some form of access
 control. Two are built in and can be combined.
 
 ```ts
-import { Secret } from "aws-cdk-lib/aws-secretsmanager";
+import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 
-const credentials = new Secret(stack, "ViewerCredentials", {
+const credentials = new Secret(stack, 'ViewerCredentials', {
   generateSecretString: {
-    secretStringTemplate: JSON.stringify({ username: "developer" }),
-    generateStringKey: "password",
+    secretStringTemplate: JSON.stringify({ username: 'developer' }),
+    generateStringKey: 'password',
   },
 });
 
-const mailCatcher = new SesMailCatcher(stack, "MailCatcher", {
+const mailCatcher = new SesMailCatcher(stack, 'MailCatcher', {
   viewer: {
     basicAuth: { secret: credentials },
-    allowedIpCidrs: ["203.0.113.0/24"],
+    allowedIpCidrs: ['203.0.113.0/24'],
   },
 });
 ```

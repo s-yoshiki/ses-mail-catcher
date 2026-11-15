@@ -28,7 +28,10 @@ export const validateEvent: (event: unknown) => asserts event is SendMailEvent =
       requireString(item.key, 'attachments[].key');
     }
   }
-  if (value.metadata !== undefined && (typeof value.metadata !== 'object' || Array.isArray(value.metadata))) {
+  if (
+    value.metadata !== undefined &&
+    (typeof value.metadata !== 'object' || Array.isArray(value.metadata))
+  ) {
     throw new Error('metadata must be an object');
   }
 };
@@ -39,7 +42,11 @@ const requireString: (value: unknown, name: string) => asserts value is string =
   }
 };
 
-const requireAddresses: (value: unknown, name: string, required: boolean) => asserts value is string[] | undefined = (value, name, required) => {
+const requireAddresses: (
+  value: unknown,
+  name: string,
+  required: boolean,
+) => asserts value is string[] | undefined = (value, name, required) => {
   if (value === undefined && !required) return;
   if (!Array.isArray(value) || (required && value.length === 0)) {
     throw new Error(`${name} must be a non-empty array`);

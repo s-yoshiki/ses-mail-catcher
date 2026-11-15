@@ -10,7 +10,11 @@ import type { StoredMessage } from '../src/types.js';
 const temporaryDirectories: string[] = [];
 
 afterEach(async () => {
-  await Promise.all(temporaryDirectories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })));
+  await Promise.all(
+    temporaryDirectories
+      .splice(0)
+      .map((directory) => rm(directory, { recursive: true, force: true })),
+  );
 });
 
 describe('SqliteStore', () => {
@@ -31,16 +35,18 @@ describe('SqliteStore', () => {
     };
 
     store.save(message);
-    expect(store.list()).toEqual([{
-      id: message.id,
-      fromAddress: message.fromAddress,
-      toAddresses: message.toAddresses,
-      ccAddresses: message.ccAddresses,
-      bccAddresses: message.bccAddresses,
-      subject: message.subject,
-      receivedAt: message.receivedAt,
-      size: message.rawMime.byteLength,
-    }]);
+    expect(store.list()).toEqual([
+      {
+        id: message.id,
+        fromAddress: message.fromAddress,
+        toAddresses: message.toAddresses,
+        ccAddresses: message.ccAddresses,
+        bccAddresses: message.bccAddresses,
+        subject: message.subject,
+        receivedAt: message.receivedAt,
+        size: message.rawMime.byteLength,
+      },
+    ]);
     expect(store.get(message.id)).toEqual(message);
     store.close();
   });

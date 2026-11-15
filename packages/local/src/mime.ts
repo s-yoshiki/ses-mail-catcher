@@ -114,19 +114,16 @@ const createMultipartMixed = (
   attachments: SesV2Attachment[],
   boundary: string,
 ): string => {
-  const parts = [
-    `--${boundary}`,
-    `Content-Type: ${body.contentType}`,
-    '',
-    body.content,
-  ];
+  const parts = [`--${boundary}`, `Content-Type: ${body.contentType}`, '', body.content];
 
   for (const attachment of attachments) {
     parts.push(
       `--${boundary}`,
       `Content-Type: ${attachment.ContentType ?? 'application/octet-stream'}; name="${escapeHeader(attachment.FileName)}"`,
       `Content-Disposition: ${attachment.ContentDisposition ?? 'attachment'}; filename="${escapeHeader(attachment.FileName)}"`,
-      ...(attachment.ContentDescription ? [`Content-Description: ${escapeHeader(attachment.ContentDescription)}`] : []),
+      ...(attachment.ContentDescription
+        ? [`Content-Description: ${escapeHeader(attachment.ContentDescription)}`]
+        : []),
       'Content-Transfer-Encoding: base64',
       '',
       wrapBase64(Buffer.from(attachment.RawContent, 'base64').toString('base64')),
@@ -143,17 +140,28 @@ const renderTextPart = (
   includeHeaders = true,
 ): string => {
   const headers = includeHeaders
-    ? [`Content-Type: ${mediaType}; charset=${value.Charset ?? 'UTF-8'}`, 'Content-Transfer-Encoding: base64', '']
+    ? [
+        `Content-Type: ${mediaType}; charset=${value.Charset ?? 'UTF-8'}`,
+        'Content-Transfer-Encoding: base64',
+        '',
+      ]
     : [];
   return [...headers, wrapBase64(Buffer.from(value.Data, 'utf8').toString('base64'))].join('\r\n');
 };
 
 const parseAddressList = (value: string | undefined): string[] => {
-  return value ? value.split(',').map((item) => item.trim()).filter(Boolean) : [];
+  return value
+    ? value
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean)
+    : [];
 };
 
 const encodeHeader = (value: string): string => {
-  return /^[\x20-\x7e]*$/.test(value) ? value : `=?UTF-8?B?${Buffer.from(value, 'utf8').toString('base64')}?=`;
+  return /^[\x20-\x7e]*$/.test(value)
+    ? value
+    : `=?UTF-8?B?${Buffer.from(value, 'utf8').toString('base64')}?=`;
 };
 
 const decodeHeader = (value: string): string => {

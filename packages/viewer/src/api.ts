@@ -39,11 +39,19 @@ export class MailCatcherClient {
       query.set('limit', String(options.limit));
     }
     const suffix = query.size > 0 ? `?${query.toString()}` : '';
-    return this.requestJson<MessageListResponse>(`messages${suffix}`, messageListResponseSchema, options.signal);
+    return this.requestJson<MessageListResponse>(
+      `messages${suffix}`,
+      messageListResponseSchema,
+      options.signal,
+    );
   }
 
   public async getMessage(id: string, signal?: AbortSignal): Promise<MessageDetail> {
-    return this.requestJson<MessageDetail>(`messages/${encodeURIComponent(id)}`, messageDetailSchema, signal);
+    return this.requestJson<MessageDetail>(
+      `messages/${encodeURIComponent(id)}`,
+      messageDetailSchema,
+      signal,
+    );
   }
 
   public rawUrl(id: string): string {

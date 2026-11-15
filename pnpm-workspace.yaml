@@ -1,14 +1,15 @@
 # Workspace definition for the pnpm + Turborepo monorepo.
 
 packages:
+  - configs/*
   - packages/*
   - examples/*
 
 onlyBuiltDependencies:
-  - "@parcel/watcher"
+  - '@parcel/watcher'
   - unrs-resolver
 allowBuilds:
-  "@parcel/watcher": true
+  '@parcel/watcher': true
   esbuild: true
   msw: true
   unrs-resolver: true
@@ -18,3 +19,30 @@ minimumReleaseAgeExclude:
   - aws-cdk-lib@2.268.0
   - projen@0.103.16
   - vitest@5.0.0
+
+catalog:
+  '@types/node': '^26.4.1'
+  '@types/react': '^19.2.18'
+  '@types/react-dom': '^19.2.7'
+  '@vitejs/plugin-react': '^6.1.1'
+  'aws-cdk-lib': '2.268.0'
+  'commit-and-tag-version': '^13.1.2'
+  'constructs': '10.8.1'
+  'jsii': '~6.0.12'
+  'jsii-diff': '^1.140.0'
+  'jsii-docgen': '^10.12.6'
+  'jsii-pacmak': '^1.140.0'
+  'jsii-rosetta': '~6.0.13'
+  'msw': '^2.11.8'
+  'oxfmt': '0.78.0'
+  'oxlint': '1.93.0'
+  'turbo': '2.10.12'
+  'postal-mime': '^3.0.0'
+  'projen': '^0.103.19'
+  'react': '^19.2.8'
+  'react-dom': '^19.2.8'
+  'tsx': '^4.23.13'
+  'typescript': '~7.0.2'
+  'vite': '^8.2.2'
+  'vitest': '^5.0.0'
+  'zod': '^4.1.12'

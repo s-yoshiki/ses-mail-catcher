@@ -4,7 +4,9 @@ import { DB_PATH_ENV, resolveDbPath } from '../src/db-path.js';
 
 describe('resolveDbPath', () => {
   it('prefers an explicit path', () => {
-    expect(resolveDbPath({ [DB_PATH_ENV]: '/tmp/custom.sqlite3' }, 'linux', '/home/tester')).toBe('/tmp/custom.sqlite3');
+    expect(resolveDbPath({ [DB_PATH_ENV]: '/tmp/custom.sqlite3' }, 'linux', '/home/tester')).toBe(
+      '/tmp/custom.sqlite3',
+    );
   });
 
   it('uses the macOS cache directory', () => {

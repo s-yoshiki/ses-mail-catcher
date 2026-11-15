@@ -59,20 +59,30 @@ describe('message schemas', () => {
     };
 
     expect(messageDetailSchema.parse(detail)).toEqual(detail);
-    expect(messageListResponseSchema.parse({ messages: [summary] })).toEqual({ messages: [summary] });
+    expect(messageListResponseSchema.parse({ messages: [summary] })).toEqual({
+      messages: [summary],
+    });
   });
 
   test('accepts the health and API error responses', () => {
     expect(healthResponseSchema.parse({ status: 'ok' })).toEqual({ status: 'ok' });
-    expect(apiErrorSchema.parse({ message: 'Message not found' })).toEqual({ message: 'Message not found' });
+    expect(apiErrorSchema.parse({ message: 'Message not found' })).toEqual({
+      message: 'Message not found',
+    });
   });
 
   test('rejects missing or incorrectly typed contract fields', () => {
     expect(messageSummarySchema.safeParse({ ...summary, size: '128' }).success).toBe(false);
-    expect(messageSummarySchema.safeParse({ ...summary, toAddresses: 'recipient@example.com' }).success).toBe(false);
-    expect(messageAttachmentSchema.safeParse({ ...attachment, inline: 'false' }).success).toBe(false);
+    expect(
+      messageSummarySchema.safeParse({ ...summary, toAddresses: 'recipient@example.com' }).success,
+    ).toBe(false);
+    expect(messageAttachmentSchema.safeParse({ ...attachment, inline: 'false' }).success).toBe(
+      false,
+    );
     expect(messageContentSchema.safeParse({ text: 'plain' }).success).toBe(false);
-    expect(messageDetailSchema.safeParse({ ...summary, content: { attachments: [] } }).success).toBe(false);
+    expect(
+      messageDetailSchema.safeParse({ ...summary, content: { attachments: [] } }).success,
+    ).toBe(false);
     expect(messageListResponseSchema.safeParse({ messages: [{}] }).success).toBe(false);
     expect(healthResponseSchema.safeParse({ status: 'healthy' }).success).toBe(false);
     expect(apiErrorSchema.safeParse({ error: 'failed' }).success).toBe(false);

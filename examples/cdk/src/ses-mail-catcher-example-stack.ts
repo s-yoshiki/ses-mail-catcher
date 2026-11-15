@@ -64,10 +64,12 @@ export class SesMailCatcherExampleStack extends Stack {
         origin: origins.FunctionUrlOrigin.withOriginAccessControl(mailCatcher.viewerFunctionUrl),
         allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD,
         cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
-        functionAssociations: [{
-          eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
-          function: edgeBasicAuthFunction,
-        }],
+        functionAssociations: [
+          {
+            eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
+            function: edgeBasicAuthFunction,
+          },
+        ],
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
       },
       additionalBehaviors: {

@@ -32,7 +32,11 @@ const postSes = (
 
 afterEach(async () => {
   await Promise.all(servers.splice(0).map((server) => server.close()));
-  await Promise.all(temporaryDirectories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })));
+  await Promise.all(
+    temporaryDirectories
+      .splice(0)
+      .map((directory) => rm(directory, { recursive: true, force: true })),
+  );
 });
 
 const seed = async (): Promise<{ url: string; id: string }> => {
@@ -49,16 +53,18 @@ const seed = async (): Promise<{ url: string; id: string }> => {
       Simple: {
         Subject: { Data: 'Receipt' },
         Body: { Text: { Data: 'plain body' }, Html: { Data: '<p>html body</p>' } },
-        Attachments: [{
-          FileName: 'invoice.pdf',
-          ContentType: 'application/pdf',
-          RawContent: Buffer.from('%PDF-1.4').toString('base64'),
-        }],
+        Attachments: [
+          {
+            FileName: 'invoice.pdf',
+            ContentType: 'application/pdf',
+            RawContent: Buffer.from('%PDF-1.4').toString('base64'),
+          },
+        ],
       },
     },
   });
 
-  const { MessageId } = await response.json() as { MessageId: string };
+  const { MessageId } = (await response.json()) as { MessageId: string };
   return { url: server.url, id: MessageId };
 };
 
@@ -106,13 +112,15 @@ it('returns the decoded body parts and attachment metadata', async () => {
 
   expect(detail.content.text).toContain('plain body');
   expect(detail.content.html).toContain('<p>html body</p>');
-  expect(detail.content.attachments).toEqual([{
-    index: 0,
-    filename: 'invoice.pdf',
-    contentType: 'application/pdf',
-    size: 8,
-    inline: false,
-  }]);
+  expect(detail.content.attachments).toEqual([
+    {
+      index: 0,
+      filename: 'invoice.pdf',
+      contentType: 'application/pdf',
+      size: 8,
+      inline: false,
+    },
+  ]);
 });
 
 it('downloads an attachment with its own content type', async () => {
@@ -122,7 +130,9 @@ it('downloads an attachment with its own content type', async () => {
   expect(response.status).toBe(200);
   expect(response.headers.get('content-type')).toBe('application/pdf');
   expect(response.headers.get('content-disposition')).toContain('invoice.pdf');
-  expect(new Uint8Array(await response.arrayBuffer())).toEqual(new TextEncoder().encode('%PDF-1.4'));
+  expect(new Uint8Array(await response.arrayBuffer())).toEqual(
+    new TextEncoder().encode('%PDF-1.4'),
+  );
 });
 
 it('reports missing messages and attachments', async () => {
@@ -132,8 +142,12 @@ it('reports missing messages and attachments', async () => {
   const missingAttachment = await fetch(`${url}/api/messages/${id}/attachments/9`);
   expect(missingMessage.status).toBe(404);
   expect(missingAttachment.status).toBe(404);
-  expect(apiErrorSchema.parse(await missingMessage.json())).toEqual({ message: 'Message not found' });
-  expect(apiErrorSchema.parse(await missingAttachment.json())).toEqual({ message: 'Attachment not found' });
+  expect(apiErrorSchema.parse(await missingMessage.json())).toEqual({
+    message: 'Message not found',
+  });
+  expect(apiErrorSchema.parse(await missingAttachment.json())).toEqual({
+    message: 'Attachment not found',
+  });
 });
 
 it('keeps serving the original store routes', async () => {
@@ -146,13 +160,13 @@ it('keeps serving the original store routes', async () => {
   expect(healthResponseSchema.parse(await health.json())).toEqual({ status: 'ok' });
   expect(healthResponseSchema.parse(await apiHealth.json())).toEqual({ status: 'ok' });
 
-  const legacy = await (await fetch(`${url}/store/${id}`)).json() as { rawMime: string };
+  const legacy = (await (await fetch(`${url}/store/${id}`)).json()) as { rawMime: string };
   expect(Buffer.from(legacy.rawMime, 'base64').toString('utf8')).toContain('Subject: Receipt');
   const legacyRaw = await fetch(`${url}/store/${id}/raw`);
   expect(legacyRaw.status).toBe(200);
   expect(await legacyRaw.text()).toContain('Subject: Receipt');
 
-  const legacyList = await (await fetch(`${url}/store`)).json() as { messages: unknown[] };
+  const legacyList = (await (await fetch(`${url}/store`)).json()) as { messages: unknown[] };
   expect(legacyList.messages).toHaveLength(1);
 });
 

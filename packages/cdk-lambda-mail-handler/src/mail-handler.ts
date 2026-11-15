@@ -66,21 +66,28 @@ export const processMail = async (
 
   const messageId = randomUUID();
   const createdAt = new Date().toISOString();
-  const rawMime = mailEvent.rawMimeBase64 === undefined
-    ? Buffer.from(await createMimeMessage(
-      event,
-      messageId,
-      createdAt,
-      (attachment) => readAttachment(dependencies.s3, dependencies.sdk, attachment.bucket, attachment.key),
-    ), 'utf8')
-    : Buffer.from(mailEvent.rawMimeBase64, 'base64');
+  const rawMime =
+    mailEvent.rawMimeBase64 === undefined
+      ? Buffer.from(
+          await createMimeMessage(event, messageId, createdAt, (attachment) =>
+            readAttachment(dependencies.s3, dependencies.sdk, attachment.bucket, attachment.key),
+          ),
+          'utf8',
+        )
+      : Buffer.from(mailEvent.rawMimeBase64, 'base64');
 
   if (config.mode === 'RELAY') {
     const relayParameters = {
       Content: { Raw: { Data: rawMime } },
-      ...(config.relay?.configurationSetName ? { ConfigurationSetName: config.relay.configurationSetName } : {}),
-      ...(config.relay?.fromEmailAddressIdentityArn ? { FromEmailAddressIdentityArn: config.relay.fromEmailAddressIdentityArn } : {}),
-      ...(config.relay?.feedbackForwardingEmailAddress ? { FeedbackForwardingEmailAddress: config.relay.feedbackForwardingEmailAddress } : {}),
+      ...(config.relay?.configurationSetName
+        ? { ConfigurationSetName: config.relay.configurationSetName }
+        : {}),
+      ...(config.relay?.fromEmailAddressIdentityArn
+        ? { FromEmailAddressIdentityArn: config.relay.fromEmailAddressIdentityArn }
+        : {}),
+      ...(config.relay?.feedbackForwardingEmailAddress
+        ? { FeedbackForwardingEmailAddress: config.relay.feedbackForwardingEmailAddress }
+        : {}),
     };
     await dependencies.ses.send(new dependencies.sdk.SendEmailCommand(relayParameters));
     return { messageId, mode: 'RELAY', createdAt };
@@ -88,19 +95,23 @@ export const processMail = async (
 
   const date = createdAt.slice(0, 10).split('-');
   const key = `messages/${date[0]}/${date[1]}/${date[2]}/${messageId}.eml`;
-  await dependencies.s3.send(new dependencies.sdk.PutObjectCommand({
-    Bucket: config.bucketName,
-    Key: key,
-    Body: rawMime,
-    ContentType: 'message/rfc822',
-    Metadata: { messageid: messageId },
-  }));
+  await dependencies.s3.send(
+    new dependencies.sdk.PutObjectCommand({
+      Bucket: config.bucketName,
+      Key: key,
+      Body: rawMime,
+      ContentType: 'message/rfc822',
+      Metadata: { messageid: messageId },
+    }),
+  );
 
   const expiresAt = Math.floor(Date.now() / 1000) + config.retentionSeconds;
-  await dependencies.ddb.send(new dependencies.sdk.PutItemCommand({
-    TableName: config.tableName,
-    Item: createMetadataItem(event, messageId, createdAt, key, rawMime.byteLength, expiresAt),
-  }));
+  await dependencies.ddb.send(
+    new dependencies.sdk.PutItemCommand({
+      TableName: config.tableName,
+      Item: createMetadataItem(event, messageId, createdAt, key, rawMime.byteLength, expiresAt),
+    }),
+  );
 
   return { messageId, mode: 'CATCH', createdAt, s3Key: key };
 };
@@ -126,9 +137,12 @@ export const serveSesApi = async (
   }
 
   try {
-    const body = request.body === undefined
-      ? ''
-      : Buffer.from(request.body, request.isBase64Encoded === true ? 'base64' : 'utf8').toString('utf8');
+    const body =
+      request.body === undefined
+        ? ''
+        : Buffer.from(request.body, request.isBase64Encoded === true ? 'base64' : 'utf8').toString(
+            'utf8',
+          );
     const parsed: unknown = JSON.parse(body);
     const input = asRecord(parsed);
     if (input === undefined) {
@@ -201,11 +215,16 @@ const requiredEnvironment = (name: string): string => {
 
 const asRecord = (value: unknown): Record<string, unknown> | undefined => {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
-    ? value as Record<string, unknown>
+    ? (value as Record<string, unknown>)
     : undefined;
 };
 
-const readAttachment = async (client: CommandClient, sdk: AwsSdkModules, bucket: string, key: string): Promise<Uint8Array> => {
+const readAttachment = async (
+  client: CommandClient,
+  sdk: AwsSdkModules,
+  bucket: string,
+  key: string,
+): Promise<Uint8Array> => {
   const response = await client.send(new sdk.GetObjectCommand({ Bucket: bucket, Key: key }));
   const body = (response as { Body?: unknown }).Body;
   if (!body) throw new Error('attachment S3 object has no body');

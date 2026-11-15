@@ -38,10 +38,10 @@ ses-mail-catcher --port 8005 --db-path ./tmp/mailbox.sqlite3
 The listening address is configurable the same way. Command line flags win over
 the environment.
 
-| Setting | Environment variable | Flag | Default |
-| --- | --- | --- | --- |
-| Bind address | `SES_MAIL_CATCHER_HOST` | `--host` | `127.0.0.1` |
-| Port | `SES_MAIL_CATCHER_PORT` | `--port` | `8005` |
+| Setting       | Environment variable       | Flag        | Default            |
+| ------------- | -------------------------- | ----------- | ------------------ |
+| Bind address  | `SES_MAIL_CATCHER_HOST`    | `--host`    | `127.0.0.1`        |
+| Port          | `SES_MAIL_CATCHER_PORT`    | `--port`    | `8005`             |
 | Database path | `SES_MAIL_CATCHER_DB_PATH` | `--db-path` | OS cache directory |
 
 ## Use with AWS SDK for JavaScript v3
@@ -66,13 +66,13 @@ The request/inspection shape is inspired by [aws-ses-v2-local](https://github.co
 The shared TypeScript types and Zod schemas are maintained in
 [`packages/api-contract/src/index.ts`](../api-contract/src/index.ts).
 
-| Route | Response |
-| --- | --- |
-| `GET /api/messages?limit=` | `{ messages }` |
-| `GET /api/messages/:id` | message with `content.text`, `content.html`, `content.attachments` |
-| `GET /api/messages/:id/raw` | `message/rfc822` |
-| `GET /api/messages/:id/attachments/:index` | the attachment bytes |
-| `GET /api/health` | `{ status: 'ok' }` |
+| Route                                      | Response                                                           |
+| ------------------------------------------ | ------------------------------------------------------------------ |
+| `GET /api/messages?limit=`                 | `{ messages }`                                                     |
+| `GET /api/messages/:id`                    | message with `content.text`, `content.html`, `content.attachments` |
+| `GET /api/messages/:id/raw`                | `message/rfc822`                                                   |
+| `GET /api/messages/:id/attachments/:index` | the attachment bytes                                               |
+| `GET /api/health`                          | `{ status: 'ok' }`                                                 |
 
 The original routes are kept as aliases:
 

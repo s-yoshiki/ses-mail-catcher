@@ -123,7 +123,9 @@ const parseStringArray = (value: string): string[] => {
 };
 
 const migrateSchema = (db: DatabaseSync): void => {
-  const columns = db.prepare('PRAGMA table_info(messages)').all() as unknown as Array<{ name: string }>;
+  const columns = db.prepare('PRAGMA table_info(messages)').all() as unknown as Array<{
+    name: string;
+  }>;
   if (columns.length === 0) {
     db.exec(`
       CREATE TABLE messages (

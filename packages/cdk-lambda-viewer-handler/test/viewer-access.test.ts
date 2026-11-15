@@ -54,12 +54,14 @@ describe('isIpAllowed', () => {
 
 describe('evaluateAccess', () => {
   test('allows a request when nothing is configured', () => {
-    expect(evaluateAccess({
-      sourceIp: '203.0.113.9',
-      authorization: undefined,
-      allowedCidrs: [],
-      credentials: undefined,
-    }).allowed).toBe(true);
+    expect(
+      evaluateAccess({
+        sourceIp: '203.0.113.9',
+        authorization: undefined,
+        allowedCidrs: [],
+        credentials: undefined,
+      }).allowed,
+    ).toBe(true);
   });
 
   test('rejects an address outside the allow list without prompting', () => {
@@ -75,12 +77,14 @@ describe('evaluateAccess', () => {
   });
 
   test('rejects a request with no source address when a range is configured', () => {
-    expect(evaluateAccess({
-      sourceIp: undefined,
-      authorization: undefined,
-      allowedCidrs: ['203.0.113.0/24'],
-      credentials: undefined,
-    }).allowed).toBe(false);
+    expect(
+      evaluateAccess({
+        sourceIp: undefined,
+        authorization: undefined,
+        allowedCidrs: ['203.0.113.0/24'],
+        credentials: undefined,
+      }).allowed,
+    ).toBe(false);
   });
 
   test('challenges a caller that sent no credentials', () => {
@@ -115,11 +119,13 @@ describe('evaluateAccess', () => {
   });
 
   test('requires both checks to pass when both are configured', () => {
-    expect(evaluateAccess({
-      sourceIp: '203.0.113.9',
-      authorization: basicHeader('reader', 'correct horse'),
-      allowedCidrs: ['203.0.113.0/24'],
-      credentials: CREDENTIALS,
-    }).allowed).toBe(true);
+    expect(
+      evaluateAccess({
+        sourceIp: '203.0.113.9',
+        authorization: basicHeader('reader', 'correct horse'),
+        allowedCidrs: ['203.0.113.0/24'],
+        credentials: CREDENTIALS,
+      }).allowed,
+    ).toBe(true);
   });
 });

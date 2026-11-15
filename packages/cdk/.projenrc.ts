@@ -5,10 +5,21 @@ const project = new awscdk.AwsCdkConstructLibrary({
   bumpPackage: 'commit-and-tag-version@^13',
   cdkVersion: '2.268.0',
   constructsVersion: '10.8.1',
-  description: 'AWS CDK Construct Library for capturing and inspecting emails sent through Amazon SES',
+  description:
+    'AWS CDK Construct Library for capturing and inspecting emails sent through Amazon SES',
   homepage: 'https://github.com/s-yoshiki/ses-mail-catcher',
   jsiiVersion: '~6.0.12',
-  keywords: ['aws-cdk', 'aws-ses', 'constructs', 'email', 'mail', 'mail-catcher', 'serverless', 'testing', 'jsii'],
+  keywords: [
+    'aws-cdk',
+    'aws-ses',
+    'constructs',
+    'email',
+    'mail',
+    'mail-catcher',
+    'serverless',
+    'testing',
+    'jsii',
+  ],
   name: '@s-yoshiki/cdk-ses-mail-catcher',
   repositoryDirectory: 'packages/cdk',
   packageManager: javascript.NodePackageManager.PNPM,
@@ -77,6 +88,7 @@ project.setScript('test:watch', 'vitest');
 // The compiled Lambda workspace is copied into the package's lib directory,
 // which is the published asset and carries no node_modules of its own.
 project.postCompileTask.exec('node scripts/copy-lambda-assets.mjs');
+project.postCompileTask.exec('node scripts/normalize-api-docs.mjs');
 
 project.package.addVersion('0.1.0');
 

@@ -25,9 +25,5 @@ export const resolveDbPath = (
     );
   }
 
-  return join(
-    env.XDG_CACHE_HOME ?? join(home, '.cache'),
-    'ses-mail-catcher',
-    'mailbox.sqlite3',
-  );
+  return join(env.XDG_CACHE_HOME ?? join(home, '.cache'), 'ses-mail-catcher', 'mailbox.sqlite3');
 };

@@ -41,7 +41,7 @@ export class ViewerAssets {
 
   public static async open(root = ViewerAssets.defaultRoot()): Promise<ViewerAssets | undefined> {
     const assets = new ViewerAssets(resolve(root));
-    return await assets.read('/') === undefined ? undefined : assets;
+    return (await assets.read('/')) === undefined ? undefined : assets;
   }
 
   public async read(pathname: string): Promise<StaticAsset | undefined> {
@@ -63,12 +63,15 @@ export class ViewerAssets {
       contentType: CONTENT_TYPES.get(extension) ?? 'application/octet-stream',
       // Vite fingerprints everything under assets/, so only the entry point
       // has to be revalidated.
-      cacheControl: filePath.endsWith(INDEX_FILE) ? 'no-cache' : 'public, max-age=31536000, immutable',
+      cacheControl: filePath.endsWith(INDEX_FILE)
+        ? 'no-cache'
+        : 'public, max-age=31536000, immutable',
     };
   }
 
   private resolveFile(pathname: string): string | undefined {
-    const relative = pathname === '/' ? INDEX_FILE : decodeURIComponent(pathname).replace(/^\/+/, '');
+    const relative =
+      pathname === '/' ? INDEX_FILE : decodeURIComponent(pathname).replace(/^\/+/, '');
     const candidate = resolve(this.root, relative);
     const withinRoot = candidate === this.root || candidate.startsWith(this.root + sep);
     return withinRoot ? candidate : undefined;

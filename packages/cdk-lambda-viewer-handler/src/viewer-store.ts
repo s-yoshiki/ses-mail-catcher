@@ -60,10 +60,12 @@ export class ViewerStore {
   }
 
   public async readRaw(s3Key: string): Promise<Uint8Array> {
-    const response = await this.s3.send(new this.sdk.GetObjectCommand({
-      Bucket: this.config.bucketName,
-      Key: s3Key,
-    }));
+    const response = await this.s3.send(
+      new this.sdk.GetObjectCommand({
+        Bucket: this.config.bucketName,
+        Key: s3Key,
+      }),
+    );
 
     const body = (response as { Body?: unknown }).Body;
     if (!body) {
@@ -91,21 +93,24 @@ export class ViewerStore {
     let startKey: Record<string, AttributeValue> | undefined;
 
     for (let page = 0; page < MAX_SCAN_PAGES; page += 1) {
-      const response = await this.ddb.send(new this.sdk.ScanCommand({
-        TableName: this.config.tableName,
-        Limit: Math.min(Math.max(limit, 1), MAX_SCANNED_ITEMS),
-        ...(projection ? { ProjectionExpression: projection } : {}),
-        ...(messageId
-          ? {
-            FilterExpression: 'messageId = :messageId',
-            ExpressionAttributeValues: { ':messageId': { S: messageId } },
-          }
-          : {}),
-        ...(startKey ? { ExclusiveStartKey: startKey } : {}),
-      }));
+      const response = await this.ddb.send(
+        new this.sdk.ScanCommand({
+          TableName: this.config.tableName,
+          Limit: Math.min(Math.max(limit, 1), MAX_SCANNED_ITEMS),
+          ...(projection ? { ProjectionExpression: projection } : {}),
+          ...(messageId
+            ? {
+                FilterExpression: 'messageId = :messageId',
+                ExpressionAttributeValues: { ':messageId': { S: messageId } },
+              }
+            : {}),
+          ...(startKey ? { ExclusiveStartKey: startKey } : {}),
+        }),
+      );
 
       items.push(...readItems(response));
-      startKey = (response as { LastEvaluatedKey?: Record<string, AttributeValue> }).LastEvaluatedKey;
+      startKey = (response as { LastEvaluatedKey?: Record<string, AttributeValue> })
+        .LastEvaluatedKey;
       if (startKey === undefined || items.length >= limit) {
         break;
       }
@@ -138,7 +143,7 @@ const readString = (value: AttributeValue | undefined): string | undefined => {
 };
 
 const readStringList = (value: AttributeValue | undefined): string[] => {
-  return (value?.L ?? []).flatMap((entry) => entry.S === undefined ? [] : [entry.S]);
+  return (value?.L ?? []).flatMap((entry) => (entry.S === undefined ? [] : [entry.S]));
 };
 
 const concat = (chunks: Uint8Array[]): Uint8Array => {
