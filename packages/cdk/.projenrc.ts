@@ -88,6 +88,7 @@ project.setScript('test:watch', 'vitest');
 // The compiled Lambda workspace is copied into the package's lib directory,
 // which is the published asset and carries no node_modules of its own.
 project.postCompileTask.exec('node scripts/copy-lambda-assets.mjs');
+project.postCompileTask.exec('node scripts/normalize-api-docs.mjs');
 
 project.package.addVersion('0.1.0');
 

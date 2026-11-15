@@ -11,12 +11,13 @@ objects. In catch mode the function writes a canonical raw MIME message to
 S3 and an index record to DynamoDB. In relay mode it sends the same raw MIME
 message through Amazon SES.
 
-_Example_
+*Example*
 
 ```typescript
 const catcher = new SesMailCatcher(this, 'MailCatcher');
 catcher.grantSend(applicationFunction);
 ```
+
 
 #### Initializers <a name="Initializers" id="@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.Initializer"></a>
 
@@ -26,38 +27,38 @@ import { SesMailCatcher } from '@s-yoshiki/cdk-ses-mail-catcher'
 new SesMailCatcher(scope: Construct, id: string, props?: SesMailCatcherProps)
 ```
 
-| **Name**                                                                                                     | **Type**                                                                                            | **Description**   |
-| ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- | ----------------- |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.Initializer.parameter.scope">scope</a></code> | <code>constructs.Construct</code>                                                                   | _No description._ |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.Initializer.parameter.id">id</a></code>       | <code>string</code>                                                                                 | _No description._ |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.Initializer.parameter.props">props</a></code> | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcherProps">SesMailCatcherProps</a></code> | _No description._ |
+| **Name** | **Type** | **Description** |
+| --- | --- | --- |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.Initializer.parameter.scope">scope</a></code> | <code>constructs.Construct</code> | *No description.* |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.Initializer.parameter.id">id</a></code> | <code>string</code> | *No description.* |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.Initializer.parameter.props">props</a></code> | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcherProps">SesMailCatcherProps</a></code> | *No description.* |
 
 ---
 
 ##### `scope`<sup>Required</sup> <a name="scope" id="@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.Initializer.parameter.scope"></a>
 
-- _Type:_ constructs.Construct
+- *Type:* constructs.Construct
 
 ---
 
 ##### `id`<sup>Required</sup> <a name="id" id="@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.Initializer.parameter.id"></a>
 
-- _Type:_ string
+- *Type:* string
 
 ---
 
 ##### `props`<sup>Optional</sup> <a name="props" id="@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.Initializer.parameter.props"></a>
 
-- _Type:_ <a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcherProps">SesMailCatcherProps</a>
+- *Type:* <a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcherProps">SesMailCatcherProps</a>
 
 ---
 
 #### Methods <a name="Methods" id="Methods"></a>
 
-| **Name**                                                                                       | **Description**                                              |
-| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.toString">toString</a></code>   | Returns a string representation of this construct.           |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.with">with</a></code>           | Applies one or more mixins to this construct.                |
+| **Name** | **Description** |
+| --- | --- |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.toString">toString</a></code> | Returns a string representation of this construct. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.with">with</a></code> | Applies one or more mixins to this construct. |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.grantSend">grantSend</a></code> | Grants an application permission to invoke the mail handler. |
 
 ---
@@ -85,7 +86,7 @@ constructs.
 
 ###### `mixins`<sup>Required</sup> <a name="mixins" id="@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.with.parameter.mixins"></a>
 
-- _Type:_ ...constructs.IMixin[]
+- *Type:* ...constructs.IMixin[]
 
 The mixins to apply.
 
@@ -101,7 +102,7 @@ Grants an application permission to invoke the mail handler.
 
 ###### `grantee`<sup>Required</sup> <a name="grantee" id="@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.grantSend.parameter.grantee"></a>
 
-- _Type:_ aws-cdk-lib.aws_iam.IGrantable
+- *Type:* aws-cdk-lib.aws_iam.IGrantable
 
 the Lambda, role, or other IAM principal that sends events.
 
@@ -109,8 +110,8 @@ the Lambda, role, or other IAM principal that sends events.
 
 #### Static Functions <a name="Static Functions" id="Static Functions"></a>
 
-| **Name**                                                                                           | **Description**               |
-| -------------------------------------------------------------------------------------------------- | ----------------------------- |
+| **Name** | **Description** |
+| --- | --- |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.isConstruct">isConstruct</a></code> | Checks if `x` is a construct. |
 
 ---
@@ -141,7 +142,7 @@ this type-testing method instead.
 
 ###### `x`<sup>Required</sup> <a name="x" id="@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.isConstruct.parameter.x"></a>
 
-- _Type:_ any
+- *Type:* any
 
 Any object.
 
@@ -149,16 +150,16 @@ Any object.
 
 #### Properties <a name="Properties" id="Properties"></a>
 
-| **Name**                                                                                                                | **Type**                                                                      | **Description**                                              |
-| ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.node">node</a></code>                           | <code>constructs.Node</code>                                                  | The tree node.                                               |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.bucket">bucket</a></code>                       | <code>aws-cdk-lib.aws_s3.IBucket</code>                                       | The raw-message storage bucket.                              |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.function">function</a></code>                   | <code>aws-cdk-lib.aws_lambda.Function</code>                                  | The Lambda function that receives mail events.               |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.mode">mode</a></code>                           | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailMode">MailMode</a></code> | The configured mail handling mode.                           |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.table">table</a></code>                         | <code>aws-cdk-lib.aws_dynamodb.ITable</code>                                  | The message metadata table.                                  |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerFunction">viewerFunction</a></code>       | <code>aws-cdk-lib.aws_lambda.Function</code>                                  | The function serving the viewer, when one is configured.     |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerFunctionUrl">viewerFunctionUrl</a></code> | <code>aws-cdk-lib.aws_lambda.IFunctionUrl</code>                              | The Function URL serving the viewer, when one is configured. |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerUrl">viewerUrl</a></code>                 | <code>string</code>                                                           | The URL the viewer is served from, when one is configured.   |
+| **Name** | **Type** | **Description** |
+| --- | --- | --- |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.node">node</a></code> | <code>constructs.Node</code> | The tree node. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.bucket">bucket</a></code> | <code>aws-cdk-lib.aws_s3.IBucket</code> | The raw-message storage bucket. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.function">function</a></code> | <code>aws-cdk-lib.aws_lambda.Function</code> | The Lambda function that receives mail events. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.mode">mode</a></code> | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailMode">MailMode</a></code> | The configured mail handling mode. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.table">table</a></code> | <code>aws-cdk-lib.aws_dynamodb.ITable</code> | The message metadata table. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerFunction">viewerFunction</a></code> | <code>aws-cdk-lib.aws_lambda.Function</code> | The function serving the viewer, when one is configured. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerFunctionUrl">viewerFunctionUrl</a></code> | <code>aws-cdk-lib.aws_lambda.IFunctionUrl</code> | The Function URL serving the viewer, when one is configured. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcher.property.viewerUrl">viewerUrl</a></code> | <code>string</code> | The URL the viewer is served from, when one is configured. |
 
 ---
 
@@ -168,7 +169,7 @@ Any object.
 public readonly node: Node;
 ```
 
-- _Type:_ constructs.Node
+- *Type:* constructs.Node
 
 The tree node.
 
@@ -180,7 +181,7 @@ The tree node.
 public readonly bucket: IBucket;
 ```
 
-- _Type:_ aws-cdk-lib.aws_s3.IBucket
+- *Type:* aws-cdk-lib.aws_s3.IBucket
 
 The raw-message storage bucket.
 
@@ -192,7 +193,7 @@ The raw-message storage bucket.
 public readonly function: Function;
 ```
 
-- _Type:_ aws-cdk-lib.aws_lambda.Function
+- *Type:* aws-cdk-lib.aws_lambda.Function
 
 The Lambda function that receives mail events.
 
@@ -204,7 +205,7 @@ The Lambda function that receives mail events.
 public readonly mode: MailMode;
 ```
 
-- _Type:_ <a href="#@s-yoshiki/cdk-ses-mail-catcher.MailMode">MailMode</a>
+- *Type:* <a href="#@s-yoshiki/cdk-ses-mail-catcher.MailMode">MailMode</a>
 
 The configured mail handling mode.
 
@@ -216,7 +217,7 @@ The configured mail handling mode.
 public readonly table: ITable;
 ```
 
-- _Type:_ aws-cdk-lib.aws_dynamodb.ITable
+- *Type:* aws-cdk-lib.aws_dynamodb.ITable
 
 The message metadata table.
 
@@ -228,7 +229,7 @@ The message metadata table.
 public readonly viewerFunction: Function;
 ```
 
-- _Type:_ aws-cdk-lib.aws_lambda.Function
+- *Type:* aws-cdk-lib.aws_lambda.Function
 
 The function serving the viewer, when one is configured.
 
@@ -240,7 +241,7 @@ The function serving the viewer, when one is configured.
 public readonly viewerFunctionUrl: IFunctionUrl;
 ```
 
-- _Type:_ aws-cdk-lib.aws_lambda.IFunctionUrl
+- *Type:* aws-cdk-lib.aws_lambda.IFunctionUrl
 
 The Function URL serving the viewer, when one is configured.
 
@@ -252,11 +253,12 @@ The Function URL serving the viewer, when one is configured.
 public readonly viewerUrl: string;
 ```
 
-- _Type:_ string
+- *Type:* string
 
 The URL the viewer is served from, when one is configured.
 
 ---
+
 
 ## Structs <a name="Structs" id="Structs"></a>
 
@@ -274,12 +276,12 @@ const mailAttachment: MailAttachment = { ... }
 
 #### Properties <a name="Properties" id="Properties"></a>
 
-| **Name**                                                                                                    | **Type**            | **Description**                              |
-| ----------------------------------------------------------------------------------------------------------- | ------------------- | -------------------------------------------- |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailAttachment.property.bucket">bucket</a></code>           | <code>string</code> | The S3 bucket containing the attachment.     |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailAttachment.property.contentType">contentType</a></code> | <code>string</code> | The MIME content type of the attachment.     |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailAttachment.property.filename">filename</a></code>       | <code>string</code> | The name displayed to the recipient.         |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailAttachment.property.key">key</a></code>                 | <code>string</code> | The S3 object key containing the attachment. |
+| **Name** | **Type** | **Description** |
+| --- | --- | --- |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailAttachment.property.bucket">bucket</a></code> | <code>string</code> | The S3 bucket containing the attachment. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailAttachment.property.contentType">contentType</a></code> | <code>string</code> | The MIME content type of the attachment. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailAttachment.property.filename">filename</a></code> | <code>string</code> | The name displayed to the recipient. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailAttachment.property.key">key</a></code> | <code>string</code> | The S3 object key containing the attachment. |
 
 ---
 
@@ -289,7 +291,7 @@ const mailAttachment: MailAttachment = { ... }
 public readonly bucket: string;
 ```
 
-- _Type:_ string
+- *Type:* string
 
 The S3 bucket containing the attachment.
 
@@ -301,7 +303,7 @@ The S3 bucket containing the attachment.
 public readonly contentType: string;
 ```
 
-- _Type:_ string
+- *Type:* string
 
 The MIME content type of the attachment.
 
@@ -313,7 +315,7 @@ The MIME content type of the attachment.
 public readonly filename: string;
 ```
 
-- _Type:_ string
+- *Type:* string
 
 The name displayed to the recipient.
 
@@ -325,7 +327,7 @@ The name displayed to the recipient.
 public readonly key: string;
 ```
 
-- _Type:_ string
+- *Type:* string
 
 The S3 object key containing the attachment.
 
@@ -345,10 +347,10 @@ const mailStorage: MailStorage = { ... }
 
 #### Properties <a name="Properties" id="Properties"></a>
 
-| **Name**                                                                                       | **Type**                                     | **Description**                           |
-| ---------------------------------------------------------------------------------------------- | -------------------------------------------- | ----------------------------------------- |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailStorage.property.bucket">bucket</a></code> | <code>aws-cdk-lib.aws_s3.IBucket</code>      | An existing bucket for raw MIME messages. |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailStorage.property.table">table</a></code>   | <code>aws-cdk-lib.aws_dynamodb.ITable</code> | An existing table for message metadata.   |
+| **Name** | **Type** | **Description** |
+| --- | --- | --- |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailStorage.property.bucket">bucket</a></code> | <code>aws-cdk-lib.aws_s3.IBucket</code> | An existing bucket for raw MIME messages. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailStorage.property.table">table</a></code> | <code>aws-cdk-lib.aws_dynamodb.ITable</code> | An existing table for message metadata. |
 
 ---
 
@@ -358,7 +360,7 @@ const mailStorage: MailStorage = { ... }
 public readonly bucket: IBucket;
 ```
 
-- _Type:_ aws-cdk-lib.aws_s3.IBucket
+- *Type:* aws-cdk-lib.aws_s3.IBucket
 
 An existing bucket for raw MIME messages.
 
@@ -370,7 +372,7 @@ An existing bucket for raw MIME messages.
 public readonly table: ITable;
 ```
 
-- _Type:_ aws-cdk-lib.aws_dynamodb.ITable
+- *Type:* aws-cdk-lib.aws_dynamodb.ITable
 
 An existing table for message metadata.
 
@@ -390,11 +392,11 @@ const relayOptions: RelayOptions = { ... }
 
 #### Properties <a name="Properties" id="Properties"></a>
 
-| **Name**                                                                                                                                        | **Type**            | **Description**                                          |
-| ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- | -------------------------------------------------------- |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.RelayOptions.property.configurationSetName">configurationSetName</a></code>                     | <code>string</code> | The SES configuration set to use.                        |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.RelayOptions.property.feedbackForwardingEmailAddress">feedbackForwardingEmailAddress</a></code> | <code>string</code> | Where SES should forward feedback notifications.         |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.RelayOptions.property.fromEmailAddressIdentityArn">fromEmailAddressIdentityArn</a></code>       | <code>string</code> | The ARN of the verified SES identity used by the sender. |
+| **Name** | **Type** | **Description** |
+| --- | --- | --- |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.RelayOptions.property.configurationSetName">configurationSetName</a></code> | <code>string</code> | The SES configuration set to use. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.RelayOptions.property.feedbackForwardingEmailAddress">feedbackForwardingEmailAddress</a></code> | <code>string</code> | Where SES should forward feedback notifications. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.RelayOptions.property.fromEmailAddressIdentityArn">fromEmailAddressIdentityArn</a></code> | <code>string</code> | The ARN of the verified SES identity used by the sender. |
 
 ---
 
@@ -404,7 +406,7 @@ const relayOptions: RelayOptions = { ... }
 public readonly configurationSetName: string;
 ```
 
-- _Type:_ string
+- *Type:* string
 
 The SES configuration set to use.
 
@@ -416,7 +418,7 @@ The SES configuration set to use.
 public readonly feedbackForwardingEmailAddress: string;
 ```
 
-- _Type:_ string
+- *Type:* string
 
 Where SES should forward feedback notifications.
 
@@ -428,7 +430,7 @@ Where SES should forward feedback notifications.
 public readonly fromEmailAddressIdentityArn: string;
 ```
 
-- _Type:_ string
+- *Type:* string
 
 The ARN of the verified SES identity used by the sender.
 
@@ -448,18 +450,18 @@ const sendMailEvent: SendMailEvent = { ... }
 
 #### Properties <a name="Properties" id="Properties"></a>
 
-| **Name**                                                                                                   | **Type**                                                                                    | **Description**                                          |
-| ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.from">from</a></code>               | <code>string</code>                                                                         | The sender address.                                      |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.subject">subject</a></code>         | <code>string</code>                                                                         | The subject of the message.                              |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.to">to</a></code>                   | <code>string[]</code>                                                                       | At least one recipient address.                          |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.attachments">attachments</a></code> | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailAttachment">MailAttachment</a>[]</code> | References to large attachments in S3.                   |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.bcc">bcc</a></code>                 | <code>string[]</code>                                                                       | Blind-carbon-copy recipients.                            |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.cc">cc</a></code>                   | <code>string[]</code>                                                                       | Carbon-copy recipients.                                  |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.html">html</a></code>               | <code>string</code>                                                                         | HTML message content.                                    |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.metadata">metadata</a></code>       | <code>{[ key: string ]: string}</code>                                                      | Arbitrary string metadata stored with the message index. |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.replyTo">replyTo</a></code>         | <code>string[]</code>                                                                       | Reply-to addresses.                                      |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.text">text</a></code>               | <code>string</code>                                                                         | Plain-text message content.                              |
+| **Name** | **Type** | **Description** |
+| --- | --- | --- |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.from">from</a></code> | <code>string</code> | The sender address. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.subject">subject</a></code> | <code>string</code> | The subject of the message. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.to">to</a></code> | <code>string[]</code> | At least one recipient address. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.attachments">attachments</a></code> | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailAttachment">MailAttachment</a>[]</code> | References to large attachments in S3. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.bcc">bcc</a></code> | <code>string[]</code> | Blind-carbon-copy recipients. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.cc">cc</a></code> | <code>string[]</code> | Carbon-copy recipients. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.html">html</a></code> | <code>string</code> | HTML message content. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.metadata">metadata</a></code> | <code>{[ key: string ]: string}</code> | Arbitrary string metadata stored with the message index. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.replyTo">replyTo</a></code> | <code>string[]</code> | Reply-to addresses. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SendMailEvent.property.text">text</a></code> | <code>string</code> | Plain-text message content. |
 
 ---
 
@@ -469,7 +471,7 @@ const sendMailEvent: SendMailEvent = { ... }
 public readonly from: string;
 ```
 
-- _Type:_ string
+- *Type:* string
 
 The sender address.
 
@@ -481,7 +483,7 @@ The sender address.
 public readonly subject: string;
 ```
 
-- _Type:_ string
+- *Type:* string
 
 The subject of the message.
 
@@ -493,7 +495,7 @@ The subject of the message.
 public readonly to: string[];
 ```
 
-- _Type:_ string[]
+- *Type:* string[]
 
 At least one recipient address.
 
@@ -505,7 +507,7 @@ At least one recipient address.
 public readonly attachments: MailAttachment[];
 ```
 
-- _Type:_ <a href="#@s-yoshiki/cdk-ses-mail-catcher.MailAttachment">MailAttachment</a>[]
+- *Type:* <a href="#@s-yoshiki/cdk-ses-mail-catcher.MailAttachment">MailAttachment</a>[]
 
 References to large attachments in S3.
 
@@ -517,7 +519,7 @@ References to large attachments in S3.
 public readonly bcc: string[];
 ```
 
-- _Type:_ string[]
+- *Type:* string[]
 
 Blind-carbon-copy recipients.
 
@@ -529,7 +531,7 @@ Blind-carbon-copy recipients.
 public readonly cc: string[];
 ```
 
-- _Type:_ string[]
+- *Type:* string[]
 
 Carbon-copy recipients.
 
@@ -541,7 +543,7 @@ Carbon-copy recipients.
 public readonly html: string;
 ```
 
-- _Type:_ string
+- *Type:* string
 
 HTML message content.
 
@@ -553,7 +555,7 @@ HTML message content.
 public readonly metadata: {[ key: string ]: string};
 ```
 
-- _Type:_ {[ key: string ]: string}
+- *Type:* {[ key: string ]: string}
 
 Arbitrary string metadata stored with the message index.
 
@@ -565,7 +567,7 @@ Arbitrary string metadata stored with the message index.
 public readonly replyTo: string[];
 ```
 
-- _Type:_ string[]
+- *Type:* string[]
 
 Reply-to addresses.
 
@@ -577,7 +579,7 @@ Reply-to addresses.
 public readonly text: string;
 ```
 
-- _Type:_ string
+- *Type:* string
 
 Plain-text message content.
 
@@ -597,13 +599,13 @@ const sesMailCatcherProps: SesMailCatcherProps = { ... }
 
 #### Properties <a name="Properties" id="Properties"></a>
 
-| **Name**                                                                                                     | **Type**                                                                                | **Description**                                                       |
-| ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcherProps.property.mode">mode</a></code>           | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailMode">MailMode</a></code>           | How incoming events are handled.                                      |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcherProps.property.relay">relay</a></code>         | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.RelayOptions">RelayOptions</a></code>   | Optional settings for relay mode.                                     |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcherProps.property.retention">retention</a></code> | <code>aws-cdk-lib.Duration</code>                                                       | How long captured messages remain available.                          |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcherProps.property.storage">storage</a></code>     | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailStorage">MailStorage</a></code>     | Existing or custom storage resources.                                 |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcherProps.property.viewer">viewer</a></code>       | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions">ViewerOptions</a></code> | Serves a browser viewer for captured mail from a Lambda function URL. |
+| **Name** | **Type** | **Description** |
+| --- | --- | --- |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcherProps.property.mode">mode</a></code> | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailMode">MailMode</a></code> | How incoming events are handled. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcherProps.property.relay">relay</a></code> | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.RelayOptions">RelayOptions</a></code> | Optional settings for relay mode. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcherProps.property.retention">retention</a></code> | <code>aws-cdk-lib.Duration</code> | How long captured messages remain available. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcherProps.property.storage">storage</a></code> | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailStorage">MailStorage</a></code> | Existing or custom storage resources. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.SesMailCatcherProps.property.viewer">viewer</a></code> | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions">ViewerOptions</a></code> | Serves a browser viewer for captured mail from a Lambda function URL. |
 
 ---
 
@@ -613,8 +615,8 @@ const sesMailCatcherProps: SesMailCatcherProps = { ... }
 public readonly mode: MailMode;
 ```
 
-- _Type:_ <a href="#@s-yoshiki/cdk-ses-mail-catcher.MailMode">MailMode</a>
-- _Default:_ MailMode.CATCH
+- *Type:* <a href="#@s-yoshiki/cdk-ses-mail-catcher.MailMode">MailMode</a>
+- *Default:* MailMode.CATCH
 
 How incoming events are handled.
 
@@ -626,7 +628,7 @@ How incoming events are handled.
 public readonly relay: RelayOptions;
 ```
 
-- _Type:_ <a href="#@s-yoshiki/cdk-ses-mail-catcher.RelayOptions">RelayOptions</a>
+- *Type:* <a href="#@s-yoshiki/cdk-ses-mail-catcher.RelayOptions">RelayOptions</a>
 
 Optional settings for relay mode.
 
@@ -638,8 +640,8 @@ Optional settings for relay mode.
 public readonly retention: Duration;
 ```
 
-- _Type:_ aws-cdk-lib.Duration
-- _Default:_ Duration.days(7)
+- *Type:* aws-cdk-lib.Duration
+- *Default:* Duration.days(7)
 
 How long captured messages remain available.
 
@@ -651,7 +653,7 @@ How long captured messages remain available.
 public readonly storage: MailStorage;
 ```
 
-- _Type:_ <a href="#@s-yoshiki/cdk-ses-mail-catcher.MailStorage">MailStorage</a>
+- *Type:* <a href="#@s-yoshiki/cdk-ses-mail-catcher.MailStorage">MailStorage</a>
 
 Existing or custom storage resources.
 
@@ -663,7 +665,7 @@ Existing or custom storage resources.
 public readonly viewer: ViewerOptions;
 ```
 
-- _Type:_ <a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions">ViewerOptions</a>
+- *Type:* <a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions">ViewerOptions</a>
 
 Serves a browser viewer for captured mail from a Lambda function URL.
 
@@ -685,11 +687,11 @@ const viewerBasicAuth: ViewerBasicAuth = { ... }
 
 #### Properties <a name="Properties" id="Properties"></a>
 
-| **Name**                                                                                                         | **Type**                                            | **Description**                           |
-| ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- | ----------------------------------------- |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerBasicAuth.property.secret">secret</a></code>               | <code>aws-cdk-lib.aws_secretsmanager.ISecret</code> | A secret holding the credentials as JSON. |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerBasicAuth.property.passwordField">passwordField</a></code> | <code>string</code>                                 | The JSON field holding the password.      |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerBasicAuth.property.usernameField">usernameField</a></code> | <code>string</code>                                 | The JSON field holding the user name.     |
+| **Name** | **Type** | **Description** |
+| --- | --- | --- |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerBasicAuth.property.secret">secret</a></code> | <code>aws-cdk-lib.aws_secretsmanager.ISecret</code> | A secret holding the credentials as JSON. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerBasicAuth.property.passwordField">passwordField</a></code> | <code>string</code> | The JSON field holding the password. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerBasicAuth.property.usernameField">usernameField</a></code> | <code>string</code> | The JSON field holding the user name. |
 
 ---
 
@@ -699,7 +701,7 @@ const viewerBasicAuth: ViewerBasicAuth = { ... }
 public readonly secret: ISecret;
 ```
 
-- _Type:_ aws-cdk-lib.aws_secretsmanager.ISecret
+- *Type:* aws-cdk-lib.aws_secretsmanager.ISecret
 
 A secret holding the credentials as JSON.
 
@@ -714,8 +716,8 @@ never appear in the synthesized template.
 public readonly passwordField: string;
 ```
 
-- _Type:_ string
-- _Default:_ password
+- *Type:* string
+- *Default:* password
 
 The JSON field holding the password.
 
@@ -727,8 +729,8 @@ The JSON field holding the password.
 public readonly usernameField: string;
 ```
 
-- _Type:_ string
-- _Default:_ username
+- *Type:* string
+- *Default:* username
 
 The JSON field holding the user name.
 
@@ -748,13 +750,13 @@ const viewerOptions: ViewerOptions = { ... }
 
 #### Properties <a name="Properties" id="Properties"></a>
 
-| **Name**                                                                                                               | **Type**                                                                                    | **Description**                                          |
-| ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.allowedIpCidrs">allowedIpCidrs</a></code>       | <code>string[]</code>                                                                       | The IPv4 and IPv6 ranges allowed to reach the viewer.    |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.allowPublicAccess">allowPublicAccess</a></code> | <code>boolean</code>                                                                        | Acknowledges a viewer that anyone with the URL can read. |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.authType">authType</a></code>                   | <code>aws-cdk-lib.aws_lambda.FunctionUrlAuthType</code>                                     | How the function URL itself is authorised.               |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.basicAuth">basicAuth</a></code>                 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerBasicAuth">ViewerBasicAuth</a></code> | Basic authentication enforced by the viewer function.    |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.timeout">timeout</a></code>                     | <code>aws-cdk-lib.Duration</code>                                                           | How long a viewer request may run.                       |
+| **Name** | **Type** | **Description** |
+| --- | --- | --- |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.allowedIpCidrs">allowedIpCidrs</a></code> | <code>string[]</code> | The IPv4 and IPv6 ranges allowed to reach the viewer. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.allowPublicAccess">allowPublicAccess</a></code> | <code>boolean</code> | Acknowledges a viewer that anyone with the URL can read. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.authType">authType</a></code> | <code>aws-cdk-lib.aws_lambda.FunctionUrlAuthType</code> | How the function URL itself is authorised. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.basicAuth">basicAuth</a></code> | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerBasicAuth">ViewerBasicAuth</a></code> | Basic authentication enforced by the viewer function. |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerOptions.property.timeout">timeout</a></code> | <code>aws-cdk-lib.Duration</code> | How long a viewer request may run. |
 
 ---
 
@@ -764,7 +766,7 @@ const viewerOptions: ViewerOptions = { ... }
 public readonly allowedIpCidrs: string[];
 ```
 
-- _Type:_ string[]
+- *Type:* string[]
 
 The IPv4 and IPv6 ranges allowed to reach the viewer.
 
@@ -779,8 +781,8 @@ forwarded header, so it cannot be spoofed by the caller.
 public readonly allowPublicAccess: boolean;
 ```
 
-- _Type:_ boolean
-- _Default:_ false
+- *Type:* boolean
+- *Default:* false
 
 Acknowledges a viewer that anyone with the URL can read.
 
@@ -795,8 +797,8 @@ create an unauthenticated viewer unless this is set.
 public readonly authType: FunctionUrlAuthType;
 ```
 
-- _Type:_ aws-cdk-lib.aws_lambda.FunctionUrlAuthType
-- _Default:_ lambda.FunctionUrlAuthType.NONE
+- *Type:* aws-cdk-lib.aws_lambda.FunctionUrlAuthType
+- *Default:* lambda.FunctionUrlAuthType.NONE
 
 How the function URL itself is authorised.
 
@@ -812,7 +814,7 @@ reached through a signing client instead of a browser.
 public readonly basicAuth: ViewerBasicAuth;
 ```
 
-- _Type:_ <a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerBasicAuth">ViewerBasicAuth</a>
+- *Type:* <a href="#@s-yoshiki/cdk-ses-mail-catcher.ViewerBasicAuth">ViewerBasicAuth</a>
 
 Basic authentication enforced by the viewer function.
 
@@ -824,12 +826,14 @@ Basic authentication enforced by the viewer function.
 public readonly timeout: Duration;
 ```
 
-- _Type:_ aws-cdk-lib.Duration
-- _Default:_ Duration.seconds(30)
+- *Type:* aws-cdk-lib.Duration
+- *Default:* Duration.seconds(30)
 
 How long a viewer request may run.
 
 ---
+
+
 
 ## Enums <a name="Enums" id="Enums"></a>
 
@@ -839,10 +843,10 @@ The way the mail catcher handles an incoming mail event.
 
 #### Members <a name="Members" id="Members"></a>
 
-| **Name**                                                                         | **Description**                                          |
-| -------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| **Name** | **Description** |
+| --- | --- |
 | <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailMode.CATCH">CATCH</a></code> | Store the message in DynamoDB and S3 without sending it. |
-| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailMode.RELAY">RELAY</a></code> | Forward the message to Amazon SES.                       |
+| <code><a href="#@s-yoshiki/cdk-ses-mail-catcher.MailMode.RELAY">RELAY</a></code> | Forward the message to Amazon SES. |
 
 ---
 
@@ -851,6 +855,7 @@ The way the mail catcher handles an incoming mail event.
 Store the message in DynamoDB and S3 without sending it.
 
 ---
+
 
 ##### `RELAY` <a name="RELAY" id="@s-yoshiki/cdk-ses-mail-catcher.MailMode.RELAY"></a>
 
