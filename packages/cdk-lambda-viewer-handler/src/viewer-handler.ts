@@ -81,14 +81,14 @@ export const serveViewer = async (
   if (!decision.allowed) {
     return decision.challenge === true
       ? {
-        statusCode: 401,
-        headers: {
-          ...SECURITY_HEADERS,
-          'Content-Type': 'application/json; charset=utf-8',
-          'WWW-Authenticate': 'Basic realm="ses-mail-catcher", charset="UTF-8"',
-        },
-        body: JSON.stringify({ message: decision.reason ?? 'Authentication required' }),
-      }
+          statusCode: 401,
+          headers: {
+            ...SECURITY_HEADERS,
+            'Content-Type': 'application/json; charset=utf-8',
+            'WWW-Authenticate': 'Basic realm="ses-mail-catcher", charset="UTF-8"',
+          },
+          body: JSON.stringify({ message: decision.reason ?? 'Authentication required' }),
+        }
       : json(403, { message: decision.reason ?? 'Forbidden' });
   }
 
@@ -160,7 +160,10 @@ const route = async (
   );
 };
 
-const serveAsset = async (path: string, dependencies: ViewerHandlerDependencies): Promise<ViewerResponse> => {
+const serveAsset = async (
+  path: string,
+  dependencies: ViewerHandlerDependencies,
+): Promise<ViewerResponse> => {
   if (path.startsWith('/api/')) {
     return json(404, { message: 'Not found' });
   }
@@ -188,7 +191,10 @@ type MessageRoute =
   | { kind: 'attachment'; id: string; index: number };
 
 const matchMessageRoute = (path: string): MessageRoute | undefined => {
-  const parts = path.split('/').filter(Boolean).map((part) => safeDecode(part));
+  const parts = path
+    .split('/')
+    .filter(Boolean)
+    .map((part) => safeDecode(part));
   if (parts[0] !== 'api' || parts[1] !== 'messages' || parts[2] === undefined) {
     return undefined;
   }
@@ -200,7 +206,9 @@ const matchMessageRoute = (path: string): MessageRoute | undefined => {
   }
   if (parts.length === 5 && parts[3] === 'attachments') {
     const index = Number.parseInt(parts[4], 10);
-    return Number.isInteger(index) && index >= 0 ? { kind: 'attachment', id: parts[2], index } : undefined;
+    return Number.isInteger(index) && index >= 0
+      ? { kind: 'attachment', id: parts[2], index }
+      : undefined;
   }
   return undefined;
 };
@@ -234,7 +242,9 @@ const readCredentials = async (
   }
 
   const client = new sdk.SecretsManagerClient({}) as CommandClient;
-  const response = await client.send(new sdk.GetSecretValueCommand({ SecretId: config.basicAuthSecretArn }));
+  const response = await client.send(
+    new sdk.GetSecretValueCommand({ SecretId: config.basicAuthSecretArn }),
+  );
   const secretString = (response as { SecretString?: string }).SecretString;
   if (secretString === undefined) {
     throw new Error('viewer credentials secret has no string value');

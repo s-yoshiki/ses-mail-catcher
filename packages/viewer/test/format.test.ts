@@ -34,7 +34,9 @@ describe('formatTimestamp', () => {
 
 describe('formatAddressList', () => {
   it('joins addresses and marks an empty list', () => {
-    expect(formatAddressList(['a@example.com', 'b@example.com'])).toBe('a@example.com, b@example.com');
+    expect(formatAddressList(['a@example.com', 'b@example.com'])).toBe(
+      'a@example.com, b@example.com',
+    );
     expect(formatAddressList([])).toBe('-');
   });
 });

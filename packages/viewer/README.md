@@ -42,13 +42,13 @@ Shapes and their Zod schemas live in
 [`packages/api-contract/src/index.ts`](../api-contract/src/index.ts). The local
 `src/types.ts` file re-exports the viewer types for compatibility.
 
-| Route | Response |
-| --- | --- |
-| `GET /api/messages?limit=` | `{ messages }` |
-| `GET /api/messages/:id` | message with `content.text`, `content.html`, `content.attachments` |
-| `GET /api/messages/:id/raw` | `message/rfc822` |
-| `GET /api/messages/:id/attachments/:index` | the attachment bytes |
-| `GET /api/health` | `{ status: 'ok' }` |
+| Route                                      | Response                                                           |
+| ------------------------------------------ | ------------------------------------------------------------------ |
+| `GET /api/messages?limit=`                 | `{ messages }`                                                     |
+| `GET /api/messages/:id`                    | message with `content.text`, `content.html`, `content.attachments` |
+| `GET /api/messages/:id/raw`                | `message/rfc822`                                                   |
+| `GET /api/messages/:id/attachments/:index` | the attachment bytes                                               |
+| `GET /api/health`                          | `{ status: 'ok' }`                                                 |
 
 ## Rendering untrusted mail
 

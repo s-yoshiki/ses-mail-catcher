@@ -25,7 +25,9 @@ export const Toolbar = (props: ToolbarProps): JSX.Element => {
         <span>Auto refresh</span>
       </label>
 
-      <button type="button" onClick={props.onRefresh}>Refresh</button>
+      <button type="button" onClick={props.onRefresh}>
+        Refresh
+      </button>
     </header>
   );
 };

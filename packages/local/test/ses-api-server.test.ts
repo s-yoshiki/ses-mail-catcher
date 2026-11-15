@@ -2,10 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import {
-  apiErrorSchema,
-  messageListResponseSchema,
-} from '@ses-mail-catcher/api-contract';
+import { apiErrorSchema, messageListResponseSchema } from '@ses-mail-catcher/api-contract';
 import { afterEach, expect, test } from 'vitest';
 
 import { startServer } from '../src/ses-server.js';
@@ -17,7 +14,11 @@ const servers: Array<{ close(): Promise<void> }> = [];
 const openServer = async (prefix: string) => {
   const directory = await mkdtemp(join(tmpdir(), `ses-mail-catcher-${prefix}-`));
   temporaryDirectories.push(directory);
-  const server = await startServer({ dbPath: join(directory, 'mailbox.sqlite3'), port: 0, viewerDir: join(directory, 'missing') });
+  const server = await startServer({
+    dbPath: join(directory, 'mailbox.sqlite3'),
+    port: 0,
+    viewerDir: join(directory, 'missing'),
+  });
   servers.push(server);
   return server;
 };
@@ -32,7 +33,11 @@ const postSes = (url: string, body: unknown, target = SES_TARGET): Promise<Respo
 
 afterEach(async () => {
   await Promise.all(servers.splice(0).map((server) => server.close()));
-  await Promise.all(temporaryDirectories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })));
+  await Promise.all(
+    temporaryDirectories
+      .splice(0)
+      .map((directory) => rm(directory, { recursive: true, force: true })),
+  );
 });
 
 test('local SES API returns stable errors for invalid input and unknown routes', async () => {
@@ -40,13 +45,15 @@ test('local SES API returns stable errors for invalid input and unknown routes',
 
   const malformed = await postSes(`${server.url}/v2/email/outbound-emails`, '{');
   expect(malformed.status).toBe(400);
-  const malformedBody = await malformed.json() as { __type: string; message: string };
+  const malformedBody = (await malformed.json()) as { __type: string; message: string };
   expect(malformedBody['__type']).toBe('InvalidParameterValue');
   expect(apiErrorSchema.parse(malformedBody).message).toContain('JSON');
 
   const nonObject = await postSes(`${server.url}/v2/email/outbound-emails`, '[]');
   expect(nonObject.status).toBe(400);
-  expect(apiErrorSchema.parse(await nonObject.json()).message).toBe('Request body must be a JSON object');
+  expect(apiErrorSchema.parse(await nonObject.json()).message).toBe(
+    'Request body must be a JSON object',
+  );
 
   const unsupported = await postSes(
     `${server.url}/v2/email/outbound-emails`,
@@ -54,7 +61,9 @@ test('local SES API returns stable errors for invalid input and unknown routes',
     'AmazonSimpleEmailServiceV2.ListIdentities',
   );
   expect(unsupported.status).toBe(400);
-  expect(apiErrorSchema.parse(await unsupported.json()).message).toContain('Unsupported SES operation');
+  expect(apiErrorSchema.parse(await unsupported.json()).message).toContain(
+    'Unsupported SES operation',
+  );
 
   const invalidAddresses = await postSes(`${server.url}/v2/email/outbound-emails`, {
     FromEmailAddress: 'sender@example.com',
@@ -62,14 +71,18 @@ test('local SES API returns stable errors for invalid input and unknown routes',
     Content: { Simple: { Subject: { Data: 'Invalid' }, Body: { Text: { Data: 'body' } } } },
   });
   expect(invalidAddresses.status).toBe(400);
-  expect(apiErrorSchema.parse(await invalidAddresses.json()).message).toBe('Email addresses must be an array of strings');
+  expect(apiErrorSchema.parse(await invalidAddresses.json()).message).toBe(
+    'Email addresses must be an array of strings',
+  );
 
   const missingContent = await postSes(`${server.url}/v2/email/outbound-emails`, {
     FromEmailAddress: 'sender@example.com',
     Destination: { ToAddresses: ['recipient@example.com'] },
   });
   expect(missingContent.status).toBe(400);
-  expect(apiErrorSchema.parse(await missingContent.json()).message).toBe('Content.Simple or Content.Raw is required');
+  expect(apiErrorSchema.parse(await missingContent.json()).message).toBe(
+    'Content.Simple or Content.Raw is required',
+  );
 
   const unknown = await fetch(`${server.url}/api/not-a-route`);
   expect(unknown.status).toBe(404);
@@ -102,6 +115,8 @@ test('local SES API bounds list limits while retaining the store alias', async (
   );
   expect(upperBound.messages).toHaveLength(2);
 
-  const legacy = messageListResponseSchema.parse(await (await fetch(`${server.url}/store?limit=1`)).json());
+  const legacy = messageListResponseSchema.parse(
+    await (await fetch(`${server.url}/store?limit=1`)).json(),
+  );
   expect(legacy.messages).toHaveLength(1);
 });

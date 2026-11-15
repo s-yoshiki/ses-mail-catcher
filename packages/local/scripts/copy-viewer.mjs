@@ -10,11 +10,15 @@ const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const source = join(packageRoot, '..', 'viewer', 'dist');
 const target = join(packageRoot, 'lib', 'viewer');
 
-const built = await stat(source).then((entry) => entry.isDirectory()).catch(() => false);
+const built = await stat(source)
+  .then((entry) => entry.isDirectory())
+  .catch(() => false);
 if (!built) {
   // The server still runs as a pure API without the bundle, so a missing
   // viewer build is a warning rather than a failed build.
-  console.warn(`[copy-viewer] ${source} not found; run "pnpm build" from the repository root to include the viewer.`);
+  console.warn(
+    `[copy-viewer] ${source} not found; run "pnpm build" from the repository root to include the viewer.`,
+  );
   process.exit(0);
 }
 

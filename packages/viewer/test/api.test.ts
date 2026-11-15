@@ -14,8 +14,9 @@ describe('resolveApiBase', () => {
   });
 
   it('accepts an override so one bundle can target another backend', () => {
-    expect(resolveApiBase('http://127.0.0.1:5173/', '?api=http://127.0.0.1:8005/api'))
-      .toBe('http://127.0.0.1:8005/api/');
+    expect(resolveApiBase('http://127.0.0.1:5173/', '?api=http://127.0.0.1:8005/api')).toBe(
+      'http://127.0.0.1:8005/api/',
+    );
   });
 });
 
@@ -41,11 +42,13 @@ describe('MailCatcherClient', () => {
   it('builds a limited list request', async () => {
     const client = new MailCatcherClient('http://localhost/api/');
 
-    server.use(http.get('*/api/messages', ({ request }) => {
-      const url = new URL(request.url);
-      expect(url.searchParams.get('limit')).toBe('25');
-      return HttpResponse.json({ messages: [] });
-    }));
+    server.use(
+      http.get('*/api/messages', ({ request }) => {
+        const url = new URL(request.url);
+        expect(url.searchParams.get('limit')).toBe('25');
+        return HttpResponse.json({ messages: [] });
+      }),
+    );
 
     await client.listMessages({ limit: 25 });
   });
@@ -54,13 +57,17 @@ describe('MailCatcherClient', () => {
     const client = new MailCatcherClient('http://localhost/api/');
 
     expect(client.rawUrl('a/b')).toBe('http://localhost/api/messages/a%2Fb/raw');
-    expect(client.attachmentUrl('a b', 2)).toBe('http://localhost/api/messages/a%20b/attachments/2');
+    expect(client.attachmentUrl('a b', 2)).toBe(
+      'http://localhost/api/messages/a%20b/attachments/2',
+    );
   });
 
   it('surfaces the server error message', async () => {
-    server.use(http.get('*/api/messages/:id', () => {
-      return HttpResponse.json({ message: 'Message not found' }, { status: 404 });
-    }));
+    server.use(
+      http.get('*/api/messages/:id', () => {
+        return HttpResponse.json({ message: 'Message not found' }, { status: 404 });
+      }),
+    );
     const client = new MailCatcherClient('http://localhost/api/');
 
     await expect(client.getMessage('missing')).rejects.toThrow('Message not found');

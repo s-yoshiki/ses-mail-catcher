@@ -6,9 +6,18 @@ import {
 } from '@ses-mail-catcher/api-contract';
 import { describe, expect, test, vi } from 'vitest';
 
-import { serveViewer, type ViewerHandlerConfig, type ViewerHandlerDependencies, type ViewerRequest } from '../src/viewer-handler.js';
+import {
+  serveViewer,
+  type ViewerHandlerConfig,
+  type ViewerHandlerDependencies,
+  type ViewerRequest,
+} from '../src/viewer-handler.js';
 import type { ViewerContent } from '../src/viewer-content.js';
-import type { ViewerMessageRecord, ViewerMessageSummary, ViewerStore } from '../src/viewer-store.js';
+import type {
+  ViewerMessageRecord,
+  ViewerMessageSummary,
+  ViewerStore,
+} from '../src/viewer-store.js';
 import type { StaticAsset, ViewerStatic } from '../src/viewer-static.js';
 
 const RAW_MIME = Buffer.from('From: sender@example.com\r\nSubject: Receipt\r\n\r\nbody', 'utf8');
@@ -24,19 +33,25 @@ const SUMMARY: ViewerMessageSummary = {
   size: RAW_MIME.byteLength,
 };
 
-const RECORD: ViewerMessageRecord = { ...SUMMARY, replyToAddresses: [], s3Key: 'messages/message-1.eml' };
+const RECORD: ViewerMessageRecord = {
+  ...SUMMARY,
+  replyToAddresses: [],
+  s3Key: 'messages/message-1.eml',
+};
 
 const CONTENT: ViewerContent = {
   text: 'body',
   html: '<p>body</p>',
-  attachments: [{
-    index: 0,
-    filename: '請求書.pdf',
-    contentType: 'application/pdf',
-    size: 8,
-    inline: false,
-    content: Buffer.from('%PDF-1.4', 'utf8'),
-  }],
+  attachments: [
+    {
+      index: 0,
+      filename: '請求書.pdf',
+      contentType: 'application/pdf',
+      size: 8,
+      inline: false,
+      content: Buffer.from('%PDF-1.4', 'utf8'),
+    },
+  ],
 };
 
 const baseConfig = (overrides: Partial<ViewerHandlerConfig> = {}): ViewerHandlerConfig => {
@@ -50,17 +65,28 @@ const baseConfig = (overrides: Partial<ViewerHandlerConfig> = {}): ViewerHandler
   };
 };
 
-const baseDependencies = (overrides: Partial<ViewerHandlerDependencies> = {}): ViewerHandlerDependencies => {
+const baseDependencies = (
+  overrides: Partial<ViewerHandlerDependencies> = {},
+): ViewerHandlerDependencies => {
   const store = {
     list: async () => [SUMMARY],
-    find: async (id: string) => id === SUMMARY.id ? RECORD : undefined,
+    find: async (id: string) => (id === SUMMARY.id ? RECORD : undefined),
     readRaw: async () => RAW_MIME,
   } as unknown as ViewerStore;
 
   const assets = {
-    read: async (pathname: string): Promise<StaticAsset | undefined> => pathname.endsWith('.js')
-      ? { body: Buffer.from('console.log(1);'), contentType: 'text/javascript; charset=utf-8', cacheControl: 'immutable' }
-      : { body: Buffer.from('<!doctype html><div id="root"></div>'), contentType: 'text/html; charset=utf-8', cacheControl: 'no-store' },
+    read: async (pathname: string): Promise<StaticAsset | undefined> =>
+      pathname.endsWith('.js')
+        ? {
+            body: Buffer.from('console.log(1);'),
+            contentType: 'text/javascript; charset=utf-8',
+            cacheControl: 'immutable',
+          }
+        : {
+            body: Buffer.from('<!doctype html><div id="root"></div>'),
+            contentType: 'text/html; charset=utf-8',
+            cacheControl: 'no-store',
+          },
   } as unknown as ViewerStatic;
 
   return {
@@ -90,7 +116,9 @@ describe('access control', () => {
 
     expect(response.statusCode).toBe(401);
     expect(response.headers['WWW-Authenticate']).toContain('Basic realm');
-    expect(apiErrorSchema.parse(JSON.parse(response.body))).toEqual({ message: 'Authentication required' });
+    expect(apiErrorSchema.parse(JSON.parse(response.body))).toEqual({
+      message: 'Authentication required',
+    });
   });
 
   test('challenges a caller with invalid basic auth credentials', async () => {
@@ -103,19 +131,25 @@ describe('access control', () => {
 
     expect(response.statusCode).toBe(401);
     expect(response.headers['WWW-Authenticate']).toContain('Basic realm');
-    expect(apiErrorSchema.parse(JSON.parse(response.body))).toEqual({ message: 'Invalid credentials' });
+    expect(apiErrorSchema.parse(JSON.parse(response.body))).toEqual({
+      message: 'Invalid credentials',
+    });
   });
 
   test('refuses an address outside the allow list without prompting', async () => {
     const response = await serveViewer(
-      request('/api/messages', { requestContext: { http: { method: 'GET', sourceIp: '198.51.100.4' } } }),
+      request('/api/messages', {
+        requestContext: { http: { method: 'GET', sourceIp: '198.51.100.4' } },
+      }),
       baseConfig({ allowedCidrs: ['203.0.113.0/24'] }),
       baseDependencies(),
     );
 
     expect(response.statusCode).toBe(403);
     expect(response.headers['WWW-Authenticate']).toBeUndefined();
-    expect(apiErrorSchema.parse(JSON.parse(response.body))).toEqual({ message: 'Address not allowed' });
+    expect(apiErrorSchema.parse(JSON.parse(response.body))).toEqual({
+      message: 'Address not allowed',
+    });
   });
 
   test('accepts a caller inside the allow list with valid credentials', async () => {
@@ -131,7 +165,9 @@ describe('access control', () => {
 
   test('rejects anything that is not a read', async () => {
     const response = await serveViewer(
-      request('/api/messages', { requestContext: { http: { method: 'POST', sourceIp: '203.0.113.9' } } }),
+      request('/api/messages', {
+        requestContext: { http: { method: 'POST', sourceIp: '203.0.113.9' } },
+      }),
       baseConfig(),
       baseDependencies(),
     );
@@ -152,11 +188,17 @@ describe('routing', () => {
     const response = await serveViewer(request('/api/messages'), baseConfig(), baseDependencies());
 
     expect(response.statusCode).toBe(200);
-    expect(messageListResponseSchema.parse(JSON.parse(response.body))).toEqual({ messages: [SUMMARY] });
+    expect(messageListResponseSchema.parse(JSON.parse(response.body))).toEqual({
+      messages: [SUMMARY],
+    });
   });
 
   test('returns parsed content without the storage key', async () => {
-    const response = await serveViewer(request('/api/messages/message-1'), baseConfig(), baseDependencies());
+    const response = await serveViewer(
+      request('/api/messages/message-1'),
+      baseConfig(),
+      baseDependencies(),
+    );
     const body = messageDetailSchema.parse(JSON.parse(response.body));
 
     expect(body).not.toHaveProperty('s3Key');
@@ -167,7 +209,11 @@ describe('routing', () => {
   });
 
   test('serves the raw message as base64', async () => {
-    const response = await serveViewer(request('/api/messages/message-1/raw'), baseConfig(), baseDependencies());
+    const response = await serveViewer(
+      request('/api/messages/message-1/raw'),
+      baseConfig(),
+      baseDependencies(),
+    );
 
     expect(response.headers['Content-Type']).toBe('message/rfc822');
     expect(response.headers['Cache-Control']).toBe('no-store');
@@ -190,7 +236,11 @@ describe('routing', () => {
   });
 
   test('reports missing messages and attachments', async () => {
-    const missingMessage = await serveViewer(request('/api/messages/nope'), baseConfig(), baseDependencies());
+    const missingMessage = await serveViewer(
+      request('/api/messages/nope'),
+      baseConfig(),
+      baseDependencies(),
+    );
     const missingAttachment = await serveViewer(
       request('/api/messages/message-1/attachments/7'),
       baseConfig(),
@@ -199,8 +249,12 @@ describe('routing', () => {
 
     expect(missingMessage.statusCode).toBe(404);
     expect(missingAttachment.statusCode).toBe(404);
-    expect(apiErrorSchema.parse(JSON.parse(missingMessage.body))).toEqual({ message: 'Message not found' });
-    expect(apiErrorSchema.parse(JSON.parse(missingAttachment.body))).toEqual({ message: 'Attachment not found' });
+    expect(apiErrorSchema.parse(JSON.parse(missingMessage.body))).toEqual({
+      message: 'Message not found',
+    });
+    expect(apiErrorSchema.parse(JSON.parse(missingAttachment.body))).toEqual({
+      message: 'Attachment not found',
+    });
   });
 
   test('never falls through to the bundle for an unknown api route', async () => {
@@ -213,7 +267,11 @@ describe('routing', () => {
 
   test('serves the bundle for everything else', async () => {
     const index = await serveViewer(request('/'), baseConfig(), baseDependencies());
-    const script = await serveViewer(request('/assets/index-abc.js'), baseConfig(), baseDependencies());
+    const script = await serveViewer(
+      request('/assets/index-abc.js'),
+      baseConfig(),
+      baseDependencies(),
+    );
 
     expect(index.headers['Content-Type']).toBe('text/html; charset=utf-8');
     expect(index.headers['Cache-Control']).toBe('no-store');
@@ -225,18 +283,26 @@ describe('routing', () => {
   });
 
   test('normalizes list limits before calling the store', async () => {
-    const list = vi.fn<(limit: number) => Promise<ViewerMessageSummary[]>>((_limit: number) => Promise.resolve([SUMMARY]));
+    const list = vi.fn<(limit: number) => Promise<ViewerMessageSummary[]>>((_limit: number) =>
+      Promise.resolve([SUMMARY]),
+    );
     const store = { list } as unknown as ViewerStore;
     const dependencies = baseDependencies({ store });
 
-    for (const [value, expected] of [['not-a-number', 100], ['0', 1], ['1001', 1000]] as const) {
+    for (const [value, expected] of [
+      ['not-a-number', 100],
+      ['0', 1],
+      ['1001', 1000],
+    ] as const) {
       const response = await serveViewer(
         request('/api/messages', { queryStringParameters: { limit: value } }),
         baseConfig(),
         dependencies,
       );
       expect(response.statusCode).toBe(200);
-      expect(messageListResponseSchema.parse(JSON.parse(response.body))).toEqual({ messages: [SUMMARY] });
+      expect(messageListResponseSchema.parse(JSON.parse(response.body))).toEqual({
+        messages: [SUMMARY],
+      });
       expect(list).toHaveBeenLastCalledWith(expected);
     }
   });
@@ -246,7 +312,11 @@ describe('routing', () => {
       request('/api/messages'),
       baseConfig(),
       baseDependencies({
-        store: { list: async () => { throw new Error('table missing'); } } as unknown as ViewerStore,
+        store: {
+          list: async () => {
+            throw new Error('table missing');
+          },
+        } as unknown as ViewerStore,
       }),
     );
 

@@ -1,8 +1,8 @@
 {
   "name": "ses-mail-catcher-cdk-example",
   "private": true,
-  "type": "module",
   "license": "Apache-2.0",
+  "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "compile": "tsc -p tsconfig.json",

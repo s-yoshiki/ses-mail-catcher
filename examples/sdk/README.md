@@ -11,7 +11,7 @@ SES-compatible endpoint. The default points to the local server at
 ## Prerequisites
 
 - Start the local server first;
-- Node.js 24 and pnpm 11.25.0; and
+- Node.js 26 and pnpm 12.20.0; and
 - dummy AWS credentials for the local endpoint (the example supplies them by
   default).
 
@@ -42,14 +42,14 @@ The sender creates an `SESv2Client` with the configured endpoint and sends a
 
 Set `MAIL_PATTERN` to choose the request body:
 
-| Pattern | SES v2 content | Use case |
-| --- | --- | --- |
-| `text` | `Content.Simple` with text only | Plain-text mail |
-| `html` | `Content.Simple` with HTML only | HTML-only mail |
-| `multipart` | `Content.Simple` with text and HTML | HTML with a text fallback |
-| `attachment` | `Content.Simple` with text, HTML, and an attachment | Attachment handling |
-| `raw` | `Content.Raw` with a multipart MIME message | Custom MIME headers and structure |
-| `template` | `CreateEmailTemplate` + templated `SendEmail` | Real SES-compatible services |
+| Pattern      | SES v2 content                                      | Use case                          |
+| ------------ | --------------------------------------------------- | --------------------------------- |
+| `text`       | `Content.Simple` with text only                     | Plain-text mail                   |
+| `html`       | `Content.Simple` with HTML only                     | HTML-only mail                    |
+| `multipart`  | `Content.Simple` with text and HTML                 | HTML with a text fallback         |
+| `attachment` | `Content.Simple` with text, HTML, and an attachment | Attachment handling               |
+| `raw`        | `Content.Raw` with a multipart MIME message         | Custom MIME headers and structure |
+| `template`   | `CreateEmailTemplate` + templated `SendEmail`       | Real SES-compatible services      |
 
 For example, send HTML only:
 
@@ -91,23 +91,23 @@ provider configuration.
 
 The following environment variables customize the event:
 
-| Variable | Default |
-| --- | --- |
-| `SES_MAIL_CATCHER_URL` | `http://127.0.0.1:8005` |
-| `MAIL_FROM` | `noreply@example.com` |
-| `MAIL_TO` | `developer@example.com` |
-| `MAIL_CC` | Omitted; comma-separated addresses |
-| `MAIL_BCC` | Omitted; comma-separated addresses |
-| `MAIL_REPLY_TO` | Omitted; comma-separated addresses |
-| `MAIL_SUBJECT` | `ses-mail-catcher SDK example` |
-| `MAIL_TEXT` | A short SDK example message |
-| `MAIL_HTML` | Omitted |
-| `MAIL_PATTERN` | Automatically selected; `text`, `html`, `multipart`, `attachment`, `raw`, or `template` |
-| `MAIL_ATTACHMENT_FILENAME` | `example.txt` |
-| `MAIL_ATTACHMENT_CONTENT` | A short attachment body |
-| `MAIL_ATTACHMENT_CONTENT_TYPE` | `text/plain` |
-| `MAIL_TEMPLATE_NAME` | `ses-mail-catcher-sdk-example-template` for `template` |
-| `MAIL_TEMPLATE_DATA` | `{"name":"developer"}` |
+| Variable                       | Default                                                                                 |
+| ------------------------------ | --------------------------------------------------------------------------------------- |
+| `SES_MAIL_CATCHER_URL`         | `http://127.0.0.1:8005`                                                                 |
+| `MAIL_FROM`                    | `noreply@example.com`                                                                   |
+| `MAIL_TO`                      | `developer@example.com`                                                                 |
+| `MAIL_CC`                      | Omitted; comma-separated addresses                                                      |
+| `MAIL_BCC`                     | Omitted; comma-separated addresses                                                      |
+| `MAIL_REPLY_TO`                | Omitted; comma-separated addresses                                                      |
+| `MAIL_SUBJECT`                 | `ses-mail-catcher SDK example`                                                          |
+| `MAIL_TEXT`                    | A short SDK example message                                                             |
+| `MAIL_HTML`                    | Omitted                                                                                 |
+| `MAIL_PATTERN`                 | Automatically selected; `text`, `html`, `multipart`, `attachment`, `raw`, or `template` |
+| `MAIL_ATTACHMENT_FILENAME`     | `example.txt`                                                                           |
+| `MAIL_ATTACHMENT_CONTENT`      | A short attachment body                                                                 |
+| `MAIL_ATTACHMENT_CONTENT_TYPE` | `text/plain`                                                                            |
+| `MAIL_TEMPLATE_NAME`           | `ses-mail-catcher-sdk-example-template` for `template`                                  |
+| `MAIL_TEMPLATE_DATA`           | `{"name":"developer"}`                                                                  |
 
 The command prints the SES message ID returned by the endpoint. The local
 server and the CDK example support `SendEmail` with `Content.Simple` and

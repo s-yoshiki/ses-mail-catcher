@@ -22,7 +22,8 @@ export const createMimeMessage = async (
   ];
   if (event.cc && event.cc.length > 0) headers.splice(2, 0, `Cc: ${event.cc.join(', ')}`);
   if (event.bcc && event.bcc.length > 0) headers.splice(3, 0, `Bcc: ${event.bcc.join(', ')}`);
-  if (event.replyTo && event.replyTo.length > 0) headers.push(`Reply-To: ${event.replyTo.join(', ')}`);
+  if (event.replyTo && event.replyTo.length > 0)
+    headers.push(`Reply-To: ${event.replyTo.join(', ')}`);
 
   let content = createBody(event, messageId);
   if (event.attachments && event.attachments.length > 0) {

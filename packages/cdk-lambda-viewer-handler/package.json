@@ -2,8 +2,8 @@
   "name": "@ses-mail-catcher/cdk-viewer-handler",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "license": "Apache-2.0",
+  "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.build.json && node scripts/copy-viewer-assets.mjs",
     "compile": "tsc -p tsconfig.build.json && node scripts/copy-viewer-assets.mjs",
@@ -13,12 +13,12 @@
     "lint": "oxlint src test"
   },
   "devDependencies": {
-    "@types/node": "^26.4.1",
-    "oxlint": "^1.81.0",
-    "postal-mime": "^3.0.0",
     "@ses-mail-catcher/api-contract": "workspace:*",
     "@ses-mail-catcher/viewer": "workspace:*",
-    "typescript": "~7.0.2",
-    "vitest": "^5.0.0"
+    "@types/node": "catalog:",
+    "oxlint": "catalog:",
+    "postal-mime": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

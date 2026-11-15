@@ -46,5 +46,7 @@ const generatedPaths = [
 ];
 
 await Promise.all(
-  generatedPaths.map((relativePath) => rm(join(repositoryRoot, relativePath), { force: true, recursive: true })),
+  generatedPaths.map((relativePath) =>
+    rm(join(repositoryRoot, relativePath), { force: true, recursive: true }),
+  ),
 );

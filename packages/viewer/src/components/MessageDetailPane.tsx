@@ -17,7 +17,11 @@ export interface MessageDetailPaneProps {
 
 export const MessageDetailPane = (props: MessageDetailPaneProps): JSX.Element => {
   if (props.error !== undefined) {
-    return <section className="detail"><p className="banner banner-error">{props.error}</p></section>;
+    return (
+      <section className="detail">
+        <p className="banner banner-error">{props.error}</p>
+      </section>
+    );
   }
 
   if (props.detail === undefined) {
@@ -72,41 +76,75 @@ const MessageBody = ({ client, detail }: MessageBodyProps): JSX.Element => {
         <dd>{detail.fromAddress ?? '-'}</dd>
         <dt>To</dt>
         <dd>{formatAddressList(detail.toAddresses)}</dd>
-        {detail.ccAddresses.length === 0 ? undefined : <><dt>Cc</dt><dd>{formatAddressList(detail.ccAddresses)}</dd></>}
-        {detail.bccAddresses.length === 0 ? undefined : <><dt>Bcc</dt><dd>{formatAddressList(detail.bccAddresses)}</dd></>}
-        {detail.replyToAddresses.length === 0 ? undefined : <><dt>Reply-To</dt><dd>{formatAddressList(detail.replyToAddresses)}</dd></>}
+        {detail.ccAddresses.length === 0 ? undefined : (
+          <>
+            <dt>Cc</dt>
+            <dd>{formatAddressList(detail.ccAddresses)}</dd>
+          </>
+        )}
+        {detail.bccAddresses.length === 0 ? undefined : (
+          <>
+            <dt>Bcc</dt>
+            <dd>{formatAddressList(detail.bccAddresses)}</dd>
+          </>
+        )}
+        {detail.replyToAddresses.length === 0 ? undefined : (
+          <>
+            <dt>Reply-To</dt>
+            <dd>{formatAddressList(detail.replyToAddresses)}</dd>
+          </>
+        )}
         <dt>Received</dt>
-        <dd><time dateTime={detail.receivedAt}>{formatTimestamp(detail.receivedAt)}</time></dd>
+        <dd>
+          <time dateTime={detail.receivedAt}>{formatTimestamp(detail.receivedAt)}</time>
+        </dd>
         <dt>Size</dt>
         <dd>{formatSize(detail.size)}</dd>
       </dl>
 
       <div className="tabs" role="tablist">
-        <TabButton current={tab} value="html" disabled={!detail.content.html} onSelect={setTab}>HTML</TabButton>
-        <TabButton current={tab} value="text" disabled={!detail.content.text} onSelect={setTab}>Text</TabButton>
+        <TabButton current={tab} value="html" disabled={!detail.content.html} onSelect={setTab}>
+          HTML
+        </TabButton>
+        <TabButton current={tab} value="text" disabled={!detail.content.text} onSelect={setTab}>
+          Text
+        </TabButton>
         <TabButton current={tab} value="attachments" onSelect={setTab}>
           Attachments ({detail.content.attachments.length})
         </TabButton>
-        <TabButton current={tab} value="raw" onSelect={setTab}>Raw</TabButton>
-        <a className="tab-link" href={client.rawUrl(detail.id)} download={`${detail.id}.eml`}>Download .eml</a>
+        <TabButton current={tab} value="raw" onSelect={setTab}>
+          Raw
+        </TabButton>
+        <a className="tab-link" href={client.rawUrl(detail.id)} download={`${detail.id}.eml`}>
+          Download .eml
+        </a>
       </div>
 
       <div className="tab-panel" role="tabpanel">
-        {tab === 'html' && (detail.content.html
-          ? <HtmlPreview html={detail.content.html} />
-          : <p className="placeholder">This message has no HTML part.</p>)}
-        {tab === 'text' && (detail.content.text
-          ? <pre className="body-text">{detail.content.text}</pre>
-          : <p className="placeholder">This message has no plain text part.</p>)}
+        {tab === 'html' &&
+          (detail.content.html ? (
+            <HtmlPreview html={detail.content.html} />
+          ) : (
+            <p className="placeholder">This message has no HTML part.</p>
+          ))}
+        {tab === 'text' &&
+          (detail.content.text ? (
+            <pre className="body-text">{detail.content.text}</pre>
+          ) : (
+            <p className="placeholder">This message has no plain text part.</p>
+          ))}
         {tab === 'attachments' && (
           <AttachmentList
             attachments={detail.content.attachments}
             urlFor={(index) => client.attachmentUrl(detail.id, index)}
           />
         )}
-        {tab === 'raw' && (rawError !== undefined
-          ? <p className="banner banner-error">{rawError}</p>
-          : <pre className="body-text">{raw ?? 'Loading…'}</pre>)}
+        {tab === 'raw' &&
+          (rawError !== undefined ? (
+            <p className="banner banner-error">{rawError}</p>
+          ) : (
+            <pre className="body-text">{raw ?? 'Loading…'}</pre>
+          ))}
       </div>
     </section>
   );

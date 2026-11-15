@@ -9,7 +9,9 @@ import { VIEWER_DIR_ENV, ViewerAssets } from '../src/viewer-assets.js';
 const directories: string[] = [];
 
 afterEach(async () => {
-  await Promise.all(directories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })));
+  await Promise.all(
+    directories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })),
+  );
 });
 
 const createBundle = async (): Promise<string> => {

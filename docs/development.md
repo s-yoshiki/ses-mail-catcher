@@ -4,10 +4,14 @@ The branch workflow is documented in
 [Branching strategy](./branching-strategy.md). Normal feature and bug-fix pull
 requests target `develop`; `main` is reserved for releases and hotfixes.
 
+## Oxfmt formatting
+
+Run `pnpm format` to format supported source files and `pnpm format:check` in CI.
+
 ## Prerequisites
 
-- Node.js 24 (see `.node-version`).
-- pnpm 11.25.0.
+- Node.js 26 (see `.node-version`).
+- pnpm 12.20.0.
 
 The repository is ESM-first. TypeScript uses NodeNext resolution and relative imports include their emitted `.js` suffix.
 

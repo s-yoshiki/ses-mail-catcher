@@ -36,7 +36,9 @@ export interface RunningLocalServer {
   close(): Promise<void>;
 }
 
-export const startServer = async (options: LocalServerOptions = {}): Promise<RunningLocalServer> => {
+export const startServer = async (
+  options: LocalServerOptions = {},
+): Promise<RunningLocalServer> => {
   const host = options.host ?? resolveHost();
   const requestedPort = options.port ?? resolvePort();
   const dbPath = options.dbPath ?? resolveDbPath();
@@ -217,7 +219,10 @@ type MessageRoute =
   | { kind: 'attachment'; id: string; index: number };
 
 const matchMessageRoute = (pathname: string): MessageRoute | undefined => {
-  const parts = pathname.split('/').filter(Boolean).map((part) => decodeURIComponent(part));
+  const parts = pathname
+    .split('/')
+    .filter(Boolean)
+    .map((part) => decodeURIComponent(part));
 
   if (parts[0] === 'store' && parts.length === 2) {
     return { kind: 'legacy', id: parts[1] };
@@ -236,7 +241,9 @@ const matchMessageRoute = (pathname: string): MessageRoute | undefined => {
   }
   if (parts.length === 5 && parts[3] === 'attachments') {
     const index = Number.parseInt(parts[4], 10);
-    return Number.isInteger(index) && index >= 0 ? { kind: 'attachment', id: parts[2], index } : undefined;
+    return Number.isInteger(index) && index >= 0
+      ? { kind: 'attachment', id: parts[2], index }
+      : undefined;
   }
   return undefined;
 };
@@ -278,7 +285,7 @@ const saveSesMessage = (
   const parsed = parseMimeHeaders(rawMime);
   const message: StoredMessage = {
     id: randomUUID(),
-    ...(asString(input.FromEmailAddress) ?? parsed.fromAddress
+    ...((asString(input.FromEmailAddress) ?? parsed.fromAddress)
       ? { fromAddress: asString(input.FromEmailAddress) ?? parsed.fromAddress }
       : {}),
     toAddresses: toAddresses.length > 0 ? toAddresses : parsed.toAddresses,
@@ -316,12 +323,16 @@ const createSimpleEmail = (
 
   return createSimpleMime(asString(input.FromEmailAddress), toAddresses, ccAddresses, {
     Subject: subject,
-    ...(text || html ? { Body: { ...(text ? { Text: text } : {}), ...(html ? { Html: html } : {}) } } : {}),
+    ...(text || html
+      ? { Body: { ...(text ? { Text: text } : {}), ...(html ? { Html: html } : {}) } }
+      : {}),
     ...(attachments && attachments.length > 0 ? { Attachments: attachments } : {}),
   });
 };
 
-const asAttachment = (value: unknown): {
+const asAttachment = (
+  value: unknown,
+): {
   RawContent: string;
   FileName: string;
   ContentDisposition?: string;
@@ -338,9 +349,15 @@ const asAttachment = (value: unknown): {
   return {
     RawContent: rawContent,
     FileName: fileName,
-    ...(asString(record?.ContentDisposition) ? { ContentDisposition: asString(record?.ContentDisposition) } : {}),
-    ...(asString(record?.ContentDescription) ? { ContentDescription: asString(record?.ContentDescription) } : {}),
-    ...(asString(record?.ContentTransferEncoding) ? { ContentTransferEncoding: asString(record?.ContentTransferEncoding) } : {}),
+    ...(asString(record?.ContentDisposition)
+      ? { ContentDisposition: asString(record?.ContentDisposition) }
+      : {}),
+    ...(asString(record?.ContentDescription)
+      ? { ContentDescription: asString(record?.ContentDescription) }
+      : {}),
+    ...(asString(record?.ContentTransferEncoding)
+      ? { ContentTransferEncoding: asString(record?.ContentTransferEncoding) }
+      : {}),
     ...(asString(record?.ContentType) ? { ContentType: asString(record?.ContentType) } : {}),
   };
 };
@@ -365,7 +382,7 @@ const stringArray = (value: unknown): string[] => {
 
 const asRecord = (value: unknown): Record<string, unknown> | undefined => {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
-    ? value as Record<string, unknown>
+    ? (value as Record<string, unknown>)
     : undefined;
 };
 
@@ -446,6 +463,6 @@ const listen = (server: Server, host: string, port: number): Promise<void> => {
 
 const closeServer = (server: Server): Promise<void> => {
   return new Promise((resolve, reject) => {
-    server.close((error) => error ? reject(error) : resolve());
+    server.close((error) => (error ? reject(error) : resolve()));
   });
 };

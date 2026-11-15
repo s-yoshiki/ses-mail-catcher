@@ -24,7 +24,7 @@ never prints the password.
 
 ## Prerequisites
 
-- Node.js 24 and pnpm 11.25.0;
+- Node.js 26 and pnpm 12.20.0;
 - AWS credentials configured for the account and region to deploy to; and
 - permission to bootstrap and deploy AWS CDK stacks.
 

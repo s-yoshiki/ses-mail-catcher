@@ -29,9 +29,11 @@ This repository is an ESM-first pnpm + Turborepo monorepo for `ses-mail-catcher`
 ```sh
 pnpm install
 pnpm lint
+pnpm format:check
 pnpm typecheck
 pnpm test
 pnpm build
+pnpm verify
 ```
 
 Package-specific commands:
@@ -55,6 +57,10 @@ pnpm --filter @s-yoshiki/cdk-ses-mail-catcher projen
 ```
 
 Do not hand-edit generated CDK files unless the corresponding source/configuration change is also made.
+
+## Formatting
+
+Use Oxfmt for formatting. Its shared settings live in `configs/oxfmt/`; `pnpm format:check` runs in CI.
 
 ## Verification expectations
 

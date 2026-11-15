@@ -14,7 +14,7 @@ jobs:
       self_mutation_happened: ${{ steps.self_mutation.outputs.self_mutation_happened }}
       artifact_id: ${{ steps.upload_artifact.outputs.artifact-id }}
     env:
-      CI: "true"
+      CI: 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -24,7 +24,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6.0.10
         with:
-          version: 11.25.0
+          version: 12.20.0
       - name: Setup Node.js
         uses: actions/setup-node@v7.0.0
         with:
@@ -117,7 +117,7 @@ jobs:
       - uses: actions/setup-node@v7.0.0
         with:
           # Keep in sync with .node-version; this job runs before checkout.
-          node-version: "24"
+          node-version: '26'
           package-manager-cache: false
       - name: Download build artifacts
         id: download_build_artifacts
@@ -133,7 +133,7 @@ jobs:
         id: setup_pnpm
         uses: pnpm/action-setup@v6.0.10
         with:
-          version: 11.25.0
+          version: 12.20.0
       - name: Checkout
         id: checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1

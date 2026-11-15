@@ -6,16 +6,16 @@ Capture emails sent through Amazon SES locally or on AWS, depending on your
 development and deployment needs.
 
 This repository is an ESM-first Node.js and TypeScript monorepo. The
-development baseline is Node.js 24 and pnpm 11.25.0.
+development baseline is Node.js 26 and pnpm 12.20.0.
 
-| Package | Purpose | Storage or runtime |
-| --- | --- | --- |
-| [`@s-yoshiki/cdk-ses-mail-catcher`](./packages/cdk) | AWS Serverless CDK construct for capturing or relaying mail | Lambda + S3 + DynamoDB |
-| [`@ses-mail-catcher/local`](./packages/local) | Local SES v2-compatible server for development and integration tests | Private workspace, distributed through Docker |
-| [`@ses-mail-catcher/viewer`](./packages/viewer) | React viewer for captured messages | Private workspace, bundled into the local server and the AWS viewer |
-| [`@ses-mail-catcher/api-contract`](./packages/api-contract) | Shared TypeScript types and Zod schemas for the viewer API | Private workspace |
-| [`@ses-mail-catcher/cdk-mail-handler`](./packages/cdk-lambda-mail-handler) | Mail Lambda handler used by the CDK construct | Private workspace |
-| [`@ses-mail-catcher/cdk-viewer-handler`](./packages/cdk-lambda-viewer-handler) | Viewer Lambda handler used by the CDK construct | Private workspace |
+| Package                                                                        | Purpose                                                              | Storage or runtime                                                  |
+| ------------------------------------------------------------------------------ | -------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| [`@s-yoshiki/cdk-ses-mail-catcher`](./packages/cdk)                            | AWS Serverless CDK construct for capturing or relaying mail          | Lambda + S3 + DynamoDB                                              |
+| [`@ses-mail-catcher/local`](./packages/local)                                  | Local SES v2-compatible server for development and integration tests | Private workspace, distributed through Docker                       |
+| [`@ses-mail-catcher/viewer`](./packages/viewer)                                | React viewer for captured messages                                   | Private workspace, bundled into the local server and the AWS viewer |
+| [`@ses-mail-catcher/api-contract`](./packages/api-contract)                    | Shared TypeScript types and Zod schemas for the viewer API           | Private workspace                                                   |
+| [`@ses-mail-catcher/cdk-mail-handler`](./packages/cdk-lambda-mail-handler)     | Mail Lambda handler used by the CDK construct                        | Private workspace                                                   |
+| [`@ses-mail-catcher/cdk-viewer-handler`](./packages/cdk-lambda-viewer-handler) | Viewer Lambda handler used by the CDK construct                      | Private workspace                                                   |
 
 ## Development
 

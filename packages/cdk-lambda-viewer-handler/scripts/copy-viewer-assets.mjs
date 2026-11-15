@@ -21,9 +21,13 @@ const copyViewer = async () => {
   const source = join(packageRoot, '..', 'viewer', 'dist');
   const target = join(libRoot, 'viewer');
 
-  const built = await stat(source).then((entry) => entry.isDirectory()).catch(() => false);
+  const built = await stat(source)
+    .then((entry) => entry.isDirectory())
+    .catch(() => false);
   if (!built) {
-    console.warn(`[copy-viewer-assets] ${source} not found; run "pnpm build" from the repository root to include the viewer.`);
+    console.warn(
+      `[copy-viewer-assets] ${source} not found; run "pnpm build" from the repository root to include the viewer.`,
+    );
     return;
   }
 

@@ -24,7 +24,7 @@ jobs:
         id: setup_pnpm
         uses: pnpm/action-setup@v6.0.10
         with:
-          version: 11.25.0
+          version: 12.20.0
       - name: Setup Node.js
         id: setup_node_js
         uses: actions/setup-node@v7.0.0
@@ -96,7 +96,7 @@ jobs:
 
             *Automatically created by projen via the "upgrade-main" workflow*
           branch: github-actions/upgrade-main
-          title: "chore(deps): upgrade dependencies"
+          title: 'chore(deps): upgrade dependencies'
           body: |-
             Upgrades project dependencies. See details in [workflow run].
 

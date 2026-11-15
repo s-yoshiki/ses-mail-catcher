@@ -19,9 +19,11 @@ const main = async (): Promise<void> => {
   const running = await startServer(options);
   console.log(`ses-mail-catcher listening on ${running.url}`);
   console.log(`sqlite: ${running.dbPath}`);
-  console.log(running.viewerEnabled
-    ? `viewer:  ${running.url}/`
-    : 'viewer:  not built (API only); run "pnpm build" from the repository root');
+  console.log(
+    running.viewerEnabled
+      ? `viewer:  ${running.url}/`
+      : 'viewer:  not built (API only); run "pnpm build" from the repository root',
+  );
 
   const shutdown = () => {
     void running.close().then(() => process.exit(0));

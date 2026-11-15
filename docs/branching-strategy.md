@@ -5,12 +5,12 @@ topic branches.
 
 ## Branch roles
 
-| Branch | Purpose | Release behavior |
-| --- | --- | --- |
-| `main` | Production and published code | A push to `main` runs the Projen release workflow. If there are releasable commits, it creates the version tag, changelog, GitHub Release, and npm publication. |
-| `develop` | Integration branch for the next release | CI runs after merges, but no package is published. |
-| `feature/*`, `fix/*`, `refactor/*`, `chore/*`, `docs/*`, `deps/*` | Short-lived work branches | Merged into `develop` through a pull request. |
-| `hotfix/*` | Urgent fixes based on the published `main` | Merged into `main` first, then synchronized back to `develop`. |
+| Branch                                                            | Purpose                                    | Release behavior                                                                                                                                                |
+| ----------------------------------------------------------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `main`                                                            | Production and published code              | A push to `main` runs the Projen release workflow. If there are releasable commits, it creates the version tag, changelog, GitHub Release, and npm publication. |
+| `develop`                                                         | Integration branch for the next release    | CI runs after merges, but no package is published.                                                                                                              |
+| `feature/*`, `fix/*`, `refactor/*`, `chore/*`, `docs/*`, `deps/*` | Short-lived work branches                  | Merged into `develop` through a pull request.                                                                                                                   |
+| `hotfix/*`                                                        | Urgent fixes based on the published `main` | Merged into `main` first, then synchronized back to `develop`.                                                                                                  |
 
 The default repository branch remains `main`. Normal development pull requests
 target `develop`; only release pull requests, hotfixes, and branch

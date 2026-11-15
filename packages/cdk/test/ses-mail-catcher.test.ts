@@ -6,9 +6,14 @@ import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import { expect, test } from 'vitest';
 import { MailMode, SesMailCatcher, type RelayOptions, type ViewerOptions } from '../src/index.js';
 
-const createStack = (mode?: MailMode, relay?: RelayOptions): { stack: Stack; catcher: SesMailCatcher } => {
+const createStack = (
+  mode?: MailMode,
+  relay?: RelayOptions,
+): { stack: Stack; catcher: SesMailCatcher } => {
   const app = new App();
-  const stack = new Stack(app, 'TestStack', { env: { account: '123456789012', region: 'us-east-1' } });
+  const stack = new Stack(app, 'TestStack', {
+    env: { account: '123456789012', region: 'us-east-1' },
+  });
   const catcher = new SesMailCatcher(stack, 'Catcher', {
     mode,
     relay,
@@ -73,9 +78,7 @@ test('catch mode grants storage access but does not grant SES access', () => {
 
   template.hasResourceProperties('AWS::IAM::Policy', {
     PolicyDocument: Match.objectLike({
-      Statement: Match.arrayWith([
-        Match.objectLike({ Action: 'lambda:InvokeFunction' }),
-      ]),
+      Statement: Match.arrayWith([Match.objectLike({ Action: 'lambda:InvokeFunction' })]),
     }),
   });
 });
@@ -100,8 +103,8 @@ test('relay mode adds SES delivery permissions to the handler', () => {
       ]),
     }),
   });
-  const relayPolicies = Object.values(template.findResources('AWS::IAM::Policy')).filter(
-    (policy) => JSON.stringify(policy).includes('ses:SendEmail'),
+  const relayPolicies = Object.values(template.findResources('AWS::IAM::Policy')).filter((policy) =>
+    JSON.stringify(policy).includes('ses:SendEmail'),
   );
   expect(relayPolicies).toHaveLength(1);
 });
@@ -138,13 +141,21 @@ test('rejects non-positive retention', () => {
   const app = new App();
   const stack = new Stack(app, 'TestStack');
 
-  expect(() => new SesMailCatcher(stack, 'Catcher', { retention: Duration.seconds(0) })).toThrow('retention must be greater than zero');
+  expect(() => new SesMailCatcher(stack, 'Catcher', { retention: Duration.seconds(0) })).toThrow(
+    'retention must be greater than zero',
+  );
 });
 
 const viewerStack = (viewer?: ViewerOptions, mode?: MailMode): Stack => {
   const app = new App();
-  const stack = new Stack(app, 'ViewerStack', { env: { account: '123456789012', region: 'us-east-1' } });
-  const catcher = new SesMailCatcher(stack, 'Catcher', { mode, viewer, retention: Duration.days(3) });
+  const stack = new Stack(app, 'ViewerStack', {
+    env: { account: '123456789012', region: 'us-east-1' },
+  });
+  const catcher = new SesMailCatcher(stack, 'Catcher', {
+    mode,
+    viewer,
+    retention: Duration.days(3),
+  });
   return catcher.node.scope as Stack;
 };
 
@@ -185,7 +196,9 @@ test('serves the viewer from a function url with an address allow list', () => {
 
 test('reads basic auth credentials from a secret rather than the template', () => {
   const app = new App();
-  const stack = new Stack(app, 'ViewerStack', { env: { account: '123456789012', region: 'us-east-1' } });
+  const stack = new Stack(app, 'ViewerStack', {
+    env: { account: '123456789012', region: 'us-east-1' },
+  });
   const secret = new secretsmanager.Secret(stack, 'ViewerCredentials');
   const catcher = new SesMailCatcher(stack, 'Catcher', {
     retention: Duration.days(3),
@@ -218,8 +231,9 @@ test('grants the viewer no write access to the catcher storage', () => {
   const stack = viewerStack({ allowPublicAccess: true });
   const template = Template.fromStack(stack);
 
-  const viewerRole = Object.entries(template.findResources('AWS::IAM::Policy'))
-    .find(([name]) => name.includes('ViewerHandler'));
+  const viewerRole = Object.entries(template.findResources('AWS::IAM::Policy')).find(([name]) =>
+    name.includes('ViewerHandler'),
+  );
   expect(viewerRole).toBeDefined();
 
   const document = JSON.stringify(viewerRole?.[1]);

@@ -29,12 +29,13 @@ const splitAddresses = (value: string, variableName: string): string[] => {
   return addresses;
 };
 
-const escapeHtml = (value: string): string => value
-  .replaceAll('&', '&amp;')
-  .replaceAll('<', '&lt;')
-  .replaceAll('>', '&gt;')
-  .replaceAll('"', '&quot;')
-  .replaceAll("'", '&#39;');
+const escapeHtml = (value: string): string =>
+  value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
 
 const wrapBase64 = (value: string): string => {
   const encoded = Buffer.from(value, 'utf8').toString('base64');
@@ -42,20 +43,22 @@ const wrapBase64 = (value: string): string => {
 };
 
 const encodeMimeHeader = (value: string): string => {
-  if (Buffer.from(value, 'utf8').every((byte) => byte <= 0x7F)) {
+  if (Buffer.from(value, 'utf8').every((byte) => byte <= 0x7f)) {
     return value;
   }
   return `=?UTF-8?B?${Buffer.from(value, 'utf8').toString('base64')}?=`;
 };
 
-const safeHeaderValue = (value: string): string => value.replaceAll('\r', ' ').replaceAll('\n', ' ');
+const safeHeaderValue = (value: string): string =>
+  value.replaceAll('\r', ' ').replaceAll('\n', ' ');
 
 const getMailPattern = (): MailPattern => {
-  const defaultPattern = process.env.MAIL_TEMPLATE_NAME !== undefined
-    ? 'template'
-    : process.env.MAIL_HTML !== undefined
-      ? 'multipart'
-      : 'text';
+  const defaultPattern =
+    process.env.MAIL_TEMPLATE_NAME !== undefined
+      ? 'template'
+      : process.env.MAIL_HTML !== undefined
+        ? 'multipart'
+        : 'text';
   const value = process.env.MAIL_PATTERN ?? defaultPattern;
   if (!mailPatterns.has(value as MailPattern)) {
     throw new Error(`MAIL_PATTERN must be one of: ${[...mailPatterns].join(', ')}`);
@@ -66,27 +69,24 @@ const getMailPattern = (): MailPattern => {
 const sesMailCatcherUrl = process.env.SES_MAIL_CATCHER_URL ?? 'http://127.0.0.1:8005';
 const from = process.env.MAIL_FROM ?? 'noreply@example.com';
 const to = splitAddresses(process.env.MAIL_TO ?? 'developer@example.com', 'MAIL_TO');
-const cc = process.env.MAIL_CC === undefined
-  ? undefined
-  : splitAddresses(process.env.MAIL_CC, 'MAIL_CC');
-const bcc = process.env.MAIL_BCC === undefined
-  ? undefined
-  : splitAddresses(process.env.MAIL_BCC, 'MAIL_BCC');
-const replyTo = process.env.MAIL_REPLY_TO === undefined
-  ? undefined
-  : splitAddresses(process.env.MAIL_REPLY_TO, 'MAIL_REPLY_TO');
+const cc =
+  process.env.MAIL_CC === undefined ? undefined : splitAddresses(process.env.MAIL_CC, 'MAIL_CC');
+const bcc =
+  process.env.MAIL_BCC === undefined ? undefined : splitAddresses(process.env.MAIL_BCC, 'MAIL_BCC');
+const replyTo =
+  process.env.MAIL_REPLY_TO === undefined
+    ? undefined
+    : splitAddresses(process.env.MAIL_REPLY_TO, 'MAIL_REPLY_TO');
 // Keep the defaults multilingual so every mail pattern exercises UTF-8
 // handling, including Japanese text and emoji.
 const subject = process.env.MAIL_SUBJECT ?? '日本語と絵文字を含む SDK サンプル 📬';
-const text = process.env.MAIL_TEXT ?? 'こんにちは、ses-mail-catcher の SDK サンプルです。日本語と絵文字が正しく表示されることを確認します。📧✨';
+const text =
+  process.env.MAIL_TEXT ??
+  'こんにちは、ses-mail-catcher の SDK サンプルです。日本語と絵文字が正しく表示されることを確認します。📧✨';
 const pattern = getMailPattern();
-const generatedHtml = ([
-  'html',
-  'multipart',
-  'attachment',
-  'raw',
-  'template',
-] as MailPattern[]).includes(pattern)
+const generatedHtml = (
+  ['html', 'multipart', 'attachment', 'raw', 'template'] as MailPattern[]
+).includes(pattern)
   ? `<html lang="ja"><body><h1>${escapeHtml(subject)}</h1><p>${escapeHtml(text).replaceAll('\n', '<br>')}</p></body></html>`
   : undefined;
 const html = process.env.MAIL_HTML ?? generatedHtml;
@@ -117,23 +117,27 @@ const createTemplate = async (): Promise<void> => {
     ...(html === undefined ? {} : { Html: html }),
   };
   try {
-    await ses.send(new CreateEmailTemplateCommand({
-      TemplateName: templateName,
-      TemplateContent: templateContent,
-    }));
+    await ses.send(
+      new CreateEmailTemplateCommand({
+        TemplateName: templateName,
+        TemplateContent: templateContent,
+      }),
+    );
   } catch (error: unknown) {
     if (
-      error === null
-      || typeof error !== 'object'
-      || !('name' in error)
-      || error.name !== 'AlreadyExistsException'
+      error === null ||
+      typeof error !== 'object' ||
+      !('name' in error) ||
+      error.name !== 'AlreadyExistsException'
     ) {
       throw error;
     }
-    await ses.send(new UpdateEmailTemplateCommand({
-      TemplateName: templateName,
-      TemplateContent: templateContent,
-    }));
+    await ses.send(
+      new UpdateEmailTemplateCommand({
+        TemplateName: templateName,
+        TemplateContent: templateContent,
+      }),
+    );
   }
 };
 
@@ -165,27 +169,31 @@ const createRawMessage = (): Uint8Array => {
 };
 
 const createSimpleMessage = (): Message => {
-  const body = pattern === 'html'
-    ? { Html: { Data: html ?? '', Charset: 'UTF-8' } }
-    : {
-        Text: { Data: text, Charset: 'UTF-8' },
-        ...(html === undefined ? {} : { Html: { Data: html, Charset: 'UTF-8' } }),
-      };
+  const body =
+    pattern === 'html'
+      ? { Html: { Data: html ?? '', Charset: 'UTF-8' } }
+      : {
+          Text: { Data: text, Charset: 'UTF-8' },
+          ...(html === undefined ? {} : { Html: { Data: html, Charset: 'UTF-8' } }),
+        };
   return {
     Subject: { Data: subject, Charset: 'UTF-8' },
     Body: body,
     Headers: [{ Name: 'X-Ses-Mail-Catcher-Pattern', Value: pattern }],
     ...(pattern === 'attachment'
       ? {
-          Attachments: [{
-            RawContent: Buffer.from(
-              process.env.MAIL_ATTACHMENT_CONTENT ?? 'これは SDK サンプルからの添付ファイルです。📎\n',
-              'utf8',
-            ),
-            FileName: process.env.MAIL_ATTACHMENT_FILENAME ?? 'example.txt',
-            ContentType: process.env.MAIL_ATTACHMENT_CONTENT_TYPE ?? 'text/plain',
-            ContentDisposition: 'ATTACHMENT' as const,
-          }],
+          Attachments: [
+            {
+              RawContent: Buffer.from(
+                process.env.MAIL_ATTACHMENT_CONTENT ??
+                  'これは SDK サンプルからの添付ファイルです。📎\n',
+                'utf8',
+              ),
+              FileName: process.env.MAIL_ATTACHMENT_FILENAME ?? 'example.txt',
+              ContentType: process.env.MAIL_ATTACHMENT_CONTENT_TYPE ?? 'text/plain',
+              ContentDisposition: 'ATTACHMENT' as const,
+            },
+          ],
         }
       : {}),
   };
@@ -210,15 +218,17 @@ if (pattern === 'template') {
   await createTemplate();
 }
 
-const response = await ses.send(new SendEmailCommand({
-  FromEmailAddress: from,
-  Destination: {
-    ToAddresses: to,
-    ...(cc === undefined ? {} : { CcAddresses: cc }),
-    ...(bcc === undefined ? {} : { BccAddresses: bcc }),
-  },
-  ...(replyTo === undefined ? {} : { ReplyToAddresses: replyTo }),
-  Content: createContent(),
-}));
+const response = await ses.send(
+  new SendEmailCommand({
+    FromEmailAddress: from,
+    Destination: {
+      ToAddresses: to,
+      ...(cc === undefined ? {} : { CcAddresses: cc }),
+      ...(bcc === undefined ? {} : { BccAddresses: bcc }),
+    },
+    ...(replyTo === undefined ? {} : { ReplyToAddresses: replyTo }),
+    Content: createContent(),
+  }),
+);
 
 console.log(`mail catcher accepted ${pattern} message ${response.MessageId ?? '(no message id)'}`);

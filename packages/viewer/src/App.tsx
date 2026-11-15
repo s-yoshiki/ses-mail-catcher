@@ -29,19 +29,23 @@ export const App = ({ client }: AppProps): JSX.Element => {
   // place, so a spinner every few seconds would just flicker.
   const [initialLoad, setInitialLoad] = useState(true);
 
-  const refresh = useCallback((signal?: AbortSignal) => {
-    return client.listMessages(signal ? { signal } : {})
-      .then((response) => {
-        setMessages(response.messages);
-        setListError(undefined);
-      })
-      .catch((error: unknown) => {
-        if (!isAbort(error)) {
-          setListError(toMessage(error));
-        }
-      })
-      .finally(() => setInitialLoad(false));
-  }, [client]);
+  const refresh = useCallback(
+    (signal?: AbortSignal) => {
+      return client
+        .listMessages(signal ? { signal } : {})
+        .then((response) => {
+          setMessages(response.messages);
+          setListError(undefined);
+        })
+        .catch((error: unknown) => {
+          if (!isAbort(error)) {
+            setListError(toMessage(error));
+          }
+        })
+        .finally(() => setInitialLoad(false));
+    },
+    [client],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -59,9 +63,10 @@ export const App = ({ client }: AppProps): JSX.Element => {
 
   // A selection only stays active while the message is still listed, so a
   // refreshed list cannot leave the detail pane showing a missing message.
-  const activeId = selectedId !== undefined && messages.some((message) => message.id === selectedId)
-    ? selectedId
-    : undefined;
+  const activeId =
+    selectedId !== undefined && messages.some((message) => message.id === selectedId)
+      ? selectedId
+      : undefined;
 
   useEffect(() => {
     if (activeId === undefined) {
@@ -69,7 +74,8 @@ export const App = ({ client }: AppProps): JSX.Element => {
     }
 
     const controller = new AbortController();
-    client.getMessage(activeId, controller.signal)
+    client
+      .getMessage(activeId, controller.signal)
       .then((loaded) => setDetail(loaded))
       .catch((error: unknown) => {
         if (!isAbort(error)) {
@@ -98,7 +104,11 @@ export const App = ({ client }: AppProps): JSX.Element => {
         <MessageDetailPane
           client={client}
           detail={detail?.id === activeId ? detail : undefined}
-          error={detailError !== undefined && detailError.id === activeId ? detailError.message : undefined}
+          error={
+            detailError !== undefined && detailError.id === activeId
+              ? detailError.message
+              : undefined
+          }
         />
       </div>
     </div>
