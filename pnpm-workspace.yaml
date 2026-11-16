@@ -37,7 +37,7 @@ catalog:
   'oxfmt': '0.78.0'
   'oxlint': '1.93.0'
   'turbo': '2.10.12'
-  'postal-mime': '^3.0.0'
+  'postal-mime': '^4.2.1'
   'projen': '^0.103.19'
   'react': '^19.2.8'
   'react-dom': '^19.2.8'
