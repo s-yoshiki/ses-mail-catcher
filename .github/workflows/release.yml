@@ -59,6 +59,8 @@ jobs:
       - name: Install dependencies
         id: install_dependencies
         run: pnpm i --frozen-lockfile
+      - name: Build workspace packages
+        run: pnpm build
       - name: release
         id: release
         run: pnpm --filter @s-yoshiki/cdk-ses-mail-catcher release
